@@ -449,28 +449,28 @@ function paintNotify(): void {
       notifBtn.hidden = true;
       notifBadge.classList.add('opt__badge--off');
       notifBadge.textContent = 'غير مدعوم';
-      notifStatus.textContent = 'متصفحك ما بيدعم التنبيهات. استعملي التقويم.';
+      notifStatus.textContent = 'متصفحك ما بيدعم التنبيهات 🤷 خدي التقويم وارتاحي.';
       break;
     case 'granted':
       notifBtn.hidden = false;
-      notifBtn.textContent = 'جرّبي تنبيه تجريبي';
+      notifBtn.textContent = 'جرّبيه هلق 👀';
       notifBtn.dataset.notifTest = '1';
       notifBadge.classList.add('opt__badge--on');
       notifBadge.textContent = 'مفعّل ✓';
-      notifStatus.textContent = 'تمام. من 10:55 كل دقيقة حتى 11:00 — طالما الصفحة مفتوحة.';
+      notifStatus.textContent = 'صرنا رسميين 🤝 من 10:55 كل دقيقة لـ11:00 — طالما الصفحة مفتوحة.';
       break;
     case 'denied':
       notifBtn.hidden = true;
       notifBadge.classList.add('opt__badge--off');
       notifBadge.textContent = 'مرفوض';
       notifStatus.textContent =
-        'رفضتي الإذن سابقاً. فعّليه من إعدادات الموقع بالمتصفح، أو استعملي التقويم.';
+        'رفضتينا من قبل 💔 فعّليه من إعدادات الموقع بالمتصفح، أو خدي التقويم.';
       break;
     default:
       notifBtn.hidden = false;
       notifBadge.classList.add('opt__badge--soft');
       notifBadge.textContent = 'اختياري';
-      notifStatus.textContent = 'لسا ما فعّلتيه.';
+      notifStatus.textContent = 'لسا ما فعّلتيه. الدوا لاحظ.';
   }
 }
 
@@ -486,7 +486,7 @@ function initNotify(): void {
     await requestPermission();
     notifBtn.disabled = false;
     paintNotify();
-    if (notifyState() === 'granted') say('تمام. صار عندك تنبيه. بس التقويم أضمن 😌');
+    if (notifyState() === 'granted') say('تمام، صار عندك تنبيه. بس التقويم أضمن 😌');
   });
 
   paintNotify();

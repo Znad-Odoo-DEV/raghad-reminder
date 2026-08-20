@@ -7,12 +7,12 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
 <section class="remind section" id="remind" aria-labelledby="remind-heading">
   <div class="wrap">
     <div class="remind__head reveal">
-      <p class="eyebrow">تذكير على الموبايل</p>
+      <p class="eyebrow">قسم الإزعاج المنظّم</p>
       <h2 id="remind-heading" class="remind__title">
-        خليه <span class="gradient-text">يرنّ عندك</span> كل يوم.
+        منرنّ عليكِ. <span class="gradient-text">كل يوم.</span> بلا ملل.
       </h2>
       <p class="remind__lead">
-        من 10:55 كل دقيقة حتى 11:00 — ويوصلك وأنتِ بأي تطبيق، وحتى والموبايل مقفول.
+        ست رنّات من 10:55 لـ11:00. بتوصلك وأنتِ بالإنستغرام، وحتى والموبايل نايم 😴
       </p>
     </div>
 
@@ -21,25 +21,26 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
       <article class="opt opt--primary reveal">
         <div class="opt__top">
           <span class="opt__icon" aria-hidden="true">📅</span>
-          <span class="opt__badge">هذا هو المطلوب</span>
+          <span class="opt__badge">الخيار الجدّي</span>
         </div>
 
         <h3 class="opt__title">ضيفيه على تقويم الموبايل</h3>
         <p class="opt__body">
-          <b>التنبيه بيطلع من الموبايل نفسه</b> — مو من المتصفح. يعني بيوصلك وأنتِ
-          بالإنستغرام، أو والشاشة مطفية، أو والنت مقطوع.
+          هون <b>الموبايل نفسه</b> بيصير هو اللي يذكّرك، مو المتصفح. يعني بيوصلك
+          وأنتِ بالإنستغرام، أو والشاشة مطفية، أو والنت مقطوع. ما في مهرب —
+          بس بشكل لطيف 😌
           <br />بيبلّش <b>10:55</b> وبيرنّ <b>كل دقيقة</b> لـ<b>11:00</b> بتوقيت سوريا.
-          ست تنبيهات، كل يوم.
-          <br />بتضيفيه مرة وحدة بس، وبيضل للأبد.
+          ست تذكيرات، كل يوم.
+          <br /><b>بتضيفيه مرة وحدة وبتنسيه</b> — وهو ما بينسى.
         </p>
 
         <a class="btn btn--primary" href={icsHref} download="raghd-dose.ics" data-ics>
-          حمّلي التذكير 🔔
+          حمّليه وخلصينا 🔔
         </a>
 
         <p class="opt__hint">
-          <b>آيفون:</b> افتحي الملف → «إضافة إلى التقويم».<br />
-          <b>أندرويد:</b> افتحيه بتطبيق تقويم Google.
+          <b>آيفون:</b> افتحي الملف ← «إضافة إلى التقويم». خلصت.<br />
+          <b>أندرويد:</b> افتحيه بتقويم Google. كمان خلصت.
         </p>
       </article>
 
@@ -52,17 +53,17 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
 
         <h3 class="opt__title">تنبيه من المتصفح</h3>
         <p class="opt__body">
-          نفس الجدول تماماً: من 10:55 كل دقيقة حتى 11:00. بس بيشتغل
-          <b>إذا الصفحة مفتوحة</b> ولو بالخلفية — إذا سكّرتي المتصفح ما بيوصل.
-          عشان هيك التقويم هو الأساس.
+          نفس الرنّات بالضبط، بس هاد <b>دلّوع</b>: بيشتغل إذا الصفحة مفتوحة ولو
+          بالخلفية. سكّرتي المتصفح؟ بينام معه 😴
+          <br />عشان هيك التقويم هو الأساس، وهاد بس مساعد.
         </p>
 
         <button class="btn btn--ghost" type="button" data-notif-enable>
-          فعّلي التنبيه
+          فعّليه، ما بيعضّ 🔔
         </button>
 
         <p class="opt__hint" data-notif-status role="status">
-          لسا ما فعّلتيه.
+          لسا ما فعّلتيه. الدوا لاحظ.
         </p>
       </article>
     </div>
@@ -70,22 +71,25 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
     <!-- ============ إضافة للشاشة الرئيسية ============ -->
     <p class="remind__foot reveal" style="--reveal-delay: 200ms">
       <span aria-hidden="true">📲</span>
-      وإذا حابة، ضيفي الموقع للشاشة الرئيسية: من قائمة المتصفح اختاري
-      «إضافة إلى الشاشة الرئيسية» — بيصير له أيقونة وبيفتح مثل التطبيق.
+      وإذا بدك تكرّمينا: ضيفي الموقع للشاشة الرئيسية من قائمة المتصفح. بيصير
+      له أيقونة وبيفتح متل تطبيق حقيقي — تطبيق وظيفته الوحيدة بالحياة تذكيرك
+      بالدوا. طموح، صح؟
     </p>
 
     <!-- ============ إلغاء الإشعارات ============ -->
     <aside class="cancel reveal" style="--reveal-delay: 260ms" aria-labelledby="cancel-heading">
       <div class="cancel__text">
         <h3 id="cancel-heading" class="cancel__title">
-          <span aria-hidden="true">ℹ️</span> شو بيصير بالضبط؟
+          <span aria-hidden="true">ℹ️</span> بالذمة، شو رح يصير؟
         </h3>
         <p class="cancel__body">
-          هذا الموقع بيبعت إشعار <b>كل دقيقة</b>، بيبلّش <b>قبل موعد الدوا بخمس
-          دقايق</b> وبيوقف الساعة 11:00 — أو أول ما تسجّلي إنك أخذتي الجرعة.
+          منبعت إشعار <b>كل دقيقة</b>، منبلّش <b>قبل الموعد بخمس دقايق</b>
+          ومنوقف الساعة <b>11:00</b>. وإذا ضغطتي «أخذت الدوا» منسكت فوراً —
+          وعد شرف 🤝
         </p>
         <p class="cancel__body">
-          بدك تلغي الإشعارات أو تغيّري الموعد؟ تواصلي مع <b>إبراهيم</b>:
+          تعبتي منّا؟ بدك تلغي الإشعارات أو تغيّري الموعد؟
+          كل الشكاوى بتروح لـ<b>إبراهيم</b> 👇
         </p>
       </div>
 
