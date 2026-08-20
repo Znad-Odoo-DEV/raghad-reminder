@@ -36,7 +36,7 @@ export const ANALYTICS = {
    *
    * اجعله '' لإخفاء العدّاد.
    */
-  hitsKey: 'znad-odoo-dev.github.io/raghad-reminder',
+  hitsKey: 'znad-odoo-dev.github.io/raghad-live',
 } as const;
 
 /** هل فُعّلت أي أداة؟ */
