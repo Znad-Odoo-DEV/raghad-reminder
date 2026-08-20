@@ -17,7 +17,7 @@ export const ANALYTICS = {
    *    'https://raghad.goatcounter.com/count'
    * 3. لوحتك: https://raghad.goatcounter.com
    */
-  goatcounter: '',
+  goatcounter: 'https://znad.goatcounter.com/count',
 
   /**
    * Cloudflare Web Analytics — مجاني وبلا حدّ، ولوحته أغنى.
