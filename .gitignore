@@ -6,9 +6,9 @@ dist/
 .env
 .env.production
 
-# ملفات الصوت: استُثني track.mp3 عمداً ليعمل صوت الخلفية على الموقع المنشور،
+# ملفات الصوت: استُثني track.m4a عمداً ليعمل صوت الخلفية على الموقع المنشور،
 # فالبناء في GitHub Actions لا يرى إلا ما أُودع في المستودع. أي ملف صوتي آخر
 # يبقى خارج المستودع.
-public/music/*.m4a
+public/music/*.mp3
 public/music/*.ogg
 public/music/*.wav

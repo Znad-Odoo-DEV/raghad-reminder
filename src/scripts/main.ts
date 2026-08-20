@@ -523,7 +523,7 @@ function initMusic(): void {
     label.textContent = playing ? 'الأغنية شغالة' : waiting ? 'المسي الشاشة' : 'شغّلي الأغنية';
     toggle.setAttribute(
       'aria-label',
-      playing ? 'إيقاف أغنية كل القصايد' : 'تشغيل أغنية كل القصايد لمروان خوري',
+      playing ? 'إيقاف أغنية جيتني صدفة' : 'تشغيل أغنية جيتني صدفة لأحمد علوي',
     );
   };
 
@@ -535,7 +535,7 @@ function initMusic(): void {
     toggle.addEventListener('click', async () => {
       const playing = await handle.toggle();
       setUi(playing);
-      if (playing) say('حطّينا مروان خوري. الجو صار مناسب لأخذ الدوا 🎶');
+      if (playing) say('حطّينا أحمد علوي. الجو صار مناسب لأخذ الدوا 🎶');
     });
 
     el.addEventListener('play', () => setUi(true));
