@@ -35,6 +35,7 @@ import {
 } from './copy';
 
 import { burst, pillRain } from './celebrate';
+import { initAudio } from './music';
 
 import {
   supported as notifySupported,
@@ -504,28 +505,61 @@ function initNotify(): void {
    ========================================================================= */
 
 /**
- * نحقن إطار يوتيوب عند النقر فقط — لا قبلها.
- * سبب أول: المتصفحات تمنع تشغيل الصوت بدون تفاعل المستخدمة.
- * سبب ثانٍ: لا نحمّل شيئاً من يوتيوب ما لم تطلب الأغنية فعلاً.
+ * وضعان: ملف محلي (<audio>) أو مشغّل يوتيوب الرسمي — يحدّده وجود الملف وقت البناء.
+ *
+ * التشغيل التلقائي بصوت ممنوع في كل المتصفحات قبل أي تفاعل، فلا نحاول خداعه:
+ * نجرّب التشغيل فوراً، وإن رُفض ننتظر أول لمسة/سكرول من رغد فتبدأ عندها.
  */
 function initMusic(): void {
-  const pill = $<HTMLButtonElement>('[data-music-open]');
+  const root = $('[data-music]');
+  const toggle = $<HTMLButtonElement>('[data-music-toggle]');
+  const label = $('[data-music-label]');
+  if (!root || !toggle || !label) return;
+
+  const setUi = (playing: boolean, waiting = false) => {
+    root.classList.toggle('is-playing', playing);
+    root.classList.toggle('is-waiting', waiting);
+    toggle.setAttribute('aria-pressed', String(playing));
+    label.textContent = playing ? 'الأغنية شغالة' : waiting ? 'المسي الشاشة' : 'شغّلي الأغنية';
+    toggle.setAttribute(
+      'aria-label',
+      playing ? 'إيقاف أغنية كل القصايد' : 'تشغيل أغنية كل القصايد لمروان خوري',
+    );
+  };
+
+  /* ---------- الوضع الأول: ملف محلي ---------- */
+  const el = $<HTMLAudioElement>('[data-music-audio]');
+  if (root.dataset.mode === 'local' && el) {
+    const handle = initAudio(el);
+
+    toggle.addEventListener('click', async () => {
+      const playing = await handle.toggle();
+      setUi(playing);
+      if (playing) say('حطّينا مروان خوري. الجو صار مناسب لأخذ الدوا 🎶');
+    });
+
+    el.addEventListener('play', () => setUi(true));
+    el.addEventListener('pause', () => setUi(false));
+
+    void handle.boot(() => setUi(true)).then((res) => {
+      setUi(res === 'playing', res === 'waiting');
+    });
+    return;
+  }
+
+  /* ---------- الوضع الثاني: يوتيوب ---------- */
   const cardEl = $('[data-music-card]');
   const frame = $('[data-music-frame]');
   const closeBtn = $<HTMLButtonElement>('[data-music-close]');
-  if (!pill || !cardEl || !frame || !closeBtn) return;
+  if (!cardEl || !frame || !closeBtn) return;
 
   const videoId = frame.dataset.video ?? '';
 
   const start = () => {
     // playlist=<id> مع loop=1 هي الطريقة الوحيدة لتكرار فيديو مفرد.
     const params = new URLSearchParams({
-      autoplay: '1',
-      loop: '1',
-      playlist: videoId,
-      rel: '0',
-      playsinline: '1',
-      modestbranding: '1',
+      autoplay: '1', loop: '1', playlist: videoId,
+      rel: '0', playsinline: '1', modestbranding: '1',
     });
     frame.innerHTML =
       `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?${params}" ` +
@@ -533,19 +567,17 @@ function initMusic(): void {
       `allow="autoplay; encrypted-media; picture-in-picture" ` +
       `allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
     cardEl.hidden = false;
-    pill.hidden = true;
-    closeBtn.focus();
+    setUi(true);
     say('حطّينا مروان خوري. الجو صار مناسب لأخذ الدوا 🎶');
   };
 
   const stop = () => {
     frame.innerHTML = '';   // إزالة الإطار توقف الصوت فوراً
     cardEl.hidden = true;
-    pill.hidden = false;
-    pill.focus();
+    setUi(false);
   };
 
-  pill.addEventListener('click', start);
+  toggle.addEventListener('click', () => (cardEl.hidden ? start() : stop()));
   closeBtn.addEventListener('click', stop);
 }
 

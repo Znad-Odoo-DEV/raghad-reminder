@@ -5,3 +5,9 @@ dist/
 *.log
 .env
 .env.production
+
+# ملفات الصوت: لا نودع تسجيلات محمية بحقوق النشر في مستودع عام
+public/music/*.mp3
+public/music/*.m4a
+public/music/*.ogg
+public/music/*.wav

@@ -1,51 +1,73 @@
 ---
+import fs from 'node:fs';
+import path from 'node:path';
+
 /**
  * MusicPlayer — «كل القصايد» لمروان خوري
  *
- * الأغنية محمية بحقوق نشر، فلا نستضيف أي ملف صوتي في المستودع. بدل ذلك
- * نضمّن مشغّل يوتيوب الرسمي من قناة روتانا (مالكة الحقوق)، فتُحتسب المشاهدة
- * لصاحب العمل ولا يوجد أي توزيع غير مرخّص.
+ * وضعان، يُختار الوضع وقت البناء:
  *
- * المشغّل يُحقن فقط بعد نقرة المستخدمة — وهذا مطلوب مرّتين:
- *  1. سياسات المتصفحات تمنع تشغيل الصوت تلقائياً بدون تفاعل.
- *  2. شروط يوتيوب تمنع إخفاء المشغّل، فنُظهره متى كان يعمل.
+ *  1. ملف محلي — إن وُجد `public/music/track.(mp3|m4a|ogg|wav)` نستخدم عنصر
+ *     <audio>. هذا هو الوضع الأفضل: صوت خلفية حقيقي، بلا مشغّل مرئي، ويبدأ
+ *     لوحده عند أول تفاعل.
+ *
+ *  2. يوتيوب — إن لم يوجد ملف، نضمّن المشغّل الرسمي من قناة روتانا (مالكة
+ *     الحقوق). لا نستضيف أي تسجيل تجاري في المستودع.
  */
 
-/** معرّف الفيديو الرسمي على قناة روتانا. */
 const VIDEO_ID = 'osCw73O_WMo';
 const TRACK = 'كل القصايد';
 const ARTIST = 'مروان خوري';
+
+const AUDIO_DIR = path.join(process.cwd(), 'public', 'music');
+const EXTS = ['mp3', 'm4a', 'ogg', 'wav'];
+
+const found = fs.existsSync(AUDIO_DIR)
+  ? EXTS.map((e) => `track.${e}`).find((f) => fs.existsSync(path.join(AUDIO_DIR, f)))
+  : undefined;
+
+const localSrc = found ? `${import.meta.env.BASE_URL}music/${found}` : null;
 ---
 
-<div class="music" data-music>
-  <!-- ===== الزر المطوي ===== -->
-  <button class="music__pill" type="button" data-music-open>
-    <span class="music__note" aria-hidden="true">🎵</span>
-    <span class="music__pill-text">شغّلي الأغنية</span>
+<div class="music" data-music data-mode={localSrc ? 'local' : 'youtube'}>
+  {
+    localSrc && (
+      <audio data-music-audio src={localSrc} loop preload="auto" playsinline></audio>
+    )
+  }
+
+  <!-- ===== الزر ===== -->
+  <button class="music__pill" type="button" data-music-toggle aria-pressed="false">
+    <span class="music__eq" data-music-eq aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </span>
+    <span class="music__note" data-music-note aria-hidden="true">🎵</span>
+    <span class="music__label" data-music-label>شغّلي الأغنية</span>
   </button>
 
-  <!-- ===== البطاقة ===== -->
-  <div class="music__card" data-music-card hidden>
-    <div class="music__head">
-      <div class="music__eq" aria-hidden="true">
-        <span></span><span></span><span></span><span></span>
+  <!-- ===== بطاقة يوتيوب (وضع الاحتياط فقط) ===== -->
+  {
+    !localSrc && (
+      <div class="music__card" data-music-card hidden>
+        <div class="music__head">
+          <div class="music__meta">
+            <p class="music__track">{TRACK}</p>
+            <p class="music__artist">{ARTIST}</p>
+          </div>
+          <button
+            class="music__close"
+            type="button"
+            data-music-close
+            aria-label="إيقاف الأغنية"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="music__frame" data-music-frame data-video={VIDEO_ID} />
+        <p class="music__credit">من القناة الرسمية 💜</p>
       </div>
-      <div class="music__meta">
-        <p class="music__track">{TRACK}</p>
-        <p class="music__artist">{ARTIST}</p>
-      </div>
-      <button class="music__close" type="button" data-music-close aria-label="إيقاف الأغنية وإغلاق المشغّل">
-        ✕
-      </button>
-    </div>
-
-    <!-- يُحقن الـiframe هنا عند التشغيل فقط -->
-    <div class="music__frame" data-music-frame data-video={VIDEO_ID}></div>
-
-    <p class="music__note-text">
-      من القناة الرسمية 💜
-    </p>
-  </div>
+    )
+  }
 </div>
 
 <style>
@@ -61,7 +83,7 @@ const ARTIST = 'مروان خوري';
     gap: .5rem;
   }
 
-  /* ---- الزر المطوي ---- */
+  /* ---- الزر ---- */
   .music__pill {
     display: inline-flex;
     align-items: center;
@@ -81,6 +103,14 @@ const ARTIST = 'مروان خوري';
   .music__pill:hover { transform: translateY(-2px); box-shadow: var(--sh-lg); }
   .music__pill:active { transform: translateY(0) scale(.96); }
 
+  .music__label {
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* النوتة تظهر وهي متوقفة، والمكافئ يظهر وهي شغالة */
   .music__note {
     font-size: 1rem;
     line-height: 1;
@@ -91,7 +121,46 @@ const ARTIST = 'مروان خوري';
     50%      { transform: translateY(-3px) rotate(-9deg); }
   }
 
-  /* ---- البطاقة ---- */
+  .music__eq {
+    display: none;
+    align-items: flex-end;
+    gap: 2px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+  .music__eq span {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--g-brand);
+    animation: eq .9s var(--e-soft) infinite alternate;
+  }
+  .music__eq span:nth-child(1) { height: 40%; animation-delay: 0s; }
+  .music__eq span:nth-child(2) { height: 95%; animation-delay: .18s; }
+  .music__eq span:nth-child(3) { height: 60%; animation-delay: .36s; }
+  .music__eq span:nth-child(4) { height: 80%; animation-delay: .54s; }
+
+  @keyframes eq {
+    from { transform: scaleY(.3); }
+    to   { transform: scaleY(1); }
+  }
+
+  .music.is-playing .music__note { display: none; }
+  .music.is-playing .music__eq { display: flex; }
+  .music.is-playing .music__pill {
+    background: linear-gradient(135deg, rgba(109, 74, 255, .14), rgba(255, 111, 181, .14)), rgba(255,255,255,.86);
+    border-color: rgba(109, 74, 255, .3);
+  }
+
+  /* حالة "بانتظار أول لمسة" — نبضة خفيفة تلمّح أن في شي جاهز */
+  .music.is-waiting .music__pill {
+    animation: waiting 2.4s var(--e-soft) infinite;
+  }
+  @keyframes waiting {
+    0%, 100% { box-shadow: var(--sh-md); }
+    50%      { box-shadow: var(--sh-md), 0 0 0 6px rgba(109, 74, 255, .12); }
+  }
+
+  /* ---- بطاقة يوتيوب ---- */
   .music__card {
     width: min(78vw, 236px);
     padding: .7rem;
@@ -114,21 +183,15 @@ const ARTIST = 'مروان خوري';
     gap: .55rem;
     margin-block-end: .55rem;
   }
-
   .music__meta { flex: 1; min-width: 0; }
-
   .music__track {
     font-size: var(--t-xs);
     font-weight: 700;
-    color: var(--c-ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .music__artist {
-    font-size: .68rem;
-    color: var(--c-ink-faint);
-  }
+  .music__artist { font-size: .68rem; color: var(--c-ink-faint); }
 
   .music__close {
     width: 26px; height: 26px;
@@ -137,35 +200,10 @@ const ARTIST = 'مروان خوري';
     font-size: .8rem;
     color: var(--c-ink-faint);
     background: rgba(23, 18, 56, .06);
-    transition: background var(--d-fast) var(--e-soft), color var(--d-fast) var(--e-soft);
+    transition: background var(--d-fast) var(--e-soft);
   }
   .music__close:hover { background: rgba(23, 18, 56, .12); color: var(--c-ink); }
 
-  /* ---- مكافئ الصوت ---- */
-  .music__eq {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 18px;
-    flex-shrink: 0;
-  }
-  .music__eq span {
-    width: 3px;
-    border-radius: 2px;
-    background: var(--g-brand);
-    animation: eq .9s var(--e-soft) infinite alternate;
-  }
-  .music__eq span:nth-child(1) { height: 40%; animation-delay: 0s; }
-  .music__eq span:nth-child(2) { height: 90%; animation-delay: .18s; }
-  .music__eq span:nth-child(3) { height: 60%; animation-delay: .36s; }
-  .music__eq span:nth-child(4) { height: 75%; animation-delay: .54s; }
-
-  @keyframes eq {
-    from { transform: scaleY(.35); }
-    to   { transform: scaleY(1); }
-  }
-
-  /* ---- إطار يوتيوب ---- */
   .music__frame {
     position: relative;
     aspect-ratio: 16 / 9;
@@ -181,7 +219,7 @@ const ARTIST = 'مروان خوري';
     border: 0;
   }
 
-  .music__note-text {
+  .music__credit {
     margin-block-start: .45rem;
     font-size: .66rem;
     color: var(--c-ink-faint);
@@ -189,13 +227,13 @@ const ARTIST = 'مروان خوري';
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .music__note, .music__eq span { animation: none; }
-    .music__card { animation: none; }
+    .music__note, .music__eq span, .music__card, .music.is-waiting .music__pill {
+      animation: none;
+    }
   }
 
-  /* لا نزاحم أزرار البطاقة على الشاشات الصغيرة جداً */
   @media (max-width: 360px) {
-    .music__pill-text { display: none; }
+    .music__label { display: none; }
     .music__pill { padding: .6rem .7rem; }
   }
 </style>
