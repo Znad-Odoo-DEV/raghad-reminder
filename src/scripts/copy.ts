@@ -23,8 +23,8 @@ export function pick(list: readonly string[], lastIndex = -1): { text: string; i
 export const STATUS: Record<Phase, { label: string; title: string; note: string }> = {
   before: {
     label: 'الجرعة القادمة بعد',
-    title: 'كل شي تمام… لهلق.',
-    note: 'النظام يعمل بشكل طبيعي. رغد لم تفعل شيئاً خاطئاً حتى هذه اللحظة.',
+    title: 'لسا بدري، خدي راحتك.',
+    note: 'لما يجي وقت الدوا رح نذكّرك. ما في داعي تفكري فيه هلق.',
   },
   due: {
     label: 'حان وقت الدواء 💊',

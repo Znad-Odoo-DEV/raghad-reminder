@@ -131,6 +131,8 @@ function frame(time: number): void {
 }
 
 function spawn(count: number, originX: number, originY: number, spread: number): void {
+  if (!ensureCanvas()) return;
+
   for (let i = 0; i < count; i++) {
     const angle = (-Math.PI / 2) + (Math.random() - 0.5) * spread;
     const speed = 7 + Math.random() * 9;

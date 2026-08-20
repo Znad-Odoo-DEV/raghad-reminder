@@ -5,7 +5,7 @@
  * everything automatically, because the stored `dayKey` no longer matches.
  */
 
-import { dayKeyOf, now } from './schedule';
+import { dayKeyOf, nowMs, wallOf } from './schedule';
 
 const KEY = 'raghd:dose:v1';
 const STREAK_KEY = 'raghd:streak:v1';
@@ -54,7 +54,7 @@ function safeWrite(key: string, value: unknown): void {
 
 /** يقرأ حالة اليوم، ويعيد التصفير تلقائياً عند بداية يوم جديد. */
 export function loadDay(): DayState {
-  const today = dayKeyOf(now());
+  const today = dayKeyOf();
   const saved = safeRead<Partial<DayState>>(KEY);
 
   if (!saved || saved.dayKey !== today) return blank(today);
@@ -93,10 +93,13 @@ export function bumpStreak(today: string): StreakState {
   const s = loadStreak();
   if (s.lastDay === today) return s;
 
+  // "أمس" بتقويم دمشق — لا بطرح 24 ساعة من لحظة مطلقة.
   const yesterday = (() => {
-    const d = now();
-    d.setDate(d.getDate() - 1);
-    return dayKeyOf(d);
+    const w = wallOf(nowMs());
+    const d = new Date(Date.UTC(w.year, w.month - 1, w.day));
+    d.setUTCDate(d.getUTCDate() - 1);
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
   })();
 
   const next: StreakState = {

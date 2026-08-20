@@ -12,7 +12,8 @@ import {
   humanRemaining,
   setOffset,
   getOffset,
-  now,
+  damascusTodayAt,
+  damascusClock,
   DOSE_HOUR,
   type DoseSnapshot,
   type Phase,
@@ -370,18 +371,15 @@ function closeCommittee(): void {
 
 function refreshCommitteeStatus(): void {
   if (!committeeStatus) return;
-  const off = getOffset();
-  committeeStatus.textContent = off
-    ? `الوقت مُحاكى الآن: ${now().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`
-    : 'الوقت حقيقي.';
+  committeeStatus.textContent = getOffset()
+    ? `الوقت مُحاكى الآن: ${damascusClock()} بتوقيت سوريا`
+    : `الوقت حقيقي — الساعة ${damascusClock()} بتوقيت سوريا.`;
 }
 
-/** يضبط الإزاحة بحيث تصبح "الآن" هي الساعة المطلوبة اليوم. */
+/** يضبط الإزاحة بحيث تصبح "الآن" هي الساعة المطلوبة اليوم بتوقيت دمشق. */
 function simulateAt(hour: number, minute: number): void {
-  const real = new Date();
-  const target = new Date(real);
-  target.setHours(hour, minute, 0, 0);
-  setOffset(target.getTime() - real.getTime());
+  const real = Date.now();
+  setOffset(damascusTodayAt(hour, minute, real) - real);
   lastPhase = null;
   tick();
   refreshCommitteeStatus();

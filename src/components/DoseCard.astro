@@ -22,11 +22,12 @@ import PillGlyph from './PillGlyph.astro';
         </button>
 
         <div class="card__id">
-          <p class="card__eyebrow">موعد الدواء</p>
+          <p class="card__eyebrow">موعد الدواء اليومي</p>
           <p class="card__time">
             <span class="tnum">11:00</span>
             <span class="card__ampm">صباحاً</span>
           </p>
+          <p class="card__tz">بتوقيت سوريا</p>
         </div>
 
         <span class="chip" data-phase-chip>قيد المتابعة</span>
@@ -241,6 +242,24 @@ import PillGlyph from './PillGlyph.astro';
     font-weight: 500;
     color: var(--c-ink-faint);
     letter-spacing: 0;
+  }
+
+  /* الموعد ثابت بتوقيت دمشق مهما كان توقيت جهاز الزائرة */
+  .card__tz {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin-block-start: .15rem;
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--c-accent-deep);
+  }
+  .card__tz::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .55;
   }
 
   .chip {
