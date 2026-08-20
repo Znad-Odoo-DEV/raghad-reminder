@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f7f4ff"/>
+      <stop offset="100%" stop-color="#efe9ff"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#6d4aff" stop-opacity=".45"/>
+      <stop offset="100%" stop-color="#6d4aff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#ff6fb5" stop-opacity=".42"/>
+      <stop offset="100%" stop-color="#ff6fb5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pillGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b6bff"/>
+      <stop offset="100%" stop-color="#5a34e0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#sky)"/>
+  <circle cx="1010" cy="90" r="330" fill="url(#glowA)"/>
+  <circle cx="170" cy="580" r="300" fill="url(#glowB)"/>
+
+  <g font-family="'IBM Plex Sans Arabic','Tajawal','Segoe UI',sans-serif" text-anchor="end">
+    <text x="1080" y="212" font-size="34" font-weight="600" fill="#7a72a3">نظام تذكير الدواء — إصدار رغد</text>
+    <text x="1080" y="308" font-size="76" font-weight="700" fill="#171238">رغد، الدوا</text>
+    <text x="1080" y="398" font-size="76" font-weight="700" fill="#6d4aff">ما رح ياخد حاله لحاله.</text>
+    <text x="1080" y="470" font-size="36" font-weight="500" fill="#443c6d">الموعد: 11:00 صباحاً — بلا مفاوضات.</text>
+  </g>
+
+  <g transform="translate(190 300) rotate(-24)">
+    <rect x="-95" y="-42" width="190" height="84" rx="42" fill="url(#pillGrad)"/>
+    <path d="M0 -42h-53a42 42 0 0 0 0 84H0z" fill="#ffffff"/>
+    <ellipse cx="-58" cy="-16" rx="20" ry="11" fill="#f3efff"/>
+  </g>
+</svg>

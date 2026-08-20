@@ -1,0 +1,149 @@
+---
+import { doseLabelAr } from '../scripts/schedule';
+---
+
+<header class="hero">
+  <div class="wrap hero__inner">
+    <p class="hero__badge" data-intro="1">
+      <span class="hero__pulse" aria-hidden="true"></span>
+      نظام تذكير الدواء — إصدار رغد
+    </p>
+
+    <h1 class="hero__title" data-intro="2">
+      رغد، الدوا
+      <span class="gradient-text">ما رح ياخد حاله لحاله.</span>
+    </h1>
+
+    <p class="hero__lead" data-intro="3">
+      نحن هنا فقط لنتأكد أنكِ ما عملتي حالك نسيانة.
+    </p>
+
+    <ul class="hero__facts" data-intro="4">
+      <li class="fact">
+        <span class="fact__k">الموعد</span>
+        <span class="fact__v">{doseLabelAr()}</span>
+      </li>
+      <li class="fact">
+        <span class="fact__k">المستخدمة</span>
+        <span class="fact__v">رغد — وحدها</span>
+      </li>
+      <li class="fact">
+        <span class="fact__k">الأعذار المقبولة</span>
+        <span class="fact__v">صفر 😐</span>
+      </li>
+    </ul>
+  </div>
+</header>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: clamp(2.75rem, 1.4rem + 6vw, 6rem) clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  }
+
+  .hero__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-5);
+    text-align: center;
+  }
+
+  /* ---- الشارة ----------------------------------------------------------- */
+  .hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .48rem 1.05rem;
+    border-radius: var(--r-pill);
+    border: 1px solid rgba(109, 74, 255, .18);
+    background: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--sh-sm);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--c-ink-soft);
+  }
+
+  .hero__pulse {
+    position: relative;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--c-accent);
+    transition: background var(--d-base) var(--e-soft);
+  }
+  .hero__pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: inherit;
+    animation: ping 2s var(--e-out) infinite;
+  }
+
+  @keyframes ping {
+    0%   { transform: scale(1);   opacity: .7; }
+    70%  { transform: scale(3.2); opacity: 0; }
+    100% { transform: scale(3.2); opacity: 0; }
+  }
+
+  /* ---- العنوان ---------------------------------------------------------- */
+  .hero__title {
+    max-width: 16ch;
+    font-size: var(--t-display);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -.03em;
+  }
+  .hero__title .gradient-text { display: block; }
+
+  .hero__lead {
+    max-width: 34ch;
+    font-size: var(--t-lead);
+    color: var(--c-ink-soft);
+    line-height: 1.7;
+  }
+
+  /* ---- الحقائق الثلاث --------------------------------------------------- */
+  .hero__facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    margin-block-start: var(--s-2);
+  }
+
+  .fact {
+    display: flex;
+    align-items: baseline;
+    gap: .45rem;
+    padding: .42rem .9rem;
+    border-radius: var(--r-pill);
+    background: rgba(255, 255, 255, .6);
+    border: 1px solid rgba(23, 18, 56, .07);
+    font-size: var(--t-xs);
+  }
+  .fact__k { color: var(--c-ink-faint); }
+  .fact__v { font-weight: 600; color: var(--c-ink); }
+
+  /* ---- دخول متدرّج ------------------------------------------------------ */
+  [data-intro] {
+    opacity: 0;
+    transform: translateY(18px);
+    animation: intro-up .82s var(--e-out) forwards;
+  }
+  [data-intro="1"] { animation-delay: .10s; }
+  [data-intro="2"] { animation-delay: .22s; }
+  [data-intro="3"] { animation-delay: .38s; }
+  [data-intro="4"] { animation-delay: .50s; }
+
+  @keyframes intro-up {
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-intro] { opacity: 1; transform: none; animation: none; }
+    .hero__pulse::after { animation: none; }
+  }
+</style>

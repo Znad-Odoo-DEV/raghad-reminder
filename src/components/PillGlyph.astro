@@ -1,0 +1,54 @@
+---
+/**
+ * PillGlyph — كبسولة الدواء
+ *
+ * A single capsule drawn as two halves that share the same rounded outline, so
+ * the seam always lands dead centre no matter the rotation.
+ */
+interface Props {
+  /** معرّف فريد للتدرّجات — لتفادي تضارب الـIDs عند تكرار الرمز */
+  id?: string;
+  class?: string;
+}
+
+const { id = 'pill', class: className } = Astro.props;
+---
+
+<svg
+  class:list={['pill-glyph', className]}
+  viewBox="0 0 64 40"
+  aria-hidden="true"
+  focusable="false"
+>
+  <defs>
+    <linearGradient id={`${id}-a`} x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b6bff" />
+      <stop offset="100%" stop-color="#5a34e0" />
+    </linearGradient>
+    <linearGradient id={`${id}-b`} x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f0eaff" />
+    </linearGradient>
+  </defs>
+
+  <g transform="rotate(-28 32 20)">
+    <!-- النصف الفاتح (يسار) -->
+    <path d="M32 8H22a12 12 0 0 0 0 24h10Z" fill={`url(#${id}-b)`} />
+    <!-- النصف الملوّن (يمين) -->
+    <path d="M32 8h10a12 12 0 0 1 0 24H32Z" fill={`url(#${id}-a)`} />
+    <!-- الحدّ الخارجي -->
+    <rect x="10" y="8" width="44" height="24" rx="12" fill="none" stroke="rgba(23,18,56,.12)" stroke-width="1.2" />
+    <!-- خط الوصل -->
+    <line x1="32" y1="8" x2="32" y2="32" stroke="rgba(23,18,56,.14)" stroke-width="1.2" />
+    <!-- لمعة -->
+    <ellipse cx="20" cy="15" rx="5.5" ry="3" fill="#fff" opacity=".9" />
+  </g>
+</svg>
+
+<style>
+  .pill-glyph {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+import { TICKER } from '../scripts/copy';
+
+// نكرّر القائمة مرتين حتى يبدو الشريط لا نهائياً بدون قفزة.
+const lane = [...TICKER, ...TICKER];
+---
+
+<div class="ticker" role="region" aria-label="تنبيهات النظام">
+  <p class="sr-only">تنبيه أمني عاجل: موعد دواء رغد الساعة 11:00 صباحاً.</p>
+
+  <div class="ticker__lane" aria-hidden="true">
+    {lane.map((t) => (
+      <span class="ticker__item">
+        <span class="ticker__dot"></span>
+        {t}
+      </span>
+    ))}
+  </div>
+</div>
+
+<style>
+  .ticker {
+    position: relative;
+    z-index: 5;
+    overflow: hidden;
+    padding-block: .6rem;
+    background: linear-gradient(90deg, var(--c-ink) 0%, #241c53 50%, var(--c-ink) 100%);
+    color: #efeaff;
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: .01em;
+    mask-image: linear-gradient(to left, transparent, #000 6%, #000 94%, transparent);
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .ticker__lane {
+    display: flex;
+    width: max-content;
+    gap: 0;
+    /* RTL: المحتوى يتدفّق من اليمين، فنحرّكه نحو اليمين لقراءة طبيعية */
+    animation: ticker-run 42s linear infinite;
+  }
+
+  .ticker:hover .ticker__lane,
+  .ticker:focus-within .ticker__lane { animation-play-state: paused; }
+
+  .ticker__item {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding-inline: 1.35rem;
+    white-space: nowrap;
+  }
+
+  .ticker__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--c-pink);
+    box-shadow: 0 0 0 3px rgba(255, 111, 181, .22);
+    animation: blip 2.2s var(--e-soft) infinite;
+  }
+
+  @keyframes ticker-run {
+    from { transform: translateX(0); }
+    to   { transform: translateX(50%); }
+  }
+
+  @keyframes blip {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .3; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ticker__lane { animation: none; }
+    .ticker__dot { animation: none; }
+  }
+</style>

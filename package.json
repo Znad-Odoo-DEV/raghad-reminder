@@ -1,0 +1,24 @@
+{
+  "name": "raghd-medication-reminder",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "نظام تذكير رغد بموعد الدواء — 11:00 صباحاً",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "devDependencies": {
+    "astro": "^5.6.1",
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.8.3"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "esbuild@0.25.12": true,
+    "sharp@0.34.5": true
+  }
+}

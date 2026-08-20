@@ -1,0 +1,145 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+
+// BASE_URL is normalised to end in "/" by astro.config.mjs, so these joins are
+// correct at both username.github.io/ and username.github.io/repo/.
+const asset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
+const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
+---
+
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f7f4ff" />
+    <meta name="color-scheme" content="light" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ar_AR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={asset('favicon.svg')} />
+    <link rel="canonical" href={Astro.url.href} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+    />
+  </head>
+
+  <body data-phase="before">
+    <a class="skip-link" href="#main">تخطَّ إلى المحتوى</a>
+
+    <!-- خلفية زخرفية: طبقات متدرّجة خفيفة، بدون صور -->
+    <div class="backdrop" aria-hidden="true">
+      <span class="blob blob--1"></span>
+      <span class="blob blob--2"></span>
+      <span class="blob blob--3"></span>
+      <span class="grid"></span>
+    </div>
+
+    <slot />
+
+    <!-- منطقة الإعلانات لقارئات الشاشة -->
+    <div class="sr-only" role="status" aria-live="polite" id="live-region"></div>
+  </body>
+</html>
+
+<style is:global>
+  /* ---- الخلفية ---------------------------------------------------------- */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--c-bg) 45%, var(--c-bg-deep) 100%);
+    transition: background 1.2s var(--e-soft);
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(64px);
+    opacity: .5;
+    will-change: transform;
+    transition: background 1.2s var(--e-soft), opacity 1.2s var(--e-soft);
+  }
+
+  .blob--1 {
+    width: 46vmax; height: 46vmax;
+    inset-block-start: -16vmax; inset-inline-end: -12vmax;
+    background: radial-gradient(circle, rgba(109, 74, 255, .5), transparent 68%);
+    animation: drift-a 26s var(--e-soft) infinite alternate;
+  }
+  .blob--2 {
+    width: 40vmax; height: 40vmax;
+    inset-block-end: -14vmax; inset-inline-start: -10vmax;
+    background: radial-gradient(circle, rgba(255, 111, 181, .48), transparent 68%);
+    animation: drift-b 32s var(--e-soft) infinite alternate;
+  }
+  .blob--3 {
+    width: 30vmax; height: 30vmax;
+    inset-block-start: 44%; inset-inline-start: 52%;
+    background: radial-gradient(circle, rgba(18, 185, 129, .26), transparent 70%);
+    opacity: .34;
+    animation: drift-c 38s var(--e-soft) infinite alternate;
+  }
+
+  /* الشبكة الخفيفة تعطي إحساس "نظام" بدون ضجيج بصري */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to left, rgba(23, 18, 56, .045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(23, 18, 56, .045) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(78% 62% at 50% 34%, #000 0%, transparent 78%);
+    -webkit-mask-image: radial-gradient(78% 62% at 50% 34%, #000 0%, transparent 78%);
+  }
+
+  /* الخلفية تتفاعل مع حالة الصفحة */
+  [data-phase="late"] .blob--1 { background: radial-gradient(circle, rgba(255, 77, 109, .5), transparent 68%); }
+  [data-phase="late"] .blob--2 { background: radial-gradient(circle, rgba(245, 158, 11, .42), transparent 68%); }
+  [data-phase="due"]  .blob--1 { background: radial-gradient(circle, rgba(245, 158, 11, .48), transparent 68%); }
+  [data-phase="taken"] .blob--1 { background: radial-gradient(circle, rgba(18, 185, 129, .46), transparent 68%); }
+  [data-phase="taken"] .blob--2 { background: radial-gradient(circle, rgba(109, 74, 255, .34), transparent 68%); }
+
+  @keyframes drift-a {
+    to { transform: translate3d(-6vmax, 5vmax, 0) scale(1.14); }
+  }
+  @keyframes drift-b {
+    to { transform: translate3d(5vmax, -6vmax, 0) scale(1.1); }
+  }
+  @keyframes drift-c {
+    to { transform: translate3d(-7vmax, -4vmax, 0) scale(1.2); }
+  }
+
+  /* ---- canvas الاحتفال --------------------------------------------------- */
+  .celebrate-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blob { animation: none !important; }
+  }
+</style>

@@ -1,0 +1,545 @@
+---
+import { STATUS, SUCCESS } from '../scripts/copy';
+import PillGlyph from './PillGlyph.astro';
+---
+
+<section class="dose" id="dose" aria-labelledby="dose-heading">
+  <div class="wrap">
+    <h2 id="dose-heading" class="sr-only">حالة جرعة اليوم</h2>
+
+    <article class="card" data-card>
+      <span class="card__aura" aria-hidden="true"></span>
+
+      <!-- ================= الرأس ================= -->
+      <header class="card__head">
+        <button
+          class="pill"
+          type="button"
+          data-pill
+          aria-label="حبة الدواء — للزينة، وللنقر إذا حبيتِ"
+        >
+          <PillGlyph id="card-pill" />
+        </button>
+
+        <div class="card__id">
+          <p class="card__eyebrow">موعد الدواء</p>
+          <p class="card__time">
+            <span class="tnum">11:00</span>
+            <span class="card__ampm">صباحاً</span>
+          </p>
+        </div>
+
+        <span class="chip" data-phase-chip>قيد المتابعة</span>
+      </header>
+
+      <!-- ================= اللوحة الحيّة ================= -->
+      <div class="card__panel" data-panel="live">
+        <p class="card__label" data-status-label>{STATUS.before.label}</p>
+
+        <div
+          class="countdown"
+          data-countdown
+          role="timer"
+          aria-live="off"
+          aria-label="الوقت المتبقي للجرعة"
+        >
+          <span class="unit">
+            <span class="unit__v tnum" data-unit="h">00</span>
+            <span class="unit__k">ساعة</span>
+          </span>
+          <span class="unit__sep" aria-hidden="true">:</span>
+          <span class="unit">
+            <span class="unit__v tnum" data-unit="m">00</span>
+            <span class="unit__k">دقيقة</span>
+          </span>
+          <span class="unit__sep" aria-hidden="true">:</span>
+          <span class="unit">
+            <span class="unit__v tnum" data-unit="s">00</span>
+            <span class="unit__k">ثانية</span>
+          </span>
+        </div>
+
+        <p class="card__title" data-status-title>{STATUS.before.title}</p>
+        <p class="card__note" data-status-note>{STATUS.before.note}</p>
+
+        <p class="late-chip" data-late-chip hidden></p>
+      </div>
+
+      <!-- ================= لوحة النجاح ================= -->
+      <div class="card__panel card__panel--success" data-panel="success" hidden>
+        <div class="tick" aria-hidden="true">
+          <svg viewBox="0 0 52 52" class="tick__svg">
+            <circle class="tick__ring" cx="26" cy="26" r="23" />
+            <path class="tick__mark" d="M15 27.5 22.5 35 38 19" />
+          </svg>
+        </div>
+
+        <p class="card__label">{SUCCESS.subtitle}</p>
+        <p class="success__title">{SUCCESS.title}</p>
+
+        <p class="score" aria-label="النتيجة: الدواء واحد، رغد صفر">
+          <span class="score__side">الدوا <b class="tnum">1</b></span>
+          <span class="score__dash" aria-hidden="true">—</span>
+          <span class="score__side score__side--lost">رغد <b class="tnum">0</b></span>
+        </p>
+
+        <p class="card__note" data-success-flavor>{SUCCESS.outro}</p>
+
+        <p class="next-dose">
+          الجرعة القادمة بعد
+          <b class="tnum" data-next-dose>—</b>
+        </p>
+      </div>
+
+      <!-- ================= الأزرار ================= -->
+      <footer class="card__actions">
+        <div class="actions" data-actions-group="before">
+          <button class="btn btn--ghost" type="button" data-act="take">
+            أخذتها من هلق ✅
+          </button>
+          <p class="actions__hint">لسا بدري. النظام هادئ. استمتعي.</p>
+        </div>
+
+        <div class="actions" data-actions-group="due" hidden>
+          <button class="btn btn--primary" type="button" data-act="take">
+            حاضر، أخذت الدوا 💊
+          </button>
+          <button class="btn btn--ghost" type="button" data-act="snooze">
+            لسا شوي 😌
+          </button>
+        </div>
+
+        <div class="actions" data-actions-group="snoozed" hidden>
+          <button class="btn btn--primary btn--wide" type="button" data-act="take">
+            خلص خلص، رح آخده 😭
+          </button>
+          <button class="btn btn--ghost btn--quiet" type="button" data-act="snooze">
+            لسا شوي كمان 🙂
+          </button>
+        </div>
+
+        <div class="actions" data-actions-group="taken" hidden>
+          <button class="btn btn--ghost btn--quiet" type="button" data-act="undo">
+            تراجع — ما أخذتها فعلاً 🙃
+          </button>
+        </div>
+      </footer>
+    </article>
+
+    <!-- رسالة النظام المتغيّرة تحت البطاقة -->
+    <p class="whisper" data-whisper aria-live="polite"></p>
+  </div>
+</section>
+
+<style>
+  .dose {
+    position: relative;
+    padding-block-end: clamp(2rem, 1rem + 3vw, 3.5rem);
+  }
+
+  /* ================= البطاقة ================= */
+  .card {
+    position: relative;
+    max-width: 720px;
+    margin-inline: auto;
+    padding: clamp(1.35rem, .9rem + 2.2vw, 2.6rem);
+    border-radius: clamp(var(--r-lg), 4vw, var(--r-xl));
+    background: rgba(255, 255, 255, .78);
+    border: 1px solid rgba(255, 255, 255, .9);
+    box-shadow: var(--sh-lg);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    overflow: hidden;
+    animation: card-in 1s var(--e-out) .18s backwards;
+    transition: box-shadow var(--d-slow) var(--e-soft);
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(26px) scale(.97); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* هالة ملوّنة أعلى البطاقة، تتبع حالة الصفحة */
+  .card__aura {
+    position: absolute;
+    inset-block-start: -55%;
+    inset-inline-start: 50%;
+    translate: 50% 0;
+    width: 130%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 22%, transparent), transparent 62%);
+    pointer-events: none;
+    transition: background var(--d-slow) var(--e-soft);
+  }
+
+  /* نبضة ترحيب بعد وصول الحبة */
+  .card.is-armed { box-shadow: var(--sh-lg), 0 0 0 6px color-mix(in srgb, var(--c-accent) 14%, transparent); }
+
+  /* ================= الرأس ================= */
+  .card__head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: clamp(.75rem, .4rem + 1.4vw, 1.15rem);
+    padding-block-end: var(--s-5);
+    border-block-end: 1px solid rgba(23, 18, 56, .08);
+  }
+
+  .pill {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: clamp(56px, 13vw, 74px);
+    height: clamp(56px, 13vw, 74px);
+    border-radius: var(--r-md);
+    background: linear-gradient(160deg, #fff, var(--c-violet-wash));
+    border: 1px solid rgba(109, 74, 255, .16);
+    padding: clamp(11px, 2.4vw, 15px);
+    box-shadow: var(--sh-sm);
+    transition: transform var(--d-fast) var(--e-back), box-shadow var(--d-base) var(--e-soft);
+    /* الحبة تطير للداخل عند فتح الصفحة */
+    animation: pill-arrive 1.15s var(--e-back) backwards;
+  }
+  .pill:hover  { transform: translateY(-3px) rotate(-6deg); box-shadow: var(--sh-md); }
+  .pill:active { transform: scale(.93) rotate(4deg); }
+  .pill.is-shaking { animation: pill-shake .5s var(--e-soft); }
+
+  @keyframes pill-arrive {
+    0%   { opacity: 0; transform: translate(-42vw, -46vh) scale(2.6) rotate(-150deg); }
+    62%  { opacity: 1; }
+    100% { opacity: 1; transform: none; }
+  }
+
+  @keyframes pill-shake {
+    0%, 100% { transform: rotate(0); }
+    25%      { transform: rotate(-13deg) scale(1.06); }
+    75%      { transform: rotate(13deg) scale(1.06); }
+  }
+
+  .card__id { flex: 1; min-width: 0; }
+
+  .card__eyebrow {
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--c-ink-faint);
+    letter-spacing: .03em;
+  }
+
+  .card__time {
+    display: flex;
+    align-items: baseline;
+    gap: .45rem;
+    font-size: clamp(1.9rem, 1.1rem + 3.6vw, 3.1rem);
+    font-weight: 700;
+    letter-spacing: -.035em;
+    line-height: 1.1;
+    color: var(--c-ink);
+  }
+  .card__ampm {
+    font-size: clamp(.85rem, .7rem + .55vw, 1.05rem);
+    font-weight: 500;
+    color: var(--c-ink-faint);
+    letter-spacing: 0;
+  }
+
+  .chip {
+    flex-shrink: 0;
+    align-self: flex-start;
+    padding: .34rem .75rem;
+    border-radius: var(--r-pill);
+    background: var(--c-accent-wash);
+    color: var(--c-accent-deep);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background var(--d-base) var(--e-soft), color var(--d-base) var(--e-soft);
+  }
+
+  /* ================= اللوحات ================= */
+  .card__panel {
+    padding-block-start: var(--s-6);
+    text-align: center;
+    animation: panel-in .5s var(--e-out);
+  }
+
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .card__label {
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--c-ink-faint);
+    letter-spacing: .02em;
+  }
+
+  /* ---- العدّاد ---- */
+  .countdown {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(.15rem, .4vw, .5rem);
+    margin-block: var(--s-4) var(--s-5);
+    direction: ltr;
+  }
+
+  .unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .3rem;
+    min-width: clamp(62px, 17vw, 104px);
+  }
+
+  .unit__v {
+    font-size: clamp(2.6rem, 1.1rem + 8.4vw, 5rem);
+    font-weight: 700;
+    line-height: .95;
+    letter-spacing: -.05em;
+    color: var(--c-ink);
+    font-variant-numeric: tabular-nums lining-nums;
+    transition: color var(--d-base) var(--e-soft);
+  }
+  .unit__v.is-tick { animation: tick .42s var(--e-out); }
+
+  @keyframes tick {
+    0%   { transform: translateY(-22%); opacity: .25; }
+    60%  { transform: translateY(2%);   opacity: 1; }
+    100% { transform: none; }
+  }
+
+  .unit__k {
+    font-size: clamp(.62rem, .55rem + .2vw, .78rem);
+    font-weight: 600;
+    color: var(--c-ink-faint);
+    letter-spacing: .02em;
+    direction: rtl;
+  }
+
+  .unit__sep {
+    font-size: clamp(2rem, .9rem + 6vw, 3.6rem);
+    font-weight: 300;
+    line-height: 1.1;
+    color: color-mix(in srgb, var(--c-accent) 55%, transparent);
+    translate: 0 -.06em;
+  }
+
+  /* العدّاد يخفت عند التأخير — الأرقام ما عاد إلها معنى */
+  [data-phase="late"] .countdown,
+  [data-phase="due"] .countdown { opacity: .92; }
+
+  .card__title {
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin-block-end: .4rem;
+  }
+
+  .card__note {
+    max-width: 44ch;
+    margin-inline: auto;
+    color: var(--c-ink-soft);
+    font-size: var(--t-body);
+  }
+
+  .late-chip {
+    display: inline-block;
+    margin-block-start: var(--s-4);
+    padding: .42rem 1rem;
+    border-radius: var(--r-pill);
+    background: var(--c-alert-wash);
+    color: var(--c-alert-deep);
+    font-weight: 700;
+    font-size: var(--t-sm);
+    animation: nudge 2.6s var(--e-soft) infinite;
+  }
+
+  @keyframes nudge {
+    0%, 92%, 100% { transform: none; }
+    95%           { transform: translateX(-4px); }
+    97%           { transform: translateX(4px); }
+  }
+
+  /* ---- لوحة النجاح ---- */
+  .tick {
+    display: grid;
+    place-items: center;
+    width: clamp(86px, 22vw, 118px);
+    height: clamp(86px, 22vw, 118px);
+    margin: 0 auto var(--s-4);
+    border-radius: 50%;
+    background: var(--c-mint-wash);
+  }
+  .tick__svg { width: 74%; height: auto; fill: none; }
+  .tick__ring {
+    stroke: var(--c-mint);
+    stroke-width: 3;
+    opacity: .35;
+    stroke-dasharray: 145;
+    stroke-dashoffset: 145;
+    animation: draw .8s var(--e-out) .1s forwards;
+  }
+  .tick__mark {
+    stroke: var(--c-mint-deep);
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 42;
+    stroke-dashoffset: 42;
+    animation: draw .5s var(--e-out) .5s forwards;
+  }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  .success__title {
+    font-size: var(--t-h2);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    margin-block: .3rem var(--s-4);
+  }
+
+  .score {
+    display: inline-flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .6rem 1.3rem;
+    margin-block-end: var(--s-4);
+    border-radius: var(--r-pill);
+    background: var(--c-surface);
+    border: 1px solid rgba(23, 18, 56, .08);
+    box-shadow: var(--sh-sm);
+    font-weight: 600;
+    font-size: var(--t-sm);
+  }
+  .score__side { display: inline-flex; align-items: baseline; gap: .4rem; }
+  .score__side b { font-size: 1.35em; font-weight: 700; color: var(--c-mint-deep); }
+  .score__side--lost b { color: var(--c-ink-faint); }
+  .score__dash { color: var(--c-ink-faint); }
+
+  .next-dose {
+    margin-block-start: var(--s-5);
+    font-size: var(--t-sm);
+    color: var(--c-ink-faint);
+  }
+  .next-dose b { color: var(--c-ink); font-weight: 700; }
+
+  /* ================= الأزرار ================= */
+  .card__actions { margin-block-start: var(--s-6); }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .7rem;
+  }
+
+  .actions__hint {
+    flex-basis: 100%;
+    text-align: center;
+    font-size: var(--t-xs);
+    color: var(--c-ink-faint);
+  }
+
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    min-height: 52px;
+    padding: .85rem 1.6rem;
+    border-radius: var(--r-pill);
+    font-size: var(--t-body);
+    font-weight: 700;
+    letter-spacing: -.01em;
+    white-space: nowrap;
+    transition:
+      transform var(--d-fast) var(--e-back),
+      box-shadow var(--d-base) var(--e-soft),
+      background var(--d-base) var(--e-soft);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn--primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--c-accent) 0%, var(--c-accent-deep) 100%);
+    box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--c-accent) 75%, transparent);
+  }
+  .btn--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -10px color-mix(in srgb, var(--c-accent) 85%, transparent);
+  }
+  .btn--primary:active { transform: translateY(0) scale(.97); }
+
+  /* بريق يمرّ على الزر الأساسي — دعوة خفيفة للضغط */
+  .btn--primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(110deg, transparent 32%, rgba(255,255,255,.42) 50%, transparent 68%);
+    background-size: 220% 100%;
+    animation: sheen 3.4s var(--e-soft) infinite;
+    pointer-events: none;
+  }
+  @keyframes sheen {
+    0%, 62% { background-position: 190% 0; }
+    100%    { background-position: -60% 0; }
+  }
+
+  .btn--ghost {
+    color: var(--c-ink-soft);
+    background: rgba(255, 255, 255, .78);
+    border: 1px solid rgba(23, 18, 56, .1);
+    box-shadow: var(--sh-sm);
+  }
+  .btn--ghost:hover {
+    transform: translateY(-2px);
+    background: #fff;
+    box-shadow: var(--sh-md);
+  }
+  .btn--ghost:active { transform: translateY(0) scale(.97); }
+
+  .btn--quiet {
+    min-height: 42px;
+    padding: .5rem 1.1rem;
+    font-size: var(--t-sm);
+    font-weight: 600;
+    box-shadow: none;
+    background: transparent;
+    border-color: transparent;
+    color: var(--c-ink-faint);
+  }
+  .btn--quiet:hover { background: rgba(255,255,255,.7); box-shadow: var(--sh-sm); }
+
+  .btn--wide { flex-basis: 100%; }
+
+  /* ================= همسة النظام ================= */
+  .whisper {
+    min-height: 1.9em;
+    margin-block-start: var(--s-5);
+    text-align: center;
+    font-size: var(--t-sm);
+    font-weight: 500;
+    color: var(--c-ink-faint);
+    transition: opacity var(--d-base) var(--e-soft);
+  }
+  .whisper.is-swapping { opacity: 0; }
+
+  /* ================= الموبايل ================= */
+  @media (max-width: 480px) {
+    .card__head { flex-wrap: wrap; }
+    .chip { order: -1; margin-inline-start: auto; }
+    .unit { min-width: 0; flex: 1; }
+    .btn { flex: 1 1 100%; }
+    .btn--quiet { flex: 0 1 auto; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .card__panel, .pill { animation: none; }
+    .btn--primary::after { animation: none; opacity: 0; }
+    .late-chip { animation: none; }
+    .tick__ring, .tick__mark { animation: none; stroke-dashoffset: 0; }
+  }
+</style>

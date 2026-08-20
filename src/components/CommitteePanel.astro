@@ -1,0 +1,192 @@
+---
+/**
+ * لجنة الدواء العليا — بيضة مخفية + أداة اختبار
+ *
+ * Hidden until the visitor taps the countdown labels three times (or presses
+ * Shift+L). It simulates the clock, which is exactly what you need to test the
+ * four states without waiting for 11:00 to come around.
+ */
+const shortcuts = [
+  { key: 'before', label: 'قبل الموعد', hint: '10:15 صباحاً' },
+  { key: 'due',    label: 'وقت الموعد', hint: '11:00 تماماً' },
+  { key: 'late',   label: 'متأخرة',     hint: '11:23 صباحاً' },
+  { key: 'verylate', label: 'متأخرة كتير', hint: '1:40 ظهراً' },
+];
+---
+
+<div class="committee" data-committee hidden>
+  <div class="committee__scrim" data-committee-close></div>
+
+  <div
+    class="committee__box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="committee-title"
+  >
+    <header class="committee__head">
+      <div>
+        <p class="committee__eyebrow">وصول غير مصرّح به… تمّت الموافقة عليه</p>
+        <h2 id="committee-title" class="committee__title">لجنة الدواء العليا 🕵️</h2>
+      </div>
+      <button
+        class="committee__x"
+        type="button"
+        data-committee-close
+        aria-label="إغلاق اللوحة"
+      >×</button>
+    </header>
+
+    <p class="committee__note">
+      من هون منقدر نغيّر الساعة. الدوا ما بيعرف. لا تقوليله.
+    </p>
+
+    <div class="committee__grid">
+      {shortcuts.map((s) => (
+        <button class="committee__btn" type="button" data-sim={s.key}>
+          <span class="committee__btn-label">{s.label}</span>
+          <span class="committee__btn-hint tnum">{s.hint}</span>
+        </button>
+      ))}
+    </div>
+
+    <div class="committee__row">
+      <button class="committee__ghost" type="button" data-sim="real">
+        رجّعي الوقت الحقيقي
+      </button>
+      <button class="committee__ghost committee__ghost--warn" type="button" data-sim="reset">
+        امسحي سجل اليوم
+      </button>
+    </div>
+
+    <p class="committee__sim" data-committee-status></p>
+  </div>
+</div>
+
+<style>
+  .committee {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: var(--s-4);
+  }
+  .committee[hidden] { display: none; }
+
+  .committee__scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(23, 18, 56, .48);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: fade-in .3s var(--e-soft);
+  }
+
+  .committee__box {
+    position: relative;
+    width: min(100%, 460px);
+    max-height: 90svh;
+    overflow-y: auto;
+    padding: clamp(1.25rem, 1rem + 1.5vw, 1.9rem);
+    border-radius: var(--r-lg);
+    background: var(--c-surface);
+    box-shadow: 0 40px 90px -30px rgba(23, 18, 56, .6);
+    animation: pop-in .42s var(--e-back);
+  }
+
+  @keyframes fade-in { from { opacity: 0; } }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(18px) scale(.95); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .committee__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s-3);
+    margin-block-end: var(--s-3);
+  }
+
+  .committee__eyebrow {
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--c-pink);
+  }
+  .committee__title {
+    font-size: var(--t-h3);
+    letter-spacing: -.02em;
+  }
+
+  .committee__x {
+    margin-inline-start: auto;
+    width: 34px; height: 34px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--c-ink-faint);
+    background: rgba(23, 18, 56, .05);
+    transition: background var(--d-fast) var(--e-soft), color var(--d-fast) var(--e-soft);
+  }
+  .committee__x:hover { background: rgba(23, 18, 56, .1); color: var(--c-ink); }
+
+  .committee__note {
+    font-size: var(--t-sm);
+    color: var(--c-ink-soft);
+    margin-block-end: var(--s-5);
+  }
+
+  .committee__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .55rem;
+    margin-block-end: .8rem;
+  }
+
+  .committee__btn {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    padding: .8rem .9rem;
+    border-radius: var(--r-sm);
+    text-align: start;
+    background: var(--c-surface-soft);
+    border: 1px solid rgba(23, 18, 56, .08);
+    transition: transform var(--d-fast) var(--e-back), border-color var(--d-fast) var(--e-soft);
+  }
+  .committee__btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--c-violet);
+  }
+  .committee__btn-label { font-weight: 700; font-size: var(--t-sm); }
+  .committee__btn-hint { font-size: var(--t-xs); color: var(--c-ink-faint); }
+
+  .committee__row { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+  .committee__ghost {
+    flex: 1;
+    padding: .6rem .8rem;
+    border-radius: var(--r-sm);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--c-ink-soft);
+    background: rgba(23, 18, 56, .04);
+    transition: background var(--d-fast) var(--e-soft);
+  }
+  .committee__ghost:hover { background: rgba(23, 18, 56, .09); }
+  .committee__ghost--warn { color: var(--c-alert-deep); background: var(--c-alert-wash); }
+  .committee__ghost--warn:hover { background: #ffd4dc; }
+
+  .committee__sim {
+    min-height: 1.4em;
+    margin-block-start: var(--s-4);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--c-violet-deep);
+    text-align: center;
+  }
+
+  @media (max-width: 380px) {
+    .committee__grid { grid-template-columns: 1fr; }
+  }
+</style>

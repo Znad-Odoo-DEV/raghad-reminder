@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import Ticker from '../components/Ticker.astro';
+import Hero from '../components/Hero.astro';
+import DoseCard from '../components/DoseCard.astro';
+import SystemVoice from '../components/SystemVoice.astro';
+import CommitteePanel from '../components/CommitteePanel.astro';
+import Footer from '../components/Footer.astro';
+
+const title = 'رغد، الدوا ما رح ياخد حاله لحاله 💊';
+const description =
+  'نظام تذكير مخصص لرغد بموعد دوائها الساعة 11:00 صباحاً. عدّاد حي، تنبيهات، وقليل جداً من التفهّم.';
+---
+
+<Base title={title} description={description}>
+  <Ticker />
+
+  <main id="main">
+    <Hero />
+    <DoseCard />
+    <SystemVoice />
+  </main>
+
+  <Footer />
+  <CommitteePanel />
+</Base>
+
+<script>
+  import '../scripts/main';
+</script>

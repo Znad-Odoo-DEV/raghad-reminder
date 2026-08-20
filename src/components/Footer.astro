@@ -1,0 +1,84 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="foot">
+  <div class="wrap foot__inner">
+    <p class="foot__line reveal">
+      صُنع خصيصاً لرغد، لأن بعض الناس يحتاجون تذكيراً
+      <span class="foot__em">أكثر من مرة</span> 😂
+    </p>
+
+    <p class="foot__brand reveal" style="--reveal-delay: 80ms">
+      <button class="foot__pill" type="button" data-foot-egg aria-label="حبة دواء صغيرة">💊</button>
+      <span>Reminder System — Raghd Edition</span>
+    </p>
+
+    <p class="foot__meta reveal" style="--reveal-delay: 140ms">
+      <span class="tnum">{year}</span>
+      <span aria-hidden="true">·</span>
+      <span>لا يوجد سيرفر، لا يوجد حساب، لا يوجد مهرب.</span>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    padding-block: clamp(2.5rem, 1.5rem + 3vw, 4.5rem) clamp(2rem, 1.4rem + 2vw, 3rem);
+    border-block-start: 1px solid rgba(23, 18, 56, .08);
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, .5));
+  }
+
+  .foot__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-4);
+    text-align: center;
+  }
+
+  .foot__line {
+    max-width: 34ch;
+    font-size: var(--t-lead);
+    font-weight: 600;
+    letter-spacing: -.02em;
+    line-height: 1.6;
+    color: var(--c-ink);
+  }
+  .foot__em {
+    background: linear-gradient(transparent 62%, var(--c-pink-wash) 62%);
+    padding-inline: .1em;
+  }
+
+  .foot__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .5rem 1.1rem;
+    border-radius: var(--r-pill);
+    background: rgba(255, 255, 255, .7);
+    border: 1px solid rgba(23, 18, 56, .07);
+    box-shadow: var(--sh-sm);
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--c-ink-soft);
+    direction: ltr;
+  }
+
+  .foot__pill {
+    font-size: 1.05rem;
+    line-height: 1;
+    transition: transform var(--d-fast) var(--e-back);
+  }
+  .foot__pill:hover  { transform: rotate(18deg) scale(1.2); }
+  .foot__pill:active { transform: scale(.85); }
+
+  .foot__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    font-size: var(--t-xs);
+    color: var(--c-ink-faint);
+  }
+</style>
