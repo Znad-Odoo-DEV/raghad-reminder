@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { ANALYTICS } from '../analytics.config';
 
 interface Props {
   title: string;
@@ -45,6 +46,28 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap"
     />
+
+    {/* إحصائيات اختيارية — لا شيء يُحمَّل ما لم تُملأ analytics.config.ts */}
+    {
+      ANALYTICS.goatcounter && (
+        <script
+          is:inline
+          data-goatcounter={ANALYTICS.goatcounter}
+          async
+          src="//gc.zgo.at/count.js"
+        />
+      )
+    }
+    {
+      ANALYTICS.cloudflareToken && (
+        <script
+          is:inline
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={`{"token": "${ANALYTICS.cloudflareToken}"}`}
+        />
+      )
+    }
   </head>
 
   <body data-phase="before">

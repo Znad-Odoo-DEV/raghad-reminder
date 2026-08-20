@@ -47,6 +47,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  // نتجاهل كل نطاق خارجي — الخطوط والإحصائيات تدير تخزينها بنفسها،
+  // واعتراضها هنا قد يُفسد العدّ.
   if (url.origin !== self.location.origin) return;
 
   // أصول مبصومة — لا تتغيّر أبداً تحت نفس الاسم.
