@@ -1,5 +1,13 @@
 ---
+import { ANALYTICS } from '../analytics.config';
+
 const year = new Date().getFullYear();
+
+// label=%20 يجعل الشارة أرقاماً فقط، فنضع نصّنا العربي بجانبها.
+const hitsSrc = ANALYTICS.hitsKey
+  ? `https://hits.sh/${ANALYTICS.hitsKey}.svg?view=today-total&label=%20&color=6d4aff&labelColor=171238&style=flat-square`
+  : null;
+const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : null;
 ---
 
 <footer class="foot">
@@ -13,6 +21,23 @@ const year = new Date().getFullYear();
       <button class="foot__pill" type="button" data-foot-egg aria-label="حبة دواء صغيرة">💊</button>
       <span>Reminder System — Raghd Edition</span>
     </p>
+
+    {
+      hitsSrc && (
+        <a
+          class="visits reveal"
+          style="--reveal-delay: 110ms"
+          href={hitsPage}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="اليوم / الإجمالي"
+        >
+          <span class="visits__eye" aria-hidden="true">👀</span>
+          <span class="visits__label">زيارات</span>
+          <img class="visits__badge" src={hitsSrc} alt="عدد الزيارات: اليوم ثم الإجمالي" width="58" height="20" />
+        </a>
+      )
+    }
 
     <p class="foot__meta reveal" style="--reveal-delay: 140ms">
       <span class="tnum">{year}</span>
@@ -72,6 +97,34 @@ const year = new Date().getFullYear();
   }
   .foot__pill:hover  { transform: rotate(18deg) scale(1.2); }
   .foot__pill:active { transform: scale(.85); }
+
+  /* ---- عدّاد الزيارات ---- */
+  .visits {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .35rem .75rem .35rem .35rem;
+    border-radius: var(--r-pill);
+    background: rgba(255, 255, 255, .7);
+    border: 1px solid rgba(23, 18, 56, .07);
+    box-shadow: var(--sh-sm);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--c-ink-soft);
+    text-decoration: none;
+    transition: transform var(--d-fast) var(--e-back), box-shadow var(--d-base) var(--e-soft);
+  }
+  .visits:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+
+  .visits__eye { font-size: .9rem; line-height: 1; }
+
+  .visits__badge {
+    height: 20px;
+    width: auto;
+    border-radius: 4px;
+    /* الشارة نفسها LTR */
+    direction: ltr;
+  }
 
   .foot__meta {
     display: flex;

@@ -27,8 +27,20 @@ export const ANALYTICS = {
    * 3. انسخ قيمة `token` من الشيفرة التي يعطيك إياها وضعها هنا.
    */
   cloudflareToken: '',
+
+  /**
+   * عدّاد بسيط بلا تسجيل — يظهر في التذييل مباشرة.
+   *
+   * يعدّ **مرات فتح الصفحة**، لا الزوار الفريدين، ولا يعطي بلداناً ولا مصادر.
+   * فائدته أنه يعمل فوراً بلا أي حساب. للوحة حقيقية استعمل GoatCounter أعلاه.
+   *
+   * اجعله '' لإخفاء العدّاد.
+   */
+  hitsKey: 'znad-odoo-dev.github.io/raghad-reminder',
 } as const;
 
 /** هل فُعّلت أي أداة؟ */
 export const analyticsEnabled =
-  ANALYTICS.goatcounter.length > 0 || ANALYTICS.cloudflareToken.length > 0;
+  ANALYTICS.goatcounter.length > 0 ||
+  ANALYTICS.cloudflareToken.length > 0 ||
+  ANALYTICS.hitsKey.length > 0;
