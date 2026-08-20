@@ -500,6 +500,56 @@ function initNotify(): void {
 }
 
 /* =========================================================================
+   الموسيقى
+   ========================================================================= */
+
+/**
+ * نحقن إطار يوتيوب عند النقر فقط — لا قبلها.
+ * سبب أول: المتصفحات تمنع تشغيل الصوت بدون تفاعل المستخدمة.
+ * سبب ثانٍ: لا نحمّل شيئاً من يوتيوب ما لم تطلب الأغنية فعلاً.
+ */
+function initMusic(): void {
+  const pill = $<HTMLButtonElement>('[data-music-open]');
+  const cardEl = $('[data-music-card]');
+  const frame = $('[data-music-frame]');
+  const closeBtn = $<HTMLButtonElement>('[data-music-close]');
+  if (!pill || !cardEl || !frame || !closeBtn) return;
+
+  const videoId = frame.dataset.video ?? '';
+
+  const start = () => {
+    // playlist=<id> مع loop=1 هي الطريقة الوحيدة لتكرار فيديو مفرد.
+    const params = new URLSearchParams({
+      autoplay: '1',
+      loop: '1',
+      playlist: videoId,
+      rel: '0',
+      playsinline: '1',
+      modestbranding: '1',
+    });
+    frame.innerHTML =
+      `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?${params}" ` +
+      `title="كل القصايد — مروان خوري" ` +
+      `allow="autoplay; encrypted-media; picture-in-picture" ` +
+      `allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+    cardEl.hidden = false;
+    pill.hidden = true;
+    closeBtn.focus();
+    say('حطّينا مروان خوري. الجو صار مناسب لأخذ الدوا 🎶');
+  };
+
+  const stop = () => {
+    frame.innerHTML = '';   // إزالة الإطار توقف الصوت فوراً
+    cardEl.hidden = true;
+    pill.hidden = false;
+    pill.focus();
+  };
+
+  pill.addEventListener('click', start);
+  closeBtn.addEventListener('click', stop);
+}
+
+/* =========================================================================
    كشف التمرير — مراقب واحد للجميع
    ========================================================================= */
 
@@ -544,6 +594,7 @@ function boot(): void {
   initCommittee();
   initReveal();
   initNotify();
+  initMusic();
 
   tick();
   window.setInterval(tick, 1000);

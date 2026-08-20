@@ -1,0 +1,201 @@
+---
+/**
+ * MusicPlayer — «كل القصايد» لمروان خوري
+ *
+ * الأغنية محمية بحقوق نشر، فلا نستضيف أي ملف صوتي في المستودع. بدل ذلك
+ * نضمّن مشغّل يوتيوب الرسمي من قناة روتانا (مالكة الحقوق)، فتُحتسب المشاهدة
+ * لصاحب العمل ولا يوجد أي توزيع غير مرخّص.
+ *
+ * المشغّل يُحقن فقط بعد نقرة المستخدمة — وهذا مطلوب مرّتين:
+ *  1. سياسات المتصفحات تمنع تشغيل الصوت تلقائياً بدون تفاعل.
+ *  2. شروط يوتيوب تمنع إخفاء المشغّل، فنُظهره متى كان يعمل.
+ */
+
+/** معرّف الفيديو الرسمي على قناة روتانا. */
+const VIDEO_ID = 'osCw73O_WMo';
+const TRACK = 'كل القصايد';
+const ARTIST = 'مروان خوري';
+---
+
+<div class="music" data-music>
+  <!-- ===== الزر المطوي ===== -->
+  <button class="music__pill" type="button" data-music-open>
+    <span class="music__note" aria-hidden="true">🎵</span>
+    <span class="music__pill-text">شغّلي الأغنية</span>
+  </button>
+
+  <!-- ===== البطاقة ===== -->
+  <div class="music__card" data-music-card hidden>
+    <div class="music__head">
+      <div class="music__eq" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="music__meta">
+        <p class="music__track">{TRACK}</p>
+        <p class="music__artist">{ARTIST}</p>
+      </div>
+      <button class="music__close" type="button" data-music-close aria-label="إيقاف الأغنية وإغلاق المشغّل">
+        ✕
+      </button>
+    </div>
+
+    <!-- يُحقن الـiframe هنا عند التشغيل فقط -->
+    <div class="music__frame" data-music-frame data-video={VIDEO_ID}></div>
+
+    <p class="music__note-text">
+      من القناة الرسمية 💜
+    </p>
+  </div>
+</div>
+
+<style>
+  .music {
+    position: fixed;
+    inset-block-end: clamp(.75rem, .4rem + 1vw, 1.25rem);
+    /* في RTL هذا هو الجانب الأيسر من الشاشة */
+    inset-inline-end: clamp(.75rem, .4rem + 1vw, 1.25rem);
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+  }
+
+  /* ---- الزر المطوي ---- */
+  .music__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1rem;
+    border-radius: var(--r-pill);
+    background: rgba(255, 255, 255, .82);
+    border: 1px solid rgba(23, 18, 56, .1);
+    box-shadow: var(--sh-md);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    color: var(--c-ink);
+    transition: transform var(--d-fast) var(--e-back), box-shadow var(--d-base) var(--e-soft);
+  }
+  .music__pill:hover { transform: translateY(-2px); box-shadow: var(--sh-lg); }
+  .music__pill:active { transform: translateY(0) scale(.96); }
+
+  .music__note {
+    font-size: 1rem;
+    line-height: 1;
+    animation: bob 2.6s var(--e-soft) infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50%      { transform: translateY(-3px) rotate(-9deg); }
+  }
+
+  /* ---- البطاقة ---- */
+  .music__card {
+    width: min(78vw, 236px);
+    padding: .7rem;
+    border-radius: var(--r-md);
+    background: rgba(255, 255, 255, .9);
+    border: 1px solid rgba(23, 18, 56, .1);
+    box-shadow: var(--sh-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: music-in .4s var(--e-back);
+  }
+  @keyframes music-in {
+    from { opacity: 0; transform: translateY(12px) scale(.94); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .music__head {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin-block-end: .55rem;
+  }
+
+  .music__meta { flex: 1; min-width: 0; }
+
+  .music__track {
+    font-size: var(--t-xs);
+    font-weight: 700;
+    color: var(--c-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .music__artist {
+    font-size: .68rem;
+    color: var(--c-ink-faint);
+  }
+
+  .music__close {
+    width: 26px; height: 26px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    font-size: .8rem;
+    color: var(--c-ink-faint);
+    background: rgba(23, 18, 56, .06);
+    transition: background var(--d-fast) var(--e-soft), color var(--d-fast) var(--e-soft);
+  }
+  .music__close:hover { background: rgba(23, 18, 56, .12); color: var(--c-ink); }
+
+  /* ---- مكافئ الصوت ---- */
+  .music__eq {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .music__eq span {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--g-brand);
+    animation: eq .9s var(--e-soft) infinite alternate;
+  }
+  .music__eq span:nth-child(1) { height: 40%; animation-delay: 0s; }
+  .music__eq span:nth-child(2) { height: 90%; animation-delay: .18s; }
+  .music__eq span:nth-child(3) { height: 60%; animation-delay: .36s; }
+  .music__eq span:nth-child(4) { height: 75%; animation-delay: .54s; }
+
+  @keyframes eq {
+    from { transform: scaleY(.35); }
+    to   { transform: scaleY(1); }
+  }
+
+  /* ---- إطار يوتيوب ---- */
+  .music__frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--r-xs);
+    overflow: hidden;
+    background: #000;
+  }
+  .music__frame :global(iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .music__note-text {
+    margin-block-start: .45rem;
+    font-size: .66rem;
+    color: var(--c-ink-faint);
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .music__note, .music__eq span { animation: none; }
+    .music__card { animation: none; }
+  }
+
+  /* لا نزاحم أزرار البطاقة على الشاشات الصغيرة جداً */
+  @media (max-width: 360px) {
+    .music__pill-text { display: none; }
+    .music__pill { padding: .6rem .7rem; }
+  }
+</style>
