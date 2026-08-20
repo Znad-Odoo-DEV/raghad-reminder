@@ -36,6 +36,16 @@ import {
 
 import { burst, pillRain } from './celebrate';
 
+import {
+  supported as notifySupported,
+  state as notifyState,
+  requestPermission,
+  registerWorker,
+  schedule as scheduleNotify,
+  initResync,
+  showTest,
+} from './notify';
+
 /* =========================================================================
    مراجع DOM
    ========================================================================= */
@@ -237,6 +247,8 @@ function takeDose(source?: Element | null): void {
         : 'نشوفك بكرا بنفس الموعد… لا تعملي حالك نسيتي 😌';
   }
 
+  scheduleNotify();
+
   // نقفل على منطقة النجاح حتى تكون واضحة على الموبايل
   card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -419,6 +431,75 @@ function initCommittee(): void {
 }
 
 /* =========================================================================
+   التنبيهات
+   ========================================================================= */
+
+const notifBtn = $<HTMLButtonElement>('[data-notif-enable]');
+const notifStatus = $('[data-notif-status]');
+const notifBadge = $('[data-notif-badge]');
+
+function paintNotify(): void {
+  if (!notifBtn || !notifStatus || !notifBadge) return;
+  const st = notifyState();
+
+  notifBadge.classList.remove('opt__badge--soft', 'opt__badge--on', 'opt__badge--off');
+
+  switch (st) {
+    case 'unsupported':
+      notifBtn.hidden = true;
+      notifBadge.classList.add('opt__badge--off');
+      notifBadge.textContent = 'غير مدعوم';
+      notifStatus.textContent = 'متصفحك ما بيدعم التنبيهات. استعملي التقويم.';
+      break;
+    case 'granted':
+      notifBtn.hidden = false;
+      notifBtn.textContent = 'جرّبي تنبيه تجريبي';
+      notifBtn.dataset.notifTest = '1';
+      notifBadge.classList.add('opt__badge--on');
+      notifBadge.textContent = 'مفعّل ✓';
+      notifStatus.textContent = 'تمام. من 10:55 كل دقيقة حتى 11:00 — طالما الصفحة مفتوحة.';
+      break;
+    case 'denied':
+      notifBtn.hidden = true;
+      notifBadge.classList.add('opt__badge--off');
+      notifBadge.textContent = 'مرفوض';
+      notifStatus.textContent =
+        'رفضتي الإذن سابقاً. فعّليه من إعدادات الموقع بالمتصفح، أو استعملي التقويم.';
+      break;
+    default:
+      notifBtn.hidden = false;
+      notifBadge.classList.add('opt__badge--soft');
+      notifBadge.textContent = 'اختياري';
+      notifStatus.textContent = 'لسا ما فعّلتيه.';
+  }
+}
+
+function initNotify(): void {
+  if (!notifBtn) return;
+
+  notifBtn.addEventListener('click', async () => {
+    if (notifBtn.dataset.notifTest === '1') {
+      await showTest();
+      return;
+    }
+    notifBtn.disabled = true;
+    await requestPermission();
+    notifBtn.disabled = false;
+    paintNotify();
+    if (notifyState() === 'granted') say('تمام. صار عندك تنبيه. بس التقويم أضمن 😌');
+  });
+
+  paintNotify();
+
+  if (notifySupported()) {
+    void registerWorker().then(() => {
+      scheduleNotify();
+      initResync();
+    });
+  }
+}
+
+/* =========================================================================
    كشف التمرير — مراقب واحد للجميع
    ========================================================================= */
 
@@ -462,6 +543,7 @@ function boot(): void {
   initEggs();
   initCommittee();
   initReveal();
+  initNotify();
 
   tick();
   window.setInterval(tick, 1000);

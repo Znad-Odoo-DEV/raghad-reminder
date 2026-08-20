@@ -109,6 +109,16 @@ function nextDayDoseInstant(w: Wall): number {
   );
 }
 
+/** لحظة جرعة اليوم (بتوقيت دمشق) كقيمة مطلقة. */
+export function doseInstantToday(at: number = nowMs()): number {
+  return doseInstantFor(wallOf(at));
+}
+
+/** لحظة جرعة الغد. */
+export function doseInstantTomorrow(at: number = nowMs()): number {
+  return nextDayDoseInstant(wallOf(at));
+}
+
 /** اللحظة التي تكون عندها ساعة دمشق اليوم هي hh:mm — تستخدمها لوحة المحاكاة. */
 export function damascusTodayAt(hour: number, minute: number, from: number = Date.now()): number {
   const w = wallOf(from);

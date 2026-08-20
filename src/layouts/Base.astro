@@ -32,7 +32,11 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
     <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
-    <link rel="apple-touch-icon" href={asset('favicon.svg')} />
+    <link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
+    <link rel="manifest" href={asset('manifest.webmanifest')} />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="دوا رغد" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="canonical" href={Astro.url.href} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -1,0 +1,201 @@
+---
+const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
+---
+
+<section class="remind section" id="remind" aria-labelledby="remind-heading">
+  <div class="wrap">
+    <div class="remind__head reveal">
+      <p class="eyebrow">تذكير على الموبايل</p>
+      <h2 id="remind-heading" class="remind__title">
+        خليه <span class="gradient-text">يرنّ عندك</span> كل يوم.
+      </h2>
+      <p class="remind__lead">
+        من 10:55 كل دقيقة حتى 11:00 — ويوصلك وأنتِ بأي تطبيق، وحتى والموبايل مقفول.
+      </p>
+    </div>
+
+    <div class="remind__grid">
+      <!-- ============ الخيار الأول: التقويم ============ -->
+      <article class="opt opt--primary reveal">
+        <div class="opt__top">
+          <span class="opt__icon" aria-hidden="true">📅</span>
+          <span class="opt__badge">هذا هو المطلوب</span>
+        </div>
+
+        <h3 class="opt__title">ضيفيه على تقويم الموبايل</h3>
+        <p class="opt__body">
+          <b>التنبيه بيطلع من الموبايل نفسه</b> — مو من المتصفح. يعني بيوصلك وأنتِ
+          بالإنستغرام، أو والشاشة مطفية، أو والنت مقطوع.
+          <br />بيبلّش <b>10:55</b> وبيرنّ <b>كل دقيقة</b> لـ<b>11:00</b> بتوقيت سوريا.
+          ست تنبيهات، كل يوم.
+          <br />بتضيفيه مرة وحدة بس، وبيضل للأبد.
+        </p>
+
+        <a class="btn btn--primary" href={icsHref} download="raghd-dose.ics" data-ics>
+          حمّلي التذكير 🔔
+        </a>
+
+        <p class="opt__hint">
+          <b>آيفون:</b> افتحي الملف → «إضافة إلى التقويم».<br />
+          <b>أندرويد:</b> افتحيه بتطبيق تقويم Google.
+        </p>
+      </article>
+
+      <!-- ============ الخيار الثاني: تنبيه المتصفح ============ -->
+      <article class="opt reveal" style="--reveal-delay: 110ms">
+        <div class="opt__top">
+          <span class="opt__icon" aria-hidden="true">🔔</span>
+          <span class="opt__badge opt__badge--soft" data-notif-badge>اختياري</span>
+        </div>
+
+        <h3 class="opt__title">تنبيه من المتصفح</h3>
+        <p class="opt__body">
+          نفس الجدول تماماً: من 10:55 كل دقيقة حتى 11:00. بس بيشتغل
+          <b>إذا الصفحة مفتوحة</b> ولو بالخلفية — إذا سكّرتي المتصفح ما بيوصل.
+          عشان هيك التقويم هو الأساس.
+        </p>
+
+        <button class="btn btn--ghost" type="button" data-notif-enable>
+          فعّلي التنبيه
+        </button>
+
+        <p class="opt__hint" data-notif-status role="status">
+          لسا ما فعّلتيه.
+        </p>
+      </article>
+    </div>
+
+    <!-- ============ إضافة للشاشة الرئيسية ============ -->
+    <p class="remind__foot reveal" style="--reveal-delay: 200ms">
+      <span aria-hidden="true">📲</span>
+      وإذا حابة، ضيفي الموقع للشاشة الرئيسية: من قائمة المتصفح اختاري
+      «إضافة إلى الشاشة الرئيسية» — بيصير له أيقونة وبيفتح مثل التطبيق.
+    </p>
+  </div>
+</section>
+
+<style>
+  .remind__head {
+    max-width: 44ch;
+    margin-inline: auto;
+    text-align: center;
+    margin-block-end: clamp(1.75rem, 1.1rem + 2.2vw, 3rem);
+  }
+
+  .remind__title {
+    font-size: var(--t-h2);
+    letter-spacing: -.03em;
+    margin-block: var(--s-3) var(--s-3);
+  }
+
+  .remind__lead { color: var(--c-ink-soft); }
+
+  .remind__grid {
+    display: grid;
+    gap: clamp(.8rem, .6rem + 1vw, 1.25rem);
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  @media (min-width: 820px) {
+    .remind__grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ---- البطاقة ---- */
+  .opt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding: clamp(1.35rem, 1rem + 1.6vw, 2rem);
+    border-radius: var(--r-lg);
+    background: rgba(255, 255, 255, .76);
+    border: 1px solid rgba(23, 18, 56, .07);
+    box-shadow: var(--sh-sm);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: transform var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-soft);
+  }
+  .opt:hover { transform: translateY(-3px); box-shadow: var(--sh-md); }
+
+  .opt--primary {
+    border-color: color-mix(in srgb, var(--c-violet) 26%, transparent);
+    box-shadow: var(--sh-md), 0 0 0 4px rgba(109, 74, 255, .07);
+  }
+
+  .opt__top {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .opt__icon {
+    display: grid;
+    place-items: center;
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background: var(--c-violet-wash);
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .opt__badge {
+    margin-inline-start: auto;
+    padding: .28rem .7rem;
+    border-radius: var(--r-pill);
+    background: var(--c-violet);
+    color: #fff;
+    font-size: var(--t-xs);
+    font-weight: 700;
+  }
+  .opt__badge--soft {
+    background: rgba(23, 18, 56, .06);
+    color: var(--c-ink-faint);
+  }
+  .opt__badge--on {
+    background: var(--c-mint-wash);
+    color: var(--c-mint-deep);
+  }
+  .opt__badge--off {
+    background: var(--c-alert-wash);
+    color: var(--c-alert-deep);
+  }
+
+  .opt__title {
+    font-size: clamp(1.08rem, .95rem + .6vw, 1.3rem);
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+
+  .opt__body {
+    font-size: var(--t-sm);
+    color: var(--c-ink-soft);
+    line-height: 1.75;
+    flex: 1;
+  }
+  .opt__body b { color: var(--c-ink); font-weight: 700; }
+
+  .opt .btn {
+    width: 100%;
+    text-decoration: none;
+    margin-block-start: var(--s-2);
+  }
+
+  .opt__hint {
+    font-size: var(--t-xs);
+    color: var(--c-ink-faint);
+    line-height: 1.85;
+  }
+  .opt__hint b { color: var(--c-ink-soft); }
+
+  .remind__foot {
+    max-width: 56ch;
+    margin: var(--s-6) auto 0;
+    padding: var(--s-4) var(--s-5);
+    border-radius: var(--r-md);
+    background: rgba(255, 255, 255, .55);
+    border: 1px dashed rgba(23, 18, 56, .13);
+    text-align: center;
+    font-size: var(--t-sm);
+    color: var(--c-ink-soft);
+  }
+</style>
