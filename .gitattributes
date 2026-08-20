@@ -1,3 +1,8 @@
 * text=auto eol=lf
+
+# RFC 5545 mandates CRLF line endings. Never normalise this file — strict
+# calendar clients (iOS Calendar in particular) can reject an LF-only .ics.
+*.ics -text
+
 *.png binary
 *.svg text eol=lf
