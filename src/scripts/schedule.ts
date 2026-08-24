@@ -1,44 +1,18 @@
 /**
  * schedule.ts — كل ما يخص الوقت
  *
- * The dose is 11:00 **Damascus time**, every day, no matter where the visitor's
- * device thinks it is. So every calculation here works on absolute instants
- * (epoch ms) and converts to Damascus wall-clock only through Intl — never
- * through the device's local timezone.
+ * كل شيء هنا يقوم على لحظات مطلقة (epoch ms) ويتحوّل إلى ساعة الحائط في دمشق
+ * عبر Intl فقط — أبداً عبر توقيت جهاز الزائرة. فلو فتحت رغد الموقع من أي بلد،
+ * العدّادات وموعد جرعة اللطافة تبقى صحيحة بتوقيت سوريا.
  *
- * Syria currently sits on a fixed UTC+3, but that is not hardcoded anywhere:
- * the offset is read from the runtime's timezone database at each instant, so
- * the site stays correct if the rules ever change again.
+ * سوريا اليوم على UTC+3 ثابتة، لكن الإزاحة غير مكتوبة في أي سطر: تُقرأ من
+ * قاعدة المناطق الزمنية عند كل لحظة، فيبقى الموقع صحيحاً لو تغيّرت القواعد.
  */
+
+import { COINCIDENCE, FIRST_TALK, SWEET_HOUR, SWEET_MINUTE } from '../site.config';
 
 /** المنطقة الزمنية المرجعية — رغد في سوريا */
 export const TIMEZONE = 'Asia/Damascus';
-
-/** موعد الجرعة: 11:00 صباحاً بتوقيت دمشق */
-export const DOSE_HOUR = 11;
-export const DOSE_MINUTE = 0;
-
-/** نافذة السماح: خلال أول 5 دقائق نعتبر الوقت "حان الآن" وليس "متأخرة". */
-export const GRACE_MINUTES = 5;
-
-export type Phase = 'before' | 'due' | 'late' | 'taken';
-
-export interface DoseSnapshot {
-  /** الحالة الحالية */
-  phase: Phase;
-  /** تاريخ اليوم في دمشق بصيغة YYYY-MM-DD — مفتاح "اليوم" في التخزين */
-  dayKey: string;
-  /** ميلي ثانية حتى الجرعة القادمة (0 إذا حان الوقت أو مرّ) */
-  msUntil: number;
-  /** ميلي ثانية مرّت منذ الموعد (0 إذا لم يحن بعد) */
-  msSince: number;
-  /** أجزاء العدّاد للعرض */
-  parts: { hours: number; minutes: number; seconds: number };
-  /** دقائق التأخير (للحالة late) */
-  lateMinutes: number;
-  /** هل الجرعة القادمة هي جرعة الغد؟ */
-  isTomorrow: boolean;
-}
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
@@ -94,31 +68,6 @@ function instantOfWall(
   return naive - offsetAt(firstGuess);
 }
 
-/** موعد جرعة اليوم الذي تقع فيه هذه الساعة. */
-function doseInstantFor(w: Wall): number {
-  return instantOfWall(w.year, w.month, w.day, DOSE_HOUR, DOSE_MINUTE);
-}
-
-/** موعد جرعة اليوم التالي لساعة الحائط المعطاة. */
-function nextDayDoseInstant(w: Wall): number {
-  // نتقدّم يوماً بحساب التقويم لا بإضافة 24 ساعة — الأخيرة تنكسر عند تغيير التوقيت.
-  const d = new Date(Date.UTC(w.year, w.month - 1, w.day));
-  d.setUTCDate(d.getUTCDate() + 1);
-  return instantOfWall(
-    d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), DOSE_HOUR, DOSE_MINUTE,
-  );
-}
-
-/** لحظة جرعة اليوم (بتوقيت دمشق) كقيمة مطلقة. */
-export function doseInstantToday(at: number = nowMs()): number {
-  return doseInstantFor(wallOf(at));
-}
-
-/** لحظة جرعة الغد. */
-export function doseInstantTomorrow(at: number = nowMs()): number {
-  return nextDayDoseInstant(wallOf(at));
-}
-
 /** اللحظة التي تكون عندها ساعة دمشق اليوم هي hh:mm — تستخدمها لوحة المحاكاة. */
 export function damascusTodayAt(hour: number, minute: number, from: number = Date.now()): number {
   const w = wallOf(from);
@@ -132,7 +81,7 @@ export function damascusClock(instant: number = nowMs()): string {
 }
 
 /* -------------------------------------------------------------------------
-   السفر عبر الزمن — يشغّل "لجنة الدواء العليا" (لوحة الاختبار المخفية)
+   السفر عبر الزمن — تشغّله «لجنة اللطافة العليا» (لوحة الاختبار المخفية)
    ------------------------------------------------------------------------- */
 
 const OFFSET_KEY = 'raghd:time-offset';
@@ -159,72 +108,153 @@ export function nowMs(): number {
   return Date.now() + getOffset();
 }
 
-/* -------------------------------------------------------------------------
-   الحالة
-   ------------------------------------------------------------------------- */
-
 /** مفتاح اليوم بتوقيت دمشق — تصفير التخزين يتبع منتصف ليل سوريا. */
 export function dayKeyOf(instant: number = nowMs()): string {
   const w = wallOf(instant);
   return `${w.year}-${pad2(w.month)}-${pad2(w.day)}`;
 }
 
-function splitDuration(ms: number) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  return {
-    hours: Math.floor(total / 3600),
-    minutes: Math.floor((total % 3600) / 60),
-    seconds: total % 60,
-  };
+/* -------------------------------------------------------------------------
+   العدّادات التصاعدية — تعدّ من يوم، وما بتوقف
+   ------------------------------------------------------------------------- */
+
+/**
+ * يحوّل تاريخاً من الإعدادات إلى لحظة مطلقة.
+ *
+ * التاريخ مكتوب بساعة حائط دمشق لا بـUTC، فلا نستخدم `Date.parse`: هي تقرأ
+ * `YYYY-MM-DD` كـUTC وتقرأ الصيغة ذات الساعة بتوقيت الجهاز — كلاهما خطأ هنا.
+ * أي قيمة غير صالحة تعود `null`، فيُخفى العدّاد بدل أن يعرض أرقاماً غلط.
+ */
+function parseDamascusDate(value: string | null): number | null {
+  if (!value) return null;
+
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?$/.exec(value.trim());
+  if (!m) return null;
+
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const hour = m[4] ? Number(m[4]) : 0;
+  const minute = m[5] ? Number(m[5]) : 0;
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  if (hour > 23 || minute > 59) return null;
+
+  const instant = instantOfWall(year, month, day, hour, minute);
+
+  // تاريخ مثل 2026-02-31 يزحف إلى آذار؛ نرفضه بدل أن نعدّ من يوم لم يوجد.
+  const w = wallOf(instant);
+  if (w.year !== year || w.month !== month || w.day !== day) return null;
+
+  return instant;
+}
+
+/** لحظة الصدفة — 25 كانون الثاني 2026. */
+export const COINCIDENCE_AT: number | null = parseDamascusDate(COINCIDENCE);
+
+/** لحظة أول حديث — 21 آذار 2026. */
+export const FIRST_TALK_AT: number | null = parseDamascusDate(FIRST_TALK);
+
+export interface SinceSnapshot {
+  /** أيام كاملة مرّت */
+  days: number;
+  /** والباقي، مقسّماً */
+  hours: number;
+  minutes: number;
+  seconds: number;
+  /** المجموع بالميلي ثانية */
+  total: number;
 }
 
 /**
- * يحسب الحالة الكاملة للحظة الحالية.
- * @param takenToday هل سُجّلت جرعة اليوم؟ (تأتي من التخزين المحلي)
+ * كم مرّ من لحظة معيّنة حتى الآن.
+ * نقصّ القيم السالبة إلى صفر، فتاريخ في المستقبل يعرض أصفاراً لا أرقاماً مقلوبة.
  */
-export function snapshot(takenToday: boolean, at: number = nowMs()): DoseSnapshot {
-  const w = wallOf(at);
-  const dayKey = `${w.year}-${pad2(w.month)}-${pad2(w.day)}`;
-  const todayDose = doseInstantFor(w);
-  const diff = todayDose - at;
+export function elapsedSince(from: number | null, at: number = nowMs()): SinceSnapshot | null {
+  if (from === null) return null;
 
-  // بعد أخذ الجرعة نعدّ لجرعة الغد.
-  if (takenToday) {
-    const useToday = diff > 0;
-    const ms = useToday ? diff : nextDayDoseInstant(w) - at;
-    return {
-      phase: 'taken',
-      dayKey,
-      msUntil: ms,
-      msSince: 0,
-      parts: splitDuration(ms),
-      lateMinutes: 0,
-      isTomorrow: !useToday,
-    };
-  }
+  const total = Math.max(0, at - from);
+  const s = Math.floor(total / 1000);
 
-  if (diff > 0) {
-    return {
-      phase: 'before',
-      dayKey,
-      msUntil: diff,
-      msSince: 0,
-      parts: splitDuration(diff),
-      lateMinutes: 0,
-      isTomorrow: false,
-    };
-  }
-
-  const since = -diff;
-  const lateMinutes = Math.floor(since / 60_000);
   return {
-    phase: lateMinutes < GRACE_MINUTES ? 'due' : 'late',
-    dayKey,
-    msUntil: 0,
-    msSince: since,
-    parts: splitDuration(since),
-    lateMinutes,
-    isTomorrow: false,
+    days: Math.floor(s / 86_400),
+    hours: Math.floor((s % 86_400) / 3600),
+    minutes: Math.floor((s % 3600) / 60),
+    seconds: s % 60,
+    total,
+  };
+}
+
+/** من يوم الصدفة حتى الآن. */
+export function sinceCoincidence(at: number = nowMs()): SinceSnapshot | null {
+  return elapsedSince(COINCIDENCE_AT, at);
+}
+
+/** من يوم ما بلّشنا نحكي حتى الآن. */
+export function sinceFirstTalk(at: number = nowMs()): SinceSnapshot | null {
+  return elapsedSince(FIRST_TALK_AT, at);
+}
+
+/* -------------------------------------------------------------------------
+   جرعة اللطافة اليومية
+   ------------------------------------------------------------------------- */
+
+export { SWEET_HOUR, SWEET_MINUTE };
+
+/** لحظة جرعة اليوم الذي تقع فيه ساعة الحائط المعطاة. */
+function sweetInstantFor(w: Wall): number {
+  return instantOfWall(w.year, w.month, w.day, SWEET_HOUR, SWEET_MINUTE);
+}
+
+/** لحظة جرعة الغد بالنسبة لساعة الحائط المعطاة. */
+function nextDaySweetInstant(w: Wall): number {
+  // نتقدّم يوماً بحساب التقويم لا بإضافة 24 ساعة — الأخيرة تنكسر عند تغيير التوقيت.
+  const d = new Date(Date.UTC(w.year, w.month - 1, w.day));
+  d.setUTCDate(d.getUTCDate() + 1);
+  return instantOfWall(
+    d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), SWEET_HOUR, SWEET_MINUTE,
+  );
+}
+
+/** لحظة جرعة اليوم. */
+export function sweetInstantToday(at: number = nowMs()): number {
+  return sweetInstantFor(wallOf(at));
+}
+
+/** لحظة جرعة الغد. */
+export function sweetInstantTomorrow(at: number = nowMs()): number {
+  return nextDaySweetInstant(wallOf(at));
+}
+
+export interface SweetSnapshot {
+  /** تاريخ اليوم في دمشق — مفتاح "اليوم" في التخزين */
+  dayKey: string;
+  /** ميلي ثانية حتى الجرعة القادمة (اليوم أو الغد) */
+  msUntil: number;
+  /** هل موعد اليوم قد مضى؟ */
+  passed: boolean;
+  /** أجزاء العدّاد للعرض */
+  parts: { hours: number; minutes: number; seconds: number };
+}
+
+/** حالة جرعة اللطافة الآن — للعرض داخل قسم الجرعة. */
+export function sweetSnapshot(at: number = nowMs()): SweetSnapshot {
+  const w = wallOf(at);
+  const today = sweetInstantFor(w);
+  const passed = today <= at;
+  const target = passed ? nextDaySweetInstant(w) : today;
+  const ms = Math.max(0, target - at);
+  const s = Math.floor(ms / 1000);
+
+  return {
+    dayKey: `${w.year}-${pad2(w.month)}-${pad2(w.day)}`,
+    msUntil: ms,
+    passed,
+    parts: {
+      hours: Math.floor(s / 3600),
+      minutes: Math.floor((s % 3600) / 60),
+      seconds: s % 60,
+    },
   };
 }
 
@@ -233,8 +263,27 @@ export function snapshot(takenToday: boolean, at: number = nowMs()): DoseSnapsho
    ------------------------------------------------------------------------- */
 
 /** "11:00 صباحاً" — للعرض. */
-export function doseLabelAr(): string {
-  return `${DOSE_HOUR}:${pad2(DOSE_MINUTE)} صباحاً`;
+export function sweetLabelAr(): string {
+  const suffix = SWEET_HOUR < 12 ? 'صباحاً' : 'مساءً';
+  const h12 = SWEET_HOUR % 12 === 0 ? 12 : SWEET_HOUR % 12;
+  return `${h12}:${pad2(SWEET_MINUTE)} ${suffix}`;
+}
+
+/** يوم / يومين / ٣ أيام / ١٥ يوم */
+export function daysAr(n: number): string {
+  if (n === 0) return 'اليوم';
+  if (n === 1) return 'يوم واحد';
+  if (n === 2) return 'يومين';
+  if (n >= 3 && n <= 10) return `${n} أيام`;
+  return `${n} يوم`;
+}
+
+/** ساعة / ساعتين / ٣ ساعات / ١٥ ساعة */
+export function hoursAr(n: number): string {
+  if (n === 1) return 'ساعة';
+  if (n === 2) return 'ساعتين';
+  if (n >= 3 && n <= 10) return `${n} ساعات`;
+  return `${n} ساعة`;
 }
 
 /** دقيقة / دقيقتين / ٣ دقائق / ١٥ دقيقة */
@@ -245,25 +294,29 @@ export function minutesAr(n: number): string {
   return `${n} دقيقة`;
 }
 
-/** نفس القاعدة للساعات. */
-export function hoursAr(n: number): string {
-  if (n === 1) return 'ساعة';
-  if (n === 2) return 'ساعتين';
-  if (n >= 3 && n <= 10) return `${n} ساعات`;
-  return `${n} ساعة`;
+/** وصف مقروء للمدة — يُستخدم في aria-live بدل الأرقام المتغيّرة كل ثانية. */
+export function humanSince(s: SinceSnapshot): string {
+  if (s.days > 0) return `${daysAr(s.days)} و${hoursAr(s.hours)}`;
+  if (s.hours > 0) return `${hoursAr(s.hours)} و${minutesAr(s.minutes)}`;
+  if (s.minutes > 0) return minutesAr(s.minutes);
+  return 'أقل من دقيقة';
 }
 
-/** وصف مقروء للمدة المتبقية — يُستخدم في aria-live بدل الأرقام المتغيّرة. */
-export function humanRemaining(p: DoseSnapshot['parts']): string {
+/** وصف مقروء للوقت المتبقّي لجرعة اللطافة. */
+export function humanRemaining(p: SweetSnapshot['parts']): string {
   if (p.hours > 0) return `${hoursAr(p.hours)} و${minutesAr(p.minutes)}`;
   if (p.minutes > 0) return minutesAr(p.minutes);
   return 'أقل من دقيقة';
 }
 
-/** تأخير مقروء: "23 دقيقة" / "ساعتين و40 دقيقة" — 160 دقيقة ليست جملة عربية. */
-export function lateAr(totalMinutes: number): string {
-  if (totalMinutes < 60) return minutesAr(totalMinutes);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return m === 0 ? hoursAr(h) : `${hoursAr(h)} و${minutesAr(m)}`;
+/** تاريخ عربي مقروء: "25 كانون الثاني 2025". */
+const MONTHS_AR = [
+  'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
+  'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول',
+];
+
+export function dateAr(instant: number | null): string | null {
+  if (instant === null) return null;
+  const w = wallOf(instant);
+  return `${w.day} ${MONTHS_AR[w.month - 1]} ${w.year}`;
 }

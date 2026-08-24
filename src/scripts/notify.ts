@@ -1,31 +1,24 @@
 /**
- * notify.ts — تنبيه المتصفح
+ * notify.ts — جرعة اللطافة اليومية
  *
- * الجدول: يبدأ قبل الموعد بخمس دقائق، ثم تنبيه كل دقيقة حتى الموعد نفسه.
- * أي ٦ تنبيهات: 10:55 · 10:56 · 10:57 · 10:58 · 10:59 · 11:00 بتوقيت دمشق.
- * كل واحد يُرسل مرة واحدة فقط في اليوم، ويتوقّف الباقي فور تسجيل الجرعة.
+ * الجدول: إشعار واحد كل يوم عند 11:00 بتوقيت دمشق. واحد فقط — الموقع صار
+ * رسالة فرح لا نظام إلحاح، وستّ رنّات متصاعدة كانت تناسب الدوا لا اللطافة.
  *
  * ما يستطيعه موقع ثابت بلا سيرفر، وما لا يستطيعه:
- *  ✅ هذا الجدول كاملاً — بينما الصفحة مفتوحة (ولو في الخلفية).
+ *  ✅ الإشعار اليومي — بينما الصفحة مفتوحة (ولو في الخلفية).
  *  ❌ والمتصفح مغلق تماماً — يحتاج Web Push، وWeb Push يحتاج سيرفر يرسل
  *     الدفعة في وقتها. لا يوجد API قياسي لجدولة تنبيه محلي مستقبلي
  *     (اقتراح Notification Triggers لم يصل إلى أي متصفح مستقر).
- *     لذلك نفس الجدول مكرّر في ملف التقويم .ics، وهناك ينفّذه الهاتف نفسه.
+ *     لذلك نفس الموعد مكرّر في ملف التقويم .ics، وهناك ينفّذه الهاتف نفسه.
  *
  * ملاحظة تقنية: على أندرويد/كروم يرمي `new Notification()` استثناءً؛ الطريق
  * الوحيد هو registration.showNotification()، ولهذا نسجّل عامل خدمة.
  */
 
-import { snapshot, dayKeyOf, nowMs, doseInstantToday, doseInstantTomorrow } from './schedule';
-import { loadDay } from './store';
+import { dayKeyOf, nowMs, sweetInstantToday, sweetInstantTomorrow, sweetLabelAr } from './schedule';
+import { SWEET, sweetLineFor } from './copy';
 
-/** نبدأ التنبيه قبل الموعد بهذا العدد من الدقائق. */
-export const LEAD_MINUTES = 5;
-
-/** عدد التنبيهات: من (الموعد − 5 دقائق) حتى الموعد، واحد كل دقيقة. */
-export const PING_COUNT = LEAD_MINUTES + 1;
-
-const LOG_KEY = 'raghd:notified:v2';
+const LOG_KEY = 'raghd:sweet-sent:v1';
 
 export type NotifyState = 'unsupported' | 'default' | 'granted' | 'denied';
 
@@ -80,69 +73,21 @@ export async function requestPermission(): Promise<NotifyState> {
 
 /* ------------------------------------------------------ سجلّ ما أُرسل */
 
-interface SentLog {
-  day: string;
-  /** أرقام التنبيهات التي أُرسلت اليوم (0 = قبل ٥ دقائق … 5 = وقت الموعد) */
-  sent: number[];
-}
-
-function readLog(): SentLog {
-  const today = dayKeyOf();
+/** آخر يوم أُرسلت فيه جرعة اللطافة — إشعار واحد لكل يوم، لا أكثر. */
+function lastSentDay(): string | null {
   try {
-    const raw = localStorage.getItem(LOG_KEY);
-    const parsed = raw ? (JSON.parse(raw) as Partial<SentLog>) : null;
-    if (parsed && parsed.day === today && Array.isArray(parsed.sent)) {
-      return { day: today, sent: parsed.sent.filter((n) => typeof n === 'number') };
-    }
+    return localStorage.getItem(LOG_KEY);
   } catch {
-    /* تجاهل */
+    return null;
   }
-  return { day: today, sent: [] };
 }
 
-function markSent(index: number): void {
-  const log = readLog();
-  if (log.sent.includes(index)) return;
-  log.sent.push(index);
+function markSent(day: string): void {
   try {
-    localStorage.setItem(LOG_KEY, JSON.stringify(log));
+    localStorage.setItem(LOG_KEY, day);
   } catch {
     /* noop */
   }
-}
-
-/* ------------------------------------------------------------ الجدول */
-
-/**
- * لحظات التنبيه لليوم الحالي.
- * index 0 → الموعد − 5 دقائق … index 5 → الموعد بالضبط.
- */
-function pingsFor(dose: number): number[] {
-  return Array.from(
-    { length: PING_COUNT },
-    (_, i) => dose - (LEAD_MINUTES - i) * 60_000,
-  );
-}
-
-/** نصّ كل تنبيه — يتصاعد كلما اقترب الموعد. */
-function copyFor(index: number): { title: string; body: string } {
-  const left = LEAD_MINUTES - index;
-  if (left >= 3) {
-    return {
-      title: `💊 باقي ${left} دقايق على الدوا`,
-      body: 'تحضّري. مو لازم تركضي، بس مو لازم تنسي.',
-    };
-  }
-  if (left === 2) {
-    return { title: '💊 باقي دقيقتين على الدوا', body: 'قرّبنا. جهّزي حالك.' };
-  }
-  if (left === 1) {
-    return { title: '💊 باقي دقيقة وحدة', body: 'جهّزي الحبة. الوقت قرب.' };
-  }
-  return {
-    title: '💊 وقت الدوا يا رغد',
-    body: 'الساعة 11:00. الدوا عم يستنى. بلا مفاوضات.',
-  };
 }
 
 /* ------------------------------------------------------------ الإظهار */
@@ -158,83 +103,62 @@ async function show(title: string, body: string, tag: string): Promise<void> {
     badge: `${import.meta.env.BASE_URL}icon-192.png`,
     lang: 'ar',
     dir: 'rtl',
-    tag,                       // نفس الوسم يستبدل السابق بدل تكديس ٦ تنبيهات
+    tag,
     renotify: true,
-    requireInteraction: true,
   } as NotificationOptions);
 }
 
-/** تنبيه تجريبي فوري — ليتأكد المستخدم أن الأمر يعمل. */
+/** تنبيه تجريبي فوري — ليطمئن أن الأمر يعمل. */
 export async function showTest(): Promise<void> {
   const reg = swReg ?? (await registerWorker());
   if (!reg) return;
-  await reg.showNotification('💊 تمام، التنبيه شغّال', {
-    body: `رح يوصلك تنبيه كل دقيقة من 10:55 حتى 11:00 — طالما الصفحة مفتوحة.`,
+  await reg.showNotification(SWEET.title, {
+    body: SWEET.test,
     icon: `${import.meta.env.BASE_URL}icon-192.png`,
     lang: 'ar',
     dir: 'rtl',
-    tag: 'raghd-test',
+    tag: 'raghd-sweet-test',
   } as NotificationOptions);
 }
 
 /* ---------------------------------------------------------- الجدولة */
 
 /**
- * يجدول التنبيه القادم.
- * يُستدعى عند الإقلاع، وبعد كل إطلاق، وعند العودة إلى التبويب — لأن مؤقتات
- * الخلفية على الموبايل تُخنق أو تُقتل، فلا نعتمد على المؤقّت وحده.
+ * يجدول جرعة الغد، ويطلق جرعة اليوم إن فات وقتها ولم تُرسل.
+ *
+ * يُستدعى عند الإقلاع وعند العودة إلى التبويب — لأن مؤقتات الخلفية على
+ * الموبايل تُخنق أو تُقتل، فلا نعتمد على المؤقّت وحده.
  */
 export function schedule(): void {
   window.clearTimeout(timer);
   if (state() !== 'granted') return;
 
-  const day = loadDay();
   const now = nowMs();
+  const today = dayKeyOf(now);
+  const at = sweetInstantToday(now);
 
-  // أُخذت الجرعة → لا تنبيهات اليوم، ننتقل لجرعة الغد.
-  if (day.taken) {
-    armFor(doseInstantTomorrow(now) - now);
-    return;
-  }
-
-  const dose = doseInstantToday(now);
-  const pings = pingsFor(dose);
-  const log = readLog();
-
-  // أطلِق كل ما فات وقته ولم يُرسل — يغطّي حالة فتح الصفحة متأخرة أو
-  // بعد أن خنق النظام المؤقّت.
-  let firedNow = false;
-  for (let i = 0; i < pings.length; i++) {
-    if (pings[i]! <= now && !log.sent.includes(i)) {
-      // نرسل الأحدث فقط حتى لا ننفجر بستة تنبيهات دفعة واحدة.
-      firedNow = true;
-      markSent(i);
+  if (at <= now) {
+    // فات موعد اليوم — أطلقه الآن إن لم يكن قد أُرسل، ثم انتقل للغد.
+    if (lastSentDay() !== today) {
+      markSent(today);
+      void show(SWEET.title, sweetLineFor(today), 'raghd-sweet');
     }
-  }
-  if (firedNow) {
-    const lastIndex = pings.reduce((acc, t, i) => (t <= now ? i : acc), 0);
-    const c = copyFor(lastIndex);
-    void show(c.title, c.body, 'raghd-dose');
-  }
-
-  // ثم جدولة أول تنبيه لم يحن وقته بعد.
-  const nextIndex = pings.findIndex((t, i) => t > now && !readLog().sent.includes(i));
-  if (nextIndex !== -1) {
-    armFor(pings[nextIndex]! - now, nextIndex);
+    arm(sweetInstantTomorrow(now) - now);
     return;
   }
 
-  // انتهى جدول اليوم → انتظر جرعة الغد.
-  armFor(doseInstantTomorrow(now) - now);
+  arm(at - now, today);
 }
 
-function armFor(wait: number, index?: number): void {
+function arm(wait: number, dayToSend?: string): void {
+  // setTimeout ينهار عند تجاوز حدّ 32 بت، وجرعة الغد قد تبعد أكثر من ذلك؟
+  // لا — أقصى انتظار أقل من 48 ساعة، لكن نحرس على أي حال.
   if (wait <= 0 || wait >= 2_147_483_647) return;
+
   timer = window.setTimeout(() => {
-    if (index !== undefined && !loadDay().taken) {
-      markSent(index);
-      const c = copyFor(index);
-      void show(c.title, c.body, 'raghd-dose');
+    if (dayToSend && lastSentDay() !== dayToSend) {
+      markSent(dayToSend);
+      void show(SWEET.title, sweetLineFor(dayToSend), 'raghd-sweet');
     }
     schedule();
   }, wait + 300);
@@ -254,9 +178,9 @@ export function debugInfo() {
   return {
     state: state(),
     now,
-    dose: doseInstantToday(now),
-    pings: pingsFor(doseInstantToday(now)),
-    log: readLog(),
-    snapshot: snapshot(loadDay().taken, now).phase,
+    at: sweetInstantToday(now),
+    label: sweetLabelAr(),
+    lastSent: lastSentDay(),
+    lineToday: sweetLineFor(dayKeyOf(now)),
   };
 }

@@ -1,35 +1,35 @@
 ---
-import { doseLabelAr } from '../scripts/schedule';
+import { HER } from '../site.config';
 ---
 
 <header class="hero">
   <div class="wrap hero__inner">
     <p class="hero__badge" data-intro="1">
       <span class="hero__pulse" aria-hidden="true"></span>
-      نظام تذكير الدواء — إصدار رغد
+      الحمد لله على السلامة
     </p>
 
     <h1 class="hero__title" data-intro="2">
-      رغد، الدوا
-      <span class="gradient-text">ما رح ياخد حاله لحاله.</span>
+      {HER} طابت،
+      <span class="gradient-text">الحمد لله.</span>
     </h1>
 
     <p class="hero__lead" data-intro="3">
-      نحن هنا نهتم بصحة رغد فقط.
+      ألطف وأجمل صدفة بحياتي — وصارت بخير. هيدا كل الخبر، وهيدا كل الموقع.
     </p>
 
     <ul class="hero__facts" data-intro="4">
       <li class="fact">
-        <span class="fact__k">الموعد</span>
-        <span class="fact__v">{doseLabelAr()} — بتوقيت سوريا</span>
+        <span class="fact__k">الحالة</span>
+        <span class="fact__v">بخير ✨</span>
       </li>
       <li class="fact">
-        <span class="fact__k">المستخدمة</span>
-        <span class="fact__v">رغد — وحدها</span>
+        <span class="fact__k">التصنيف</span>
+        <span class="fact__v fact__v--ltr">super special</span>
       </li>
       <li class="fact">
-        <span class="fact__k">الأعذار المقبولة</span>
-        <span class="fact__v">صفر 😐</span>
+        <span class="fact__k">اللطافة</span>
+        <span class="fact__v">خارج المقياس 🤍</span>
       </li>
     </ul>
   </div>
@@ -56,7 +56,7 @@ import { doseLabelAr } from '../scripts/schedule';
     gap: .6rem;
     padding: .48rem 1.05rem;
     border-radius: var(--r-pill);
-    border: 1px solid rgba(109, 74, 255, .18);
+    border: 1px solid rgba(255, 77, 141, .2);
     background: rgba(255, 255, 255, .72);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -99,7 +99,7 @@ import { doseLabelAr } from '../scripts/schedule';
   .hero__title .gradient-text { display: block; }
 
   .hero__lead {
-    max-width: 34ch;
+    max-width: 38ch;
     font-size: var(--t-lead);
     color: var(--c-ink-soft);
     line-height: 1.7;
@@ -126,6 +126,13 @@ import { doseLabelAr } from '../scripts/schedule';
   }
   .fact__k { color: var(--c-ink-faint); }
   .fact__v { font-weight: 600; color: var(--c-ink); }
+
+  /* «super special» لاتينية داخل سطر عربي — تُعزل حتى لا يقلبها المحرّك. */
+  .fact__v--ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+    letter-spacing: .01em;
+  }
 
   /* ---- دخول متدرّج ------------------------------------------------------ */
   [data-intro] {

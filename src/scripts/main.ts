@@ -1,40 +1,38 @@
 /**
- * main.ts — تشغيل النظام
+ * main.ts — تشغيل الموقع
  *
- * Reads a DoseSnapshot once per second and paints it. All DOM writes happen in
- * `paint()`; nothing else touches the document, which keeps the state machine
- * honest and makes the hidden simulator (لجنة الدواء العليا) trustworthy.
+ * يقرأ الوقت مرة كل ثانية ويرسمه. كل الكتابة في الـDOM تحدث داخل `paint()`؛
+ * لا شيء غيرها يلمس الصفحة، وهذا ما يجعل محاكي الوقت المخفي (لجنة اللطافة
+ * العليا) صادقاً: نغيّر مصدر الوقت فقط، فيتبعه كل شيء.
  */
 
 import {
-  snapshot,
-  lateAr,
-  humanRemaining,
+  sinceCoincidence,
+  sinceFirstTalk,
+  humanSince,
+  daysAr,
   setOffset,
   getOffset,
   damascusTodayAt,
   damascusClock,
-  DOSE_HOUR,
-  type DoseSnapshot,
-  type Phase,
+  SWEET_HOUR,
+  type SinceSnapshot,
 } from './schedule';
 
-import { loadDay, patchDay, bumpStreak, resetAll, type DayState } from './store';
+import { loadDay, patchDay, bumpStreak, resetAll, dropRetiredKeys, type DayState } from './store';
 
 import {
-  STATUS,
-  SUCCESS_FLAVOR,
-  NAG_EARLY,
-  NAG_LATE,
-  NAG_VERY_LATE,
-  PILL_TAPS,
+  GRACE,
+  LATAFA,
+  HEART_TAPS,
+  HEART_TAPS_AFTER,
   AWAY_TITLES,
   EGG_TOASTS,
-  snoozeLine,
+  thanksLine,
   pick,
 } from './copy';
 
-import { burst, pillRain } from './celebrate';
+import { burst, heartRain, butterflies } from './celebrate';
 import { initAudio } from './music';
 
 import {
@@ -56,29 +54,21 @@ const $ = <T extends Element = HTMLElement>(sel: string) =>
 const $$ = <T extends Element = HTMLElement>(sel: string) =>
   Array.from(document.querySelectorAll(sel)) as T[];
 
-const body = document.body;
 const card = $('[data-card]');
-const pillBtn = $<HTMLButtonElement>('[data-pill]');
-const chip = $('[data-phase-chip]');
-const elLabel = $('[data-status-label]');
-const elTitle = $('[data-status-title]');
-const elNote = $('[data-status-note]');
-const elLateChip = $('[data-late-chip]');
+const heartBtn = $<HTMLButtonElement>('[data-heart]');
 const elWhisper = $('[data-whisper]');
-const elNextDose = $('[data-next-dose]');
-const elFlavor = $('[data-success-flavor]');
+const elThanksHint = $('[data-thanks-hint]');
+const elTalk = $('[data-talk]');
 const live = $('#live-region');
 
-const panels = {
-  live: $('[data-panel="live"]'),
-  success: $('[data-panel="success"]'),
-};
-
-const units: Record<'h' | 'm' | 's', HTMLElement | null> = {
+const units: Record<'d' | 'h' | 'm' | 's', HTMLElement | null> = {
+  d: $('[data-unit="d"]'),
   h: $('[data-unit="h"]'),
   m: $('[data-unit="m"]'),
   s: $('[data-unit="s"]'),
 };
+
+const dayLabel = $('[data-unit-k="d"]');
 
 const BASE_TITLE = document.title;
 
@@ -87,10 +77,9 @@ const BASE_TITLE = document.title;
    ========================================================================= */
 
 let day: DayState = loadDay();
-let lastPhase: Phase | 'snoozed' | null = null;
-/** هل ضغطت "لسا شوي" في هذه الجلسة؟ (لا يُحفظ — التأجيل مزاج لحظي) */
-let snoozing = false;
+let lastDays = -1;
 let lastWhisperIndex = -1;
+let lastThanksIndex = -1;
 let whisperTimer = 0;
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -99,110 +88,47 @@ const pad = (n: number) => String(n).padStart(2, '0');
    الرسم
    ========================================================================= */
 
-function setDigit(el: HTMLElement | null, value: string): void {
+function setText(el: HTMLElement | null, value: string): void {
+  if (!el || el.textContent === value) return;
+  el.textContent = value;
+}
+
+/** الأيام هي الرقم البطل — تستحق أنيميشن عند التغيّر، بخلاف الثواني. */
+function setDays(el: HTMLElement | null, value: string): void {
   if (!el || el.textContent === value) return;
   el.textContent = value;
   el.classList.remove('is-tick');
-  // إعادة تشغيل الأنيميشن
-  void el.offsetWidth;
+  void el.offsetWidth; // إعادة تشغيل الأنيميشن
   el.classList.add('is-tick');
 }
 
-function showGroup(name: 'before' | 'due' | 'snoozed' | 'taken'): void {
-  for (const group of $$('[data-actions-group]')) {
-    group.hidden = group.dataset.actionsGroup !== name;
-  }
-}
+function paint(): void {
+  const s = sinceCoincidence();
+  if (s) {
+    setDays(units.d, String(s.days));
+    setText(units.h, pad(s.hours));
+    setText(units.m, pad(s.minutes));
+    setText(units.s, pad(s.seconds));
 
-function showPanel(which: 'live' | 'success'): void {
-  if (panels.live) panels.live.hidden = which !== 'live';
-  if (panels.success) panels.success.hidden = which !== 'success';
-}
-
-const CHIP_TEXT: Record<Phase, string> = {
-  before: 'قيد المتابعة',
-  due: 'الآن ⏰',
-  late: 'متأخرة',
-  taken: 'مكتملة ✅',
-};
-
-function paint(snap: DoseSnapshot): void {
-  const uiState: Phase | 'snoozed' =
-    snoozing && (snap.phase === 'due' || snap.phase === 'late') ? 'snoozed' : snap.phase;
-
-  // ---- الأرقام -----------------------------------------------------------
-  setDigit(units.h, pad(snap.parts.hours));
-  setDigit(units.m, pad(snap.parts.minutes));
-  setDigit(units.s, pad(snap.parts.seconds));
-
-  if (elNextDose) {
-    elNextDose.textContent = `${pad(snap.parts.hours)}:${pad(snap.parts.minutes)}:${pad(snap.parts.seconds)}`;
-  }
-
-  // ---- التأخير ------------------------------------------------------------
-  if (elLateChip) {
-    if (snap.phase === 'late') {
-      elLateChip.hidden = false;
-      elLateChip.textContent = `متأخرة ${lateAr(snap.lateMinutes)}. 😐`;
-    } else {
-      elLateChip.hidden = true;
+    if (s.days !== lastDays) {
+      lastDays = s.days;
+      announce(s);
     }
   }
 
-  // ---- ما يتغيّر عند تبدّل الحالة فقط -------------------------------------
-  if (uiState === lastPhase) return;
-  lastPhase = uiState;
-
-  body.dataset.phase = snap.phase;
-  if (chip) chip.textContent = CHIP_TEXT[snap.phase];
-
-  const copy = STATUS[snap.phase];
-  if (elLabel) {
-    elLabel.textContent =
-      snap.phase === 'late'
-        ? 'مرّ على الموعد'
-        : snap.isTomorrow
-          ? 'جرعة بكرا بعد'
-          : copy.label;
-  }
-  if (elTitle) elTitle.textContent = copy.title;
-  if (elNote) elNote.textContent = copy.note;
-
-  showPanel(snap.phase === 'taken' ? 'success' : 'live');
-
-  if (snap.phase === 'taken') showGroup('taken');
-  else if (uiState === 'snoozed') showGroup('snoozed');
-  else if (snap.phase === 'before') showGroup('before');
-  else showGroup('due');
-
-  announce(snap);
-  scheduleWhisper();
+  const t = sinceFirstTalk();
+  if (t && elTalk) setText(elTalk, daysAr(t.days));
 }
 
-/** إعلان لقارئات الشاشة — عند تغيّر الحالة فقط، لا كل ثانية. */
-function announce(snap: DoseSnapshot): void {
+/** إعلان لقارئات الشاشة — عند تغيّر اليوم فقط، لا كل ثانية. */
+function announce(s: SinceSnapshot): void {
   if (!live) return;
-  if (snap.phase === 'taken') {
-    live.textContent = 'تم تسجيل جرعة اليوم بنجاح.';
-  } else if (snap.phase === 'before') {
-    live.textContent = `الجرعة القادمة بعد ${humanRemaining(snap.parts)}.`;
-  } else if (snap.phase === 'due') {
-    live.textContent = 'حان وقت الدواء الآن.';
-  } else {
-    live.textContent = `متأخرة عن موعد الدواء بـ ${lateAr(snap.lateMinutes)}.`;
-  }
+  live.textContent = `مرّ من يوم الصدفة ${humanSince(s)}. ${GRACE.title}`;
 }
 
 /* =========================================================================
-   همسات النظام
+   همسات اللطافة
    ========================================================================= */
-
-function whisperPool(snap: DoseSnapshot): readonly string[] {
-  if (snap.phase === 'taken') return SUCCESS_FLAVOR;
-  if (snap.phase === 'before') return NAG_EARLY;
-  if (snap.lateMinutes >= 30) return NAG_VERY_LATE;
-  return NAG_LATE;
-}
 
 function say(text: string): void {
   if (!elWhisper) return;
@@ -216,8 +142,7 @@ function say(text: string): void {
 function scheduleWhisper(): void {
   window.clearInterval(whisperTimer);
   const rotate = () => {
-    const fresh = snapshot(loadDay().taken);
-    const { text, index } = pick(whisperPool(fresh), lastWhisperIndex);
+    const { text, index } = pick(LATAFA, lastWhisperIndex);
     lastWhisperIndex = index;
     say(text);
   };
@@ -229,54 +154,26 @@ function scheduleWhisper(): void {
    الأفعال
    ========================================================================= */
 
-function takeDose(source?: Element | null): void {
-  const snap = snapshot(false);
-  day = patchDay({ taken: true, takenAt: new Date().toISOString() });
-  const streak = bumpStreak(snap.dayKey);
-  snoozing = false;
+function thanks(source?: Element | null): void {
+  const next = patchDay({ thanks: loadDay().thanks + 1 });
+  day = next;
 
   burst(source);
 
-  // نجبر إعادة الرسم حتى لو كانت الحالة تبدو متطابقة
-  lastPhase = null;
-  tick();
+  const { text, index } = thanksLine(next.thanks, lastThanksIndex);
+  lastThanksIndex = index;
 
-  if (elFlavor) {
-    elFlavor.textContent =
-      streak.count > 1
-        ? `${streak.count} أيام ورا بعض. رغد، شكلك بلشتي تحبي الموضوع 👀`
-        : 'نشوفك بكرا بنفس الموعد… لا تعملي حالك نسيتي 😌';
-  }
-
-  scheduleNotify();
-
-  // نقفل على منطقة النجاح حتى تكون واضحة على الموبايل
-  card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function snooze(): void {
-  const next = patchDay({ snoozes: loadDay().snoozes + 1 });
-  day = next;
-  snoozing = true;
-  lastPhase = null;
-  tick();
-
+  // نوقف الدوران لحظة حتى تُقرأ الجملة، ثم نرجع للهمسات
   window.clearInterval(whisperTimer);
-  say(snoozeLine(next.snoozes));
+  say(text);
+  window.setTimeout(scheduleWhisper, 9000);
 
-  // بعد صمت قصير يرجع النظام لطبيعته… أي إلى الإلحاح
-  window.setTimeout(() => {
-    const snap = snapshot(loadDay().taken);
-    if (snap.phase !== 'taken') scheduleWhisper();
-  }, 11000);
-}
-
-function undo(): void {
-  day = patchDay({ taken: false, takenAt: null });
-  snoozing = false;
-  lastPhase = null;
-  tick();
-  say('اعتراف متأخر بس محترم. رجعنا للمربع الأول. 🙃');
+  if (elThanksHint) {
+    elThanksHint.textContent =
+      next.thanks >= 5
+        ? `قلتيها ${next.thanks} مرات اليوم. ولا مرة زادت عن اللزوم 🤍`
+        : 'اضغطي، وأنا كمان رح قولها معك.';
+  }
 }
 
 /* =========================================================================
@@ -286,11 +183,8 @@ function undo(): void {
 function tick(): void {
   const fresh = loadDay();
   // انقلاب اليوم والصفحة مفتوحة، أو تعديل من تبويب آخر
-  if (fresh.dayKey !== day.dayKey || fresh.taken !== day.taken) {
-    day = fresh;
-    lastPhase = null;
-  }
-  paint(snapshot(day.taken));
+  if (fresh.dayKey !== day.dayKey) day = fresh;
+  paint();
 }
 
 /* =========================================================================
@@ -298,26 +192,26 @@ function tick(): void {
    ========================================================================= */
 
 function initEggs(): void {
-  // 1) النقر على حبة الدواء
-  pillBtn?.addEventListener('click', () => {
-    const taps = loadDay().pillTaps + 1;
-    day = patchDay({ pillTaps: taps });
+  // 1) النقر على القلب
+  heartBtn?.addEventListener('click', () => {
+    const taps = loadDay().heartTaps + 1;
+    day = patchDay({ heartTaps: taps });
 
-    pillBtn.classList.remove('is-shaking');
-    void pillBtn.offsetWidth;
-    pillBtn.classList.add('is-shaking');
+    heartBtn.classList.remove('is-beating');
+    void heartBtn.offsetWidth;
+    heartBtn.classList.add('is-beating');
 
-    const line = PILL_TAPS[taps];
+    butterflies(taps >= 8 ? 18 : 10);
+
+    const line = HEART_TAPS[taps];
     if (line) say(line);
-    if (taps === 12) pillRain();
-    if (taps > 12 && taps % 7 === 0) {
-      say('ما عاد في رسائل. في بس حبة، وأنت، والوقت. 🧘');
-    }
+    if (taps === 12) heartRain();
+    if (taps > 12 && taps % 7 === 0) say(HEART_TAPS_AFTER);
   });
 
-  // 2) حبة الفوتر
+  // 2) قلب الفوتر
   $('[data-foot-egg]')?.addEventListener('click', () => {
-    pillRain();
+    heartRain();
     say(EGG_TOASTS.bottom);
   });
 
@@ -327,31 +221,28 @@ function initEggs(): void {
   // 4) تغيير عنوان التبويب عند الخروج
   let awayIndex = -1;
   document.addEventListener('visibilitychange', () => {
-    const snap = snapshot(loadDay().taken);
-    if (document.hidden && (snap.phase === 'due' || snap.phase === 'late')) {
+    if (document.hidden) {
       const { text, index } = pick(AWAY_TITLES, awayIndex);
       awayIndex = index;
       document.title = text;
     } else {
       document.title = BASE_TITLE;
-      if (!document.hidden) tick();
+      tick();
     }
   });
 
-  // 5) لجنة الدواء العليا — ثلاث نقرات على تسميات العدّاد، أو Shift+L
+  // 5) لجنة اللطافة العليا — ثلاث نقرات على تسمية «يوم»، أو Shift+L
   let taps = 0;
   let tapTimer = 0;
-  for (const label of $$('.unit__k')) {
-    label.addEventListener('click', () => {
-      taps += 1;
-      window.clearTimeout(tapTimer);
-      tapTimer = window.setTimeout(() => (taps = 0), 1500);
-      if (taps >= 3) {
-        taps = 0;
-        openCommittee();
-      }
-    });
-  }
+  dayLabel?.addEventListener('click', () => {
+    taps += 1;
+    window.clearTimeout(tapTimer);
+    tapTimer = window.setTimeout(() => (taps = 0), 1500);
+    if (taps >= 3) {
+      taps = 0;
+      openCommittee();
+    }
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.shiftKey && (e.key === 'L' || e.key === 'l')) openCommittee();
@@ -360,7 +251,7 @@ function initEggs(): void {
 }
 
 /* =========================================================================
-   لجنة الدواء العليا (محاكي الوقت)
+   لجنة اللطافة العليا (محاكي الوقت)
    ========================================================================= */
 
 const committee = $('[data-committee]');
@@ -393,8 +284,8 @@ function refreshCommitteeStatus(): void {
 function simulateAt(hour: number, minute: number): void {
   const real = Date.now();
   setOffset(damascusTodayAt(hour, minute, real) - real);
-  lastPhase = null;
   tick();
+  scheduleNotify();
   refreshCommitteeStatus();
 }
 
@@ -406,22 +297,24 @@ function initCommittee(): void {
   for (const btn of $$<HTMLButtonElement>('[data-sim]')) {
     btn.addEventListener('click', () => {
       switch (btn.dataset.sim) {
-        case 'before':   simulateAt(DOSE_HOUR - 1, 15); break;
-        case 'due':      simulateAt(DOSE_HOUR, 0); break;
-        case 'late':     simulateAt(DOSE_HOUR, 23); break;
-        case 'verylate': simulateAt(DOSE_HOUR + 2, 40); break;
+        case 'before': simulateAt(SWEET_HOUR - 1, 15); break;
+        case 'due':    simulateAt(SWEET_HOUR, 0); break;
+        case 'after':  simulateAt(SWEET_HOUR + 2, 40); break;
+        case 'rain':
+          heartRain();
+          butterflies(16);
+          break;
         case 'real':
           setOffset(0);
-          lastPhase = null;
           tick();
+          scheduleNotify();
           refreshCommitteeStatus();
           break;
         case 'reset':
           resetAll();
           setOffset(0);
-          snoozing = false;
           day = loadDay();
-          lastPhase = null;
+          lastDays = -1;
           tick();
           refreshCommitteeStatus();
           say(EGG_TOASTS.reset);
@@ -432,7 +325,7 @@ function initCommittee(): void {
 }
 
 /* =========================================================================
-   التنبيهات
+   جرعة اللطافة — الإشعارات
    ========================================================================= */
 
 const notifBtn = $<HTMLButtonElement>('[data-notif-enable]');
@@ -454,24 +347,24 @@ function paintNotify(): void {
       break;
     case 'granted':
       notifBtn.hidden = false;
-      notifBtn.textContent = 'جرّبيه هلق 👀';
+      notifBtn.textContent = 'جرّبيها هلق 👀';
       notifBtn.dataset.notifTest = '1';
       notifBadge.classList.add('opt__badge--on');
       notifBadge.textContent = 'مفعّل ✓';
-      notifStatus.textContent = 'صرنا رسميين 🤝 من 10:55 كل دقيقة لـ11:00 — طالما الصفحة مفتوحة.';
+      notifStatus.textContent = 'صرنا رسميين 🤝 جملة وحدة كل يوم — طالما الصفحة مفتوحة.';
       break;
     case 'denied':
       notifBtn.hidden = true;
       notifBadge.classList.add('opt__badge--off');
       notifBadge.textContent = 'مرفوض';
       notifStatus.textContent =
-        'رفضتينا من قبل 💔 فعّليه من إعدادات الموقع بالمتصفح، أو خدي التقويم.';
+        'رفضتينا من قبل 🤍 فعّليها من إعدادات الموقع بالمتصفح، أو خدي التقويم.';
       break;
     default:
       notifBtn.hidden = false;
       notifBadge.classList.add('opt__badge--soft');
       notifBadge.textContent = 'اختياري';
-      notifStatus.textContent = 'لسا ما فعّلتيه. الدوا لاحظ.';
+      notifStatus.textContent = 'لسا ما فعّلتيه. ولا مشكلة أبداً.';
   }
 }
 
@@ -487,7 +380,7 @@ function initNotify(): void {
     await requestPermission();
     notifBtn.disabled = false;
     paintNotify();
-    if (notifyState() === 'granted') say('تمام، صار عندك تنبيه. بس التقويم أضمن 😌');
+    if (notifyState() === 'granted') say('تمام. صار عندك جملة حلوة كل يوم 🤍');
   });
 
   paintNotify();
@@ -505,7 +398,7 @@ function initNotify(): void {
    ========================================================================= */
 
 /**
- * وضعان: ملف محلي (<audio>) أو مشغّل يوتيوب الرسمي — يحدّده وجود الملف وقت البناء.
+ * وضعان: ملف محلي (<audio>) أو مشغّل يوتيوب — يحدّده وجود الملف وقت البناء.
  *
  * التشغيل التلقائي بصوت ممنوع في كل المتصفحات قبل أي تفاعل، فلا نحاول خداعه:
  * نجرّب التشغيل فوراً، وإن رُفض ننتظر أول لمسة/سكرول من رغد فتبدأ عندها.
@@ -523,7 +416,7 @@ function initMusic(): void {
     label.textContent = playing ? 'الأغنية شغالة' : waiting ? 'المسي الشاشة' : 'شغّلي الأغنية';
     toggle.setAttribute(
       'aria-label',
-      playing ? 'إيقاف أغنية جيتني صدفة' : 'تشغيل أغنية جيتني صدفة لأحمد علوي',
+      playing ? 'إيقاف أغنية عيني اليمين' : 'تشغيل أغنية عيني اليمين لحمد العامري',
     );
   };
 
@@ -535,7 +428,7 @@ function initMusic(): void {
     toggle.addEventListener('click', async () => {
       const playing = await handle.toggle();
       setUi(playing);
-      if (playing) say('حطّينا أحمد علوي. الجو صار مناسب لأخذ الدوا 🎶');
+      if (playing) say('حطّينا حمد العامري — عيني اليمين 🎶');
     });
 
     el.addEventListener('play', () => setUi(true));
@@ -563,12 +456,12 @@ function initMusic(): void {
     });
     frame.innerHTML =
       `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?${params}" ` +
-      `title="كل القصايد — مروان خوري" ` +
+      `title="عيني اليمين — حمد العامري" ` +
       `allow="autoplay; encrypted-media; picture-in-picture" ` +
       `allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
     cardEl.hidden = false;
     setUi(true);
-    say('حطّينا مروان خوري. الجو صار مناسب لأخذ الدوا 🎶');
+    say('حطّينا حمد العامري — عيني اليمين 🎶');
   };
 
   const stop = () => {
@@ -613,13 +506,10 @@ function initReveal(): void {
    ========================================================================= */
 
 function boot(): void {
-  // الأزرار
-  for (const btn of $$<HTMLButtonElement>('[data-act]')) {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.act === 'take') takeDose(btn);
-      else if (btn.dataset.act === 'snooze') snooze();
-      else if (btn.dataset.act === 'undo') undo();
-    });
+  dropRetiredKeys();
+
+  for (const btn of $$<HTMLButtonElement>('[data-act="thanks"]')) {
+    btn.addEventListener('click', () => thanks(btn));
   }
 
   initEggs();
@@ -631,7 +521,17 @@ function boot(): void {
   tick();
   window.setInterval(tick, 1000);
 
-  // نبضة ترحيب بعد ما توصل الحبة إلى البطاقة
+  // سلسلة الزيارات — نحكي عنها فقط إذا كانت تستحق
+  const streak = bumpStreak(day.dayKey);
+  scheduleWhisper();
+  if (streak.count > 1) {
+    window.setTimeout(
+      () => say(`${streak.count} أيام ورا بعض وأنتِ عم تفوتي هون. شكراً 🤍`),
+      2600,
+    );
+  }
+
+  // نبضة ترحيب بعد ما يوصل القلب إلى البطاقة
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     window.setTimeout(() => {
       card?.classList.add('is-armed');

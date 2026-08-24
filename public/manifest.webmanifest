@@ -1,7 +1,7 @@
 {
-  "name": "نظام تذكير الدواء — إصدار رغد",
-  "short_name": "دوا رغد",
-  "description": "تذكير رغد بجرعة الساعة 11:00 صباحاً بتوقيت سوريا.",
+  "name": "رغد طابت — الحمد لله",
+  "short_name": "رغد طابت",
+  "description": "ألطف وأجمل صدفة بحياتي — وصارت بخير. عدّاد من يوم الصدفة، وجملة حلوة كل يوم.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
@@ -9,8 +9,8 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f7f4ff",
-  "theme_color": "#6d4aff",
-  "categories": ["health", "lifestyle"],
+  "theme_color": "#ff4d8d",
+  "categories": ["lifestyle", "personalization"],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

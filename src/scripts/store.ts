@@ -1,37 +1,51 @@
 /**
  * store.ts — الحالة المحفوظة محلياً (بدون backend)
  *
- * One record per calendar day. Opening the site on a new day resets
- * everything automatically, because the stored `dayKey` no longer matches.
+ * سجل واحد لكل يوم تقويمي. فتح الموقع في يوم جديد يصفّر كل شيء تلقائياً، لأن
+ * الـ`dayKey` المحفوظ لم يعد يطابق يوم دمشق الحالي.
+ *
+ * لا شيء من هذا يخرج من جهاز رغد: لا سيرفر، لا حساب، لا تتبّع.
  */
 
 import { dayKeyOf, nowMs, wallOf } from './schedule';
 
-const KEY = 'raghd:dose:v1';
-const STREAK_KEY = 'raghd:streak:v1';
+const KEY = 'raghd:grace:v1';
+const STREAK_KEY = 'raghd:visits:v1';
 
 export interface DayState {
-  /** YYYY-MM-DD محلي — إذا اختلف عن اليوم الحالي نبدأ من الصفر */
+  /** YYYY-MM-DD بتوقيت دمشق — إذا اختلف عن اليوم الحالي نبدأ من الصفر */
   dayKey: string;
-  /** هل أُخذت جرعة اليوم؟ */
-  taken: boolean;
-  /** وقت التسجيل (ISO) */
-  takenAt: string | null;
-  /** كم مرة ضغطت "لسا شوي" اليوم */
-  snoozes: number;
-  /** كم مرة نقرت على حبة الدواء (easter egg) */
-  pillTaps: number;
+  /** كم مرة ضغطت «الحمد لله» اليوم */
+  thanks: number;
+  /** كم مرة نقرت على القلب (easter egg) */
+  heartTaps: number;
+  /** هل قرأت جرعة اللطافة اليوم؟ */
+  sweetSeen: boolean;
 }
 
 export interface StreakState {
-  /** عدد الأيام المتتالية */
+  /** عدد الأيام المتتالية التي فتحت فيها الموقع */
   count: number;
   /** آخر يوم مسجّل */
   lastDay: string | null;
 }
 
 function blank(dayKey: string): DayState {
-  return { dayKey, taken: false, takenAt: null, snoozes: 0, pillTaps: 0 };
+  return { dayKey, thanks: 0, heartTaps: 0, sweetSeen: false };
+}
+
+/**
+ * مفاتيح الموقع القديم (تذكير الدوا). لا شيء يقرأها بعد اليوم، لكنها تبقى
+ * معلّقة في متصفح رغد إلى الأبد إن لم نحذفها — فنحذفها مرة واحدة عند الإقلاع.
+ */
+const RETIRED_KEYS = ['raghd:dose:v1', 'raghd:streak:v1', 'raghd:notified:v2'];
+
+export function dropRetiredKeys(): void {
+  try {
+    for (const k of RETIRED_KEYS) localStorage.removeItem(k);
+  } catch {
+    /* وضع التصفح الخاص — لا يوجد ما يُحذف أصلاً */
+  }
 }
 
 /** localStorage يرمي استثناءً في وضع التصفح الخاص — نتعامل معه بهدوء. */
@@ -61,10 +75,9 @@ export function loadDay(): DayState {
 
   return {
     dayKey: today,
-    taken: Boolean(saved.taken),
-    takenAt: typeof saved.takenAt === 'string' ? saved.takenAt : null,
-    snoozes: Number(saved.snoozes) || 0,
-    pillTaps: Number(saved.pillTaps) || 0,
+    thanks: Number(saved.thanks) || 0,
+    heartTaps: Number(saved.heartTaps) || 0,
+    sweetSeen: Boolean(saved.sweetSeen),
   };
 }
 
@@ -78,7 +91,7 @@ export function patchDay(patch: Partial<DayState>): DayState {
   return next;
 }
 
-/* ---- السلسلة: كم يوم متتالي أخذت فيه رغد الدوا ------------------------- */
+/* ---- سلسلة الزيارات: كم يوم متتالي فتحت فيه رغد الموقع ------------------ */
 
 export function loadStreak(): StreakState {
   const saved = safeRead<Partial<StreakState>>(STREAK_KEY);
@@ -89,7 +102,7 @@ export function loadStreak(): StreakState {
 }
 
 /** يزيد السلسلة مرة واحدة فقط لكل يوم. */
-export function bumpStreak(today: string): StreakState {
+export function bumpStreak(today: string = dayKeyOf()): StreakState {
   const s = loadStreak();
   if (s.lastDay === today) return s;
 

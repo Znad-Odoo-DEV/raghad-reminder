@@ -6,16 +6,17 @@
       <stop offset="100%" stop-color="#efe9ff"/>
     </linearGradient>
     <radialGradient id="glowA" cx="50%" cy="50%">
-      <stop offset="0%" stop-color="#6d4aff" stop-opacity=".45"/>
-      <stop offset="100%" stop-color="#6d4aff" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glowB" cx="50%" cy="50%">
-      <stop offset="0%" stop-color="#ff6fb5" stop-opacity=".42"/>
+      <stop offset="0%" stop-color="#ff6fb5" stop-opacity=".48"/>
       <stop offset="100%" stop-color="#ff6fb5" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="pillGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#8b6bff"/>
-      <stop offset="100%" stop-color="#5a34e0"/>
+    <radialGradient id="glowB" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#6d4aff" stop-opacity=".4"/>
+      <stop offset="100%" stop-color="#6d4aff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff8ec7"/>
+      <stop offset="55%" stop-color="#ff4d8d"/>
+      <stop offset="100%" stop-color="#6d4aff"/>
     </linearGradient>
   </defs>
 
@@ -24,15 +25,15 @@
   <circle cx="170" cy="580" r="300" fill="url(#glowB)"/>
 
   <g font-family="'IBM Plex Sans Arabic','Tajawal','Segoe UI',sans-serif" text-anchor="end">
-    <text x="1080" y="212" font-size="34" font-weight="600" fill="#7a72a3">نظام تذكير الدواء — إصدار رغد</text>
-    <text x="1080" y="308" font-size="76" font-weight="700" fill="#171238">رغد، الدوا</text>
-    <text x="1080" y="398" font-size="76" font-weight="700" fill="#6d4aff">ما رح ياخد حاله لحاله.</text>
-    <text x="1080" y="470" font-size="36" font-weight="500" fill="#443c6d">الموعد: 11:00 صباحاً — بلا مفاوضات.</text>
+    <text x="1080" y="200" font-size="34" font-weight="600" fill="#7a72a3">الحمد لله على السلامة</text>
+    <text x="1080" y="300" font-size="80" font-weight="700" fill="#171238">رغد طابت،</text>
+    <text x="1080" y="392" font-size="80" font-weight="700" fill="#d62d78">الحمد لله.</text>
+    <text x="1080" y="462" font-size="34" font-weight="500" fill="#443c6d">ألطف وأجمل صدفة بحياتي — وصارت بخير.</text>
+    <text x="1080" y="512" font-size="30" font-weight="600" fill="#6d4aff" direction="ltr">super special</text>
   </g>
 
-  <g transform="translate(190 300) rotate(-24)">
-    <rect x="-95" y="-42" width="190" height="84" rx="42" fill="url(#pillGrad)"/>
-    <path d="M0 -42h-53a42 42 0 0 0 0 84H0z" fill="#ffffff"/>
-    <ellipse cx="-58" cy="-16" rx="20" ry="11" fill="#f3efff"/>
+  <g transform="translate(196 312) scale(3.5) translate(-32 -28.5)">
+    <path d="M32 53C32 53 4 36.5 4 20.5 4 11.4 11.2 4 20.2 4 25.6 4 30.2 6.9 32 11.2 33.8 6.9 38.4 4 43.8 4 52.8 4 60 11.4 60 20.5 60 36.5 32 53 32 53Z" fill="url(#heartGrad)"/>
+    <ellipse cx="20" cy="17" rx="8" ry="5" fill="#ffffff" opacity=".55" transform="rotate(-24 20 17)"/>
   </g>
 </svg>

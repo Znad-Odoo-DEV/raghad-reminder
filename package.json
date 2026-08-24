@@ -1,9 +1,9 @@
 {
-  "name": "raghd-medication-reminder",
+  "name": "raghd-got-well",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "نظام تذكير رغد بموعد الدواء — 11:00 صباحاً",
+  "description": "رغد طابت، الحمد لله — ألطف وأجمل صدفة، وصارت بخير",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",

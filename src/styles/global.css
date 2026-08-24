@@ -1,5 +1,5 @@
 /* ==========================================================================
-   نظام رغد — Design tokens & base layer
+   رغد طابت — Design tokens & base layer
    ========================================================================== */
 
 :root {
@@ -18,6 +18,7 @@
   --c-violet-wash:   #ece6ff;
 
   --c-pink:          #ff6fb5;
+  --c-pink-deep:     #d62d78;
   --c-pink-wash:     #ffe8f4;
 
   --c-mint:          #12b981;
@@ -32,10 +33,10 @@
   --c-amber-deep:    #b45309;
   --c-amber-wash:    #fff2d9;
 
-  /* ---- Semantic accent (re-pointed per state by [data-phase]) ----------- */
-  --c-accent:        var(--c-violet);
-  --c-accent-deep:   var(--c-violet-deep);
-  --c-accent-wash:   var(--c-violet-wash);
+  /* ---- Semantic accent — لون الموقع الواحد، لا حالات ولا أطوار ---------- */
+  --c-accent:        var(--c-pink);
+  --c-accent-deep:   var(--c-pink-deep);
+  --c-accent-wash:   var(--c-pink-wash);
 
   /* ---- Gradients -------------------------------------------------------- */
   --g-brand: linear-gradient(135deg, var(--c-violet) 0%, var(--c-pink) 100%);
@@ -85,23 +86,6 @@
   --pad-x: clamp(1.15rem, .6rem + 2.6vw, 2.75rem);
 
   color-scheme: light;
-}
-
-/* State-driven accent remap — one swap re-themes the entire page. */
-[data-phase="due"] {
-  --c-accent: var(--c-amber);
-  --c-accent-deep: var(--c-amber-deep);
-  --c-accent-wash: var(--c-amber-wash);
-}
-[data-phase="late"] {
-  --c-accent: var(--c-alert);
-  --c-accent-deep: var(--c-alert-deep);
-  --c-accent-wash: var(--c-alert-wash);
-}
-[data-phase="taken"] {
-  --c-accent: var(--c-mint);
-  --c-accent-deep: var(--c-mint-deep);
-  --c-accent-wash: var(--c-mint-wash);
 }
 
 /* ==========================================================================
@@ -227,7 +211,7 @@ a { color: var(--c-violet-deep); text-underline-offset: .25em; }
 }
 
 /* ==========================================================================
-   Buttons — shared primitive (dose card + reminder card)
+   Buttons — shared primitive (grace card + sweet dose)
    ========================================================================== */
 
 .btn {

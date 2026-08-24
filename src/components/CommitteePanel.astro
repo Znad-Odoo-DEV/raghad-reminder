@@ -1,16 +1,19 @@
 ---
 /**
- * لجنة الدواء العليا — بيضة مخفية + أداة اختبار
+ * لجنة اللطافة العليا — بيضة مخفية + أداة اختبار
  *
- * Hidden until the visitor taps the countdown labels three times (or presses
- * Shift+L). It simulates the clock, which is exactly what you need to test the
- * four states without waiting for 11:00 to come around.
+ * تُفتح بثلاث نقرات على تسمية «يوم» تحت العدّاد، أو بـShift+L. تحاكي الساعة،
+ * وهو ما تحتاجه لاختبار جرعة اللطافة اليومية بلا انتظار حتى الحادية عشرة.
  */
+import { sweetLabelAr } from '../scripts/schedule';
+
+const at = sweetLabelAr();
+
 const shortcuts = [
-  { key: 'before', label: 'قبل الموعد', hint: '10:15 صباحاً' },
-  { key: 'due',    label: 'وقت الموعد', hint: '11:00 تماماً' },
-  { key: 'late',   label: 'متأخرة',     hint: '11:23 صباحاً' },
-  { key: 'verylate', label: 'متأخرة كتير', hint: '1:40 ظهراً' },
+  { key: 'before', label: 'قبل الجرعة',  hint: '10:15 صباحاً' },
+  { key: 'due',    label: 'وقت الجرعة',  hint: `${at} تماماً` },
+  { key: 'after',  label: 'بعد الجرعة',  hint: '1:40 ظهراً' },
+  { key: 'rain',   label: 'مطر لطافة',   hint: 'قلوب وفراشات' },
 ];
 ---
 
@@ -26,7 +29,7 @@ const shortcuts = [
     <header class="committee__head">
       <div>
         <p class="committee__eyebrow">وصول غير مصرّح به… تمّت الموافقة عليه</p>
-        <h2 id="committee-title" class="committee__title">لجنة الدواء العليا 🕵️</h2>
+        <h2 id="committee-title" class="committee__title">لجنة اللطافة العليا 🤍</h2>
       </div>
       <button
         class="committee__x"
@@ -37,14 +40,14 @@ const shortcuts = [
     </header>
 
     <p class="committee__note">
-      من هون منقدر نغيّر الساعة. الدوا ما بيعرف. لا تقوليله.
+      من هون منقدر نغيّر الساعة. اللطافة ما بتتأثر، بس منشوف كيف بيطلع الإشعار.
     </p>
 
     <div class="committee__grid">
       {shortcuts.map((s) => (
         <button class="committee__btn" type="button" data-sim={s.key}>
           <span class="committee__btn-label">{s.label}</span>
-          <span class="committee__btn-hint tnum">{s.hint}</span>
+          <span class="committee__btn-hint">{s.hint}</span>
         </button>
       ))}
     </div>
@@ -156,7 +159,7 @@ const shortcuts = [
   }
   .committee__btn:hover {
     transform: translateY(-2px);
-    border-color: var(--c-violet);
+    border-color: var(--c-pink);
   }
   .committee__btn-label { font-weight: 700; font-size: var(--t-sm); }
   .committee__btn-hint { font-size: var(--t-xs); color: var(--c-ink-faint); }

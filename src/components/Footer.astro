@@ -1,11 +1,12 @@
 ---
 import { ANALYTICS } from '../analytics.config';
+import { FROM, HER } from '../site.config';
 
 const year = new Date().getFullYear();
 
 // label=%20 يجعل الشارة أرقاماً فقط، فنضع نصّنا العربي بجانبها.
 const hitsSrc = ANALYTICS.hitsKey
-  ? `https://hits.sh/${ANALYTICS.hitsKey}.svg?view=today-total&label=%20&color=6d4aff&labelColor=171238&style=flat-square`
+  ? `https://hits.sh/${ANALYTICS.hitsKey}.svg?view=today-total&label=%20&color=ff4d8d&labelColor=171238&style=flat-square`
   : null;
 const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : null;
 ---
@@ -13,20 +14,24 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
 <footer class="foot">
   <div class="wrap foot__inner">
     <p class="foot__line reveal">
-      صُنع خصيصاً لرغد، لأن بعض الناس يحتاجون تذكيراً
-      <span class="foot__em">أكثر من مرة</span> 😂
+      صُنع خصيصاً لـ{HER}، لأنها
+      <span class="foot__em">ألطف وأجمل صدفة</span> صارت بحياتي 🤍
     </p>
 
-    <p class="foot__brand reveal" style="--reveal-delay: 80ms">
-      <button class="foot__pill" type="button" data-foot-egg aria-label="حبة دواء صغيرة">💊</button>
-      <span>Reminder System — Raghd Edition</span>
+    <p class="foot__sign reveal" style="--reveal-delay: 60ms">
+      من {FROM} — والحمد لله إنك بخير.
+    </p>
+
+    <p class="foot__brand reveal" style="--reveal-delay: 110ms">
+      <button class="foot__heart" type="button" data-foot-egg aria-label="قلب صغير">🤍</button>
+      <span>Made for {HER} · super special edition</span>
     </p>
 
     {
       hitsSrc && (
         <a
           class="visits reveal"
-          style="--reveal-delay: 110ms"
+          style="--reveal-delay: 150ms"
           href={hitsPage}
           target="_blank"
           rel="noopener noreferrer"
@@ -39,10 +44,10 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
       )
     }
 
-    <p class="foot__meta reveal" style="--reveal-delay: 140ms">
+    <p class="foot__meta reveal" style="--reveal-delay: 190ms">
       <span class="tnum">{year}</span>
       <span aria-hidden="true">·</span>
-      <span>لا يوجد سيرفر، لا يوجد حساب، لا يوجد مهرب.</span>
+      <span>لا يوجد سيرفر، لا يوجد حساب، ولا شي يطلع من جهازك.</span>
     </p>
   </div>
 </footer>
@@ -75,6 +80,12 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     padding-inline: .1em;
   }
 
+  .foot__sign {
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--c-accent-deep);
+  }
+
   .foot__brand {
     display: inline-flex;
     align-items: center;
@@ -90,13 +101,13 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     direction: ltr;
   }
 
-  .foot__pill {
+  .foot__heart {
     font-size: 1.05rem;
     line-height: 1;
     transition: transform var(--d-fast) var(--e-back);
   }
-  .foot__pill:hover  { transform: rotate(18deg) scale(1.2); }
-  .foot__pill:active { transform: scale(.85); }
+  .foot__heart:hover  { transform: scale(1.25) rotate(-8deg); }
+  .foot__heart:active { transform: scale(.85); }
 
   /* ---- عدّاد الزيارات ---- */
   .visits {

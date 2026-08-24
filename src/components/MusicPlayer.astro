@@ -1,27 +1,22 @@
 ---
 import fs from 'node:fs';
 import path from 'node:path';
+import { SONG } from '../site.config';
 
 /**
- * MusicPlayer — «جيتني صدفة» لأحمد علوي
+ * MusicPlayer — «عيني اليمين» لحمد العامري
  *
- * وضعان، يُختار الوضع وقت البناء:
+ * ثلاثة أوضاع، يُختار الوضع وقت البناء:
  *
  *  1. ملف محلي — إن وُجد `public/music/track.(mp3|m4a|ogg|wav)` نستخدم عنصر
- *     <audio>. هذا هو الوضع الأفضل: صوت خلفية حقيقي، بلا مشغّل مرئي، ويبدأ
- *     لوحده عند أول تفاعل. وهو الوضع الفعلي هنا: الملف مودَع في المستودع.
+ *     <audio>. هذا هو الوضع الفعلي هنا: صوت خلفية حقيقي، بلا مشغّل مرئي،
+ *     ويبدأ لوحده عند أول تفاعل.
  *
- *  2. يوتيوب — إن لم يوجد ملف، نضمّن المشغّل الرسمي. لا نستضيف أي تسجيل
- *     تجاري في المستودع.
+ *  2. يوتيوب — إن لم يوجد ملف وكان `SONG.videoId` مضبوطاً، نضمّن المشغّل
+ *     الرسمي. لا نستضيف أي تسجيل تجاري في المستودع.
  *
- * ⚠️ الاحتياط أدناه ما زال يشير إلى «كل القصايد» لمروان خوري — الأغنية
- * السابقة. لا يظهر إطلاقاً ما دام track.m4a موجوداً، لكنه سيشغّل الأغنية
- * الخطأ إن حُذف الملف. يحتاج معرّف فيديو «جيتني صدفة» من قناة رسمية.
+ *  3. لا شيء — إن لم يوجد ملف ولا معرّف فيديو، لا نرسم زراً معطّلاً.
  */
-
-const VIDEO_ID = 'osCw73O_WMo';
-const TRACK = 'كل القصايد';
-const ARTIST = 'مروان خوري';
 
 const AUDIO_DIR = path.join(process.cwd(), 'public', 'music');
 const EXTS = ['mp3', 'm4a', 'ogg', 'wav'];
@@ -31,48 +26,49 @@ const found = fs.existsSync(AUDIO_DIR)
   : undefined;
 
 const localSrc = found ? `${import.meta.env.BASE_URL}music/${found}` : null;
+const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
 ---
 
-<div class="music" data-music data-mode={localSrc ? 'local' : 'youtube'}>
-  {
-    localSrc && (
-      <audio data-music-audio src={localSrc} loop preload="auto" playsinline></audio>
-    )
-  }
+{
+  mode !== 'none' && (
+    <div class="music" data-music data-mode={mode}>
+      {localSrc && (
+        <audio data-music-audio src={localSrc} loop preload="auto" playsinline></audio>
+      )}
 
-  <!-- ===== الزر ===== -->
-  <button class="music__pill" type="button" data-music-toggle aria-pressed="false">
-    <span class="music__eq" data-music-eq aria-hidden="true">
-      <span></span><span></span><span></span><span></span>
-    </span>
-    <span class="music__note" data-music-note aria-hidden="true">🎵</span>
-    <span class="music__label" data-music-label>شغّلي الأغنية</span>
-  </button>
+      {/* ===== الزر ===== */}
+      <button class="music__pill" type="button" data-music-toggle aria-pressed="false">
+        <span class="music__eq" data-music-eq aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </span>
+        <span class="music__note" data-music-note aria-hidden="true">🎵</span>
+        <span class="music__label" data-music-label>شغّلي الأغنية</span>
+      </button>
 
-  <!-- ===== بطاقة يوتيوب (وضع الاحتياط فقط) ===== -->
-  {
-    !localSrc && (
-      <div class="music__card" data-music-card hidden>
-        <div class="music__head">
-          <div class="music__meta">
-            <p class="music__track">{TRACK}</p>
-            <p class="music__artist">{ARTIST}</p>
+      {/* ===== بطاقة يوتيوب (وضع الاحتياط فقط) ===== */}
+      {mode === 'youtube' && (
+        <div class="music__card" data-music-card hidden>
+          <div class="music__head">
+            <div class="music__meta">
+              <p class="music__track">{SONG.track}</p>
+              <p class="music__artist">{SONG.artist}</p>
+            </div>
+            <button
+              class="music__close"
+              type="button"
+              data-music-close
+              aria-label="إيقاف الأغنية"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            class="music__close"
-            type="button"
-            data-music-close
-            aria-label="إيقاف الأغنية"
-          >
-            ✕
-          </button>
+          <div class="music__frame" data-music-frame data-video={SONG.videoId} />
+          <p class="music__credit">من القناة الرسمية 🤍</p>
         </div>
-        <div class="music__frame" data-music-frame data-video={VIDEO_ID} />
-        <p class="music__credit">من القناة الرسمية 💜</p>
-      </div>
-    )
-  }
-</div>
+      )}
+    </div>
+  )
+}
 
 <style>
   .music {
@@ -151,8 +147,8 @@ const localSrc = found ? `${import.meta.env.BASE_URL}music/${found}` : null;
   .music.is-playing .music__note { display: none; }
   .music.is-playing .music__eq { display: flex; }
   .music.is-playing .music__pill {
-    background: linear-gradient(135deg, rgba(109, 74, 255, .14), rgba(255, 111, 181, .14)), rgba(255,255,255,.86);
-    border-color: rgba(109, 74, 255, .3);
+    background: linear-gradient(135deg, rgba(255, 111, 181, .16), rgba(109, 74, 255, .14)), rgba(255,255,255,.86);
+    border-color: rgba(255, 77, 141, .3);
   }
 
   /* حالة "بانتظار أول لمسة" — نبضة خفيفة تلمّح أن في شي جاهز */
@@ -161,7 +157,7 @@ const localSrc = found ? `${import.meta.env.BASE_URL}music/${found}` : null;
   }
   @keyframes waiting {
     0%, 100% { box-shadow: var(--sh-md); }
-    50%      { box-shadow: var(--sh-md), 0 0 0 6px rgba(109, 74, 255, .12); }
+    50%      { box-shadow: var(--sh-md), 0 0 0 6px rgba(255, 77, 141, .14); }
   }
 
   /* ---- بطاقة يوتيوب ---- */

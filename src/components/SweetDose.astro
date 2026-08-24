@@ -1,41 +1,44 @@
 ---
-const WA = 'https://wa.me/971525691003?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20%D8%A5%D8%A8%D8%B1%D8%A7%D9%87%D9%8A%D9%85%D8%8C%20%D8%A8%D8%AE%D8%B5%D9%88%D8%B5%20%D8%A5%D8%B4%D8%B9%D8%A7%D8%B1%D8%A7%D8%AA%20%D9%85%D9%88%D9%82%D8%B9%20%D8%A7%D9%84%D8%AF%D9%88%D8%A7%20%F0%9F%92%8A';
+import { FROM } from '../site.config';
+import { sweetLabelAr } from '../scripts/schedule';
+
+const WA = 'https://wa.me/971525691003?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20%D8%A5%D8%A8%D8%B1%D8%A7%D9%87%D9%8A%D9%85%20%F0%9F%A4%8D';
 const IG = 'https://www.instagram.com/znad_0';
-const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
+const icsHref = `${import.meta.env.BASE_URL}raghd-sweet.ics`;
+const at = sweetLabelAr();
 ---
 
-<section class="remind section" id="remind" aria-labelledby="remind-heading">
+<section class="sweet section" id="sweet" aria-labelledby="sweet-heading">
   <div class="wrap">
-    <div class="remind__head reveal">
-      <p class="eyebrow">قسم الإزعاج المنظّم</p>
-      <h2 id="remind-heading" class="remind__title">
-        منرنّ عليكِ. <span class="gradient-text">كل يوم.</span> بلا ملل.
+    <div class="sweet__head reveal">
+      <p class="eyebrow">جرعة اللطافة اليومية</p>
+      <h2 id="sweet-heading" class="sweet__title">
+        منرنّ عليكِ. <span class="gradient-text">كل يوم.</span> بجملة حلوة.
       </h2>
-      <p class="remind__lead">
-        ست رنّات من 10:55 لـ11:00. بتوصلك وأنتِ بالإنستغرام، وحتى والموبايل نايم 😴
+      <p class="sweet__lead">
+        رسالة وحدة، الساعة {at} بتوقيت سوريا. مو إلحاح ولا مواعيد — بس تذكير
+        إنك بخير، وإنك super special 🤍
       </p>
     </div>
 
-    <div class="remind__grid">
+    <div class="sweet__grid">
       <!-- ============ الخيار الأول: التقويم ============ -->
       <article class="opt opt--primary reveal">
         <div class="opt__top">
           <span class="opt__icon" aria-hidden="true">📅</span>
-          <span class="opt__badge">الخيار الجدّي</span>
+          <span class="opt__badge">الخيار الأضمن</span>
         </div>
 
-        <h3 class="opt__title">ضيفيه على تقويم الموبايل</h3>
+        <h3 class="opt__title">ضيفيها على تقويم الموبايل</h3>
         <p class="opt__body">
-          هون <b>الموبايل نفسه</b> بيصير هو اللي يذكّرك، مو المتصفح. يعني بيوصلك
-          وأنتِ بالإنستغرام، أو والشاشة مطفية، أو والنت مقطوع. ما في مهرب —
-          بس بشكل لطيف 😌
-          <br />بيبلّش <b>10:55</b> وبيرنّ <b>كل دقيقة</b> لـ<b>11:00</b> بتوقيت سوريا.
-          ست تذكيرات، كل يوم.
-          <br /><b>بتضيفيه مرة وحدة وبتنسيه</b> — وهو ما بينسى.
+          هون <b>الموبايل نفسه</b> يلي يذكّرك، مو المتصفح. يعني بتوصلك وأنتِ
+          بالإنستغرام، أو والشاشة مطفية، أو والنت مقطوع.
+          <br />جملة وحدة كل يوم الساعة <b>{at}</b>. ولا شي غيرها.
+          <br /><b>بتضيفيها مرة وحدة وبتنسيها</b> — وهي ما تنساك.
         </p>
 
-        <a class="btn btn--primary" href={icsHref} download="raghd-dose.ics" data-ics>
-          حمّليه وخلصينا 🔔
+        <a class="btn btn--primary" href={icsHref} download="raghd-sweet.ics" data-ics>
+          حمّليها 🤍
         </a>
 
         <p class="opt__hint">
@@ -53,7 +56,7 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
 
         <h3 class="opt__title">تنبيه من المتصفح</h3>
         <p class="opt__body">
-          نفس الرنّات بالضبط، بس هاد <b>دلّوع</b>: بيشتغل إذا الصفحة مفتوحة ولو
+          نفس الجملة بالضبط، بس هاد <b>دلّوع</b>: بيشتغل إذا الصفحة مفتوحة ولو
           بالخلفية. سكّرتي المتصفح؟ بينام معه 😴
           <br />عشان هيك التقويم هو الأساس، وهاد بس مساعد.
         </p>
@@ -63,37 +66,36 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
         </button>
 
         <p class="opt__hint" data-notif-status role="status">
-          لسا ما فعّلتيه. الدوا لاحظ.
+          لسا ما فعّلتيه. ولا مشكلة أبداً.
         </p>
       </article>
     </div>
 
     <!-- ============ إضافة للشاشة الرئيسية ============ -->
-    <p class="remind__foot reveal" style="--reveal-delay: 200ms">
+    <p class="sweet__foot reveal" style="--reveal-delay: 200ms">
       <span aria-hidden="true">📲</span>
       وإذا بدك تكرّمينا: ضيفي الموقع للشاشة الرئيسية من قائمة المتصفح. بيصير
-      له أيقونة وبيفتح متل تطبيق حقيقي — تطبيق وظيفته الوحيدة بالحياة تذكيرك
-      بالدوا. طموح، صح؟
+      له أيقونة وبيفتح متل تطبيق حقيقي — تطبيق وظيفته الوحيدة بالحياة إنه
+      يقول «الحمد لله إنك بخير». طموح، صح؟
     </p>
 
-    <!-- ============ إلغاء الإشعارات ============ -->
-    <aside class="cancel reveal" style="--reveal-delay: 260ms" aria-labelledby="cancel-heading">
-      <div class="cancel__text">
-        <h3 id="cancel-heading" class="cancel__title">
-          <span aria-hidden="true">ℹ️</span> بالذمة، شو رح يصير؟
+    <!-- ============ التواصل ============ -->
+    <aside class="reach reveal" style="--reveal-delay: 260ms" aria-labelledby="reach-heading">
+      <div class="reach__text">
+        <h3 id="reach-heading" class="reach__title">
+          <span aria-hidden="true">🤍</span> بالذمة، شو رح يصير؟
         </h3>
-        <p class="cancel__body">
-          منبعت إشعار <b>كل دقيقة</b>، منبلّش <b>قبل الموعد بخمس دقايق</b>
-          ومنوقف الساعة <b>11:00</b>. وإذا ضغطتي «أخذت الدوا» منسكت فوراً —
-          وعد شرف 🤝
+        <p class="reach__body">
+          <b>إشعار واحد باليوم</b>، الساعة <b>{at}</b>، وبكلمتين حلوين. ما في
+          إلحاح، ما في تكرار، ولا في موعد لازم تلحقيه — خلص، الحمد لله.
         </p>
-        <p class="cancel__body">
-          تعبتي منّا؟ بدك تلغي الإشعارات أو تغيّري الموعد؟
-          كل الشكاوى بتروح لـ<b>إبراهيم</b> 👇
+        <p class="reach__body">
+          تعبتي منّا؟ بدك تلغي الإشعارات أو تغيّري الموعد؟ أو بس بدك تحكي؟
+          كل شي بيروح لـ<b>{FROM}</b> 👇
         </p>
       </div>
 
-      <div class="cancel__actions">
+      <div class="reach__actions">
         <a
           class="chan chan--wa"
           href={WA}
@@ -126,22 +128,22 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
 </section>
 
 <style>
-  .remind__head {
-    max-width: 44ch;
+  .sweet__head {
+    max-width: 46ch;
     margin-inline: auto;
     text-align: center;
     margin-block-end: clamp(1.75rem, 1.1rem + 2.2vw, 3rem);
   }
 
-  .remind__title {
+  .sweet__title {
     font-size: var(--t-h2);
     letter-spacing: -.03em;
     margin-block: var(--s-3) var(--s-3);
   }
 
-  .remind__lead { color: var(--c-ink-soft); }
+  .sweet__lead { color: var(--c-ink-soft); }
 
-  .remind__grid {
+  .sweet__grid {
     display: grid;
     gap: clamp(.8rem, .6rem + 1vw, 1.25rem);
     grid-template-columns: 1fr;
@@ -149,7 +151,7 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
   }
 
   @media (min-width: 820px) {
-    .remind__grid { grid-template-columns: 1fr 1fr; }
+    .sweet__grid { grid-template-columns: 1fr 1fr; }
   }
 
   /* ---- البطاقة ---- */
@@ -169,8 +171,8 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
   .opt:hover { transform: translateY(-3px); box-shadow: var(--sh-md); }
 
   .opt--primary {
-    border-color: color-mix(in srgb, var(--c-violet) 26%, transparent);
-    box-shadow: var(--sh-md), 0 0 0 4px rgba(109, 74, 255, .07);
+    border-color: color-mix(in srgb, var(--c-pink) 30%, transparent);
+    box-shadow: var(--sh-md), 0 0 0 4px rgba(255, 111, 181, .09);
   }
 
   .opt__top {
@@ -184,7 +186,7 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
     place-items: center;
     width: 44px; height: 44px;
     border-radius: var(--r-sm);
-    background: var(--c-violet-wash);
+    background: var(--c-pink-wash);
     font-size: 1.3rem;
     line-height: 1;
   }
@@ -193,7 +195,7 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
     margin-inline-start: auto;
     padding: .28rem .7rem;
     border-radius: var(--r-pill);
-    background: var(--c-violet);
+    background: var(--c-pink);
     color: #fff;
     font-size: var(--t-xs);
     font-weight: 700;
@@ -238,8 +240,8 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
   }
   .opt__hint b { color: var(--c-ink-soft); }
 
-  /* ---- إلغاء الإشعارات ---- */
-  .cancel {
+  /* ---- التواصل ---- */
+  .reach {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -248,28 +250,28 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
     margin: var(--s-4) auto 0;
     padding: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
     border-radius: var(--r-lg);
-    background: linear-gradient(135deg, rgba(109, 74, 255, .07), rgba(255, 111, 181, .07));
-    border: 1px solid rgba(109, 74, 255, .16);
+    background: linear-gradient(135deg, rgba(255, 111, 181, .09), rgba(109, 74, 255, .07));
+    border: 1px solid rgba(255, 111, 181, .2);
   }
 
-  .cancel__text { flex: 1 1 300px; }
+  .reach__text { flex: 1 1 300px; }
 
-  .cancel__title {
+  .reach__title {
     font-size: 1.02rem;
     font-weight: 700;
     letter-spacing: -.015em;
     margin-block-end: .45rem;
   }
 
-  .cancel__body {
+  .reach__body {
     font-size: var(--t-sm);
     color: var(--c-ink-soft);
     line-height: 1.8;
   }
-  .cancel__body + .cancel__body { margin-block-start: .5rem; }
-  .cancel__body b { color: var(--c-ink); font-weight: 700; }
+  .reach__body + .reach__body { margin-block-start: .5rem; }
+  .reach__body b { color: var(--c-ink); font-weight: 700; }
 
-  .cancel__actions {
+  .reach__actions {
     display: flex;
     flex-wrap: wrap;
     gap: .6rem;
@@ -306,11 +308,11 @@ const icsHref = `${import.meta.env.BASE_URL}raghd-dose.ics`;
   }
 
   @media (max-width: 560px) {
-    .cancel__actions { width: 100%; }
+    .reach__actions { width: 100%; }
     .chan { flex: 1; }
   }
 
-  .remind__foot {
+  .sweet__foot {
     max-width: 56ch;
     margin: var(--s-6) auto 0;
     padding: var(--s-4) var(--s-5);

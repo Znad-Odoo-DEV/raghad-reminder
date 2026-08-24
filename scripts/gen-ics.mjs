@@ -1,8 +1,12 @@
 /**
- * Builds public/raghd-dose.ics — a daily 11:00 Asia/Damascus reminder that the
+ * Builds public/raghd-sweet.ics — a daily 11:00 Asia/Damascus reminder that the
  * phone's own calendar fires, with no server and no browser involved.
  *
  * Run with: node scripts/gen-ics.mjs
+ *
+ * كان هذا الملف ينبّه ست مرات متصاعدة على موعد الدوا. صار تنبيهاً واحداً
+ * لطيفاً: الموقع تحوّل من تذكير بالجرعة إلى رسالة فرح، وستّ رنّات لا تناسب
+ * جملة حلوة.
  *
  * RFC 5545 details that matter:
  *  - lines MUST be CRLF-terminated
@@ -12,14 +16,15 @@
 import { writeFileSync } from 'node:fs';
 
 const URL_SITE = 'https://znad-odoo-dev.github.io/raghad-reminder/';
+const OUT = 'public/raghd-sweet.ics';
 
 const lines = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
-  'PRODID:-//Raghd Reminder//Daily Dose//AR',
+  'PRODID:-//Raghd//Daily Sweet Dose//AR',
   'CALSCALE:GREGORIAN',
   'METHOD:PUBLISH',
-  'X-WR-CALNAME:دوا رغد 💊',
+  'X-WR-CALNAME:جرعة اللطافة اليومية 🤍',
   'X-WR-TIMEZONE:Asia/Damascus',
 
   // سوريا ألغت التوقيت الصيفي في 2022-10-28 وثبتت على +03.
@@ -34,31 +39,24 @@ const lines = [
   'END:VTIMEZONE',
 
   'BEGIN:VEVENT',
-  'UID:raghd-daily-dose@znad-odoo-dev.github.io',
-  'DTSTAMP:20260820T000000Z',
+  // UID جديد عن ملف الدوا القديم عن قصد: لو حمل أحدهم الملفين، لا نريد أن
+  // يستبدل التقويم أحدهما بالآخر بصمت.
+  'UID:raghd-daily-sweet@znad-odoo-dev.github.io',
+  'DTSTAMP:20260824T000000Z',
   'DTSTART;TZID=Asia/Damascus:20260101T110000',
-  'DURATION:PT10M',
+  'DURATION:PT5M',
   'RRULE:FREQ=DAILY',
-  'SUMMARY:💊 وقت الدوا يا رغد',
-  'DESCRIPTION:الساعة 11:00. الدوا عم يستنى. بلا مفاوضات.',
+  'SUMMARY:🤍 جرعة اللطافة اليومية',
+  'DESCRIPTION:تذكير إنك بخير، وإنك super special. الحمد لله 🤍',
   `URL:${URL_SITE}`,
   'TRANSP:TRANSPARENT',
 
-  // تنبيه كل دقيقة من (الموعد − 5 دقائق) حتى الموعد نفسه.
-  // ننشئ منبّهاً مستقلاً لكل دقيقة بدل REPEAT/DURATION، لأن دعم REPEAT
-  // متفاوت بين تقويم آبل وتقويم Google، أما المنبّهات المنفصلة فمدعومة عند الجميع.
-  ...[5, 4, 3, 2, 1, 0].flatMap((minsBefore) => [
-    'BEGIN:VALARM',
-    'ACTION:DISPLAY',
-    minsBefore === 0 ? 'TRIGGER:PT0S' : `TRIGGER:-PT${minsBefore}M`,
-    'DESCRIPTION:' + (
-      minsBefore === 0 ? '💊 وقت الدوا يا رغد'
-      : minsBefore === 1 ? '💊 باقي دقيقة وحدة على الدوا'
-      : minsBefore === 2 ? '💊 باقي دقيقتين على الدوا'
-      : `💊 باقي ${minsBefore} دقايق على الدوا`
-    ),
-    'END:VALARM',
-  ]),
+  // منبّه واحد، في وقته بالضبط.
+  'BEGIN:VALARM',
+  'ACTION:DISPLAY',
+  'TRIGGER:PT0S',
+  'DESCRIPTION:🤍 صباح الخير يا ألطف صدفة. تضلي بخير.',
+  'END:VALARM',
 
   'END:VEVENT',
   'END:VCALENDAR',
@@ -87,9 +85,9 @@ function fold(line) {
 
 const folded = lines.flatMap(fold);
 const ics = folded.join('\r\n') + '\r\n';
-writeFileSync('public/raghd-dose.ics', ics, 'utf8');
+writeFileSync(OUT, ics, 'utf8');
 
 const over = folded.filter((l) => enc.encode(l).length > 75);
-console.log(`public/raghd-dose.ics  ${folded.length} lines, ${enc.encode(ics).length} bytes`);
+console.log(`${OUT}  ${folded.length} lines, ${enc.encode(ics).length} bytes`);
 console.log(`CRLF: ${ics.includes('\r\n') && !/[^\r]\n/.test(ics) ? 'ok' : 'BROKEN'}`);
 console.log(`lines over 75 octets: ${over.length === 0 ? 'none' : over.join(' | ')}`);

@@ -35,8 +35,10 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
     <link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
     <link rel="manifest" href={asset('manifest.webmanifest')} />
+    {/* الاسم القياسي أولاً؛ نسخة آبل مهجورة لكنها لازمة لإصدارات iOS الأقدم. */}
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="دوا رغد" />
+    <meta name="apple-mobile-web-app-title" content="رغد طابت" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="canonical" href={Astro.url.href} />
 
@@ -70,7 +72,7 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
     }
   </head>
 
-  <body data-phase="before">
+  <body>
     <a class="skip-link" href="#main">تخطَّ إلى المحتوى</a>
 
     <!-- خلفية زخرفية: طبقات متدرّجة خفيفة، بدون صور -->
@@ -112,13 +114,13 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
   .blob--1 {
     width: 46vmax; height: 46vmax;
     inset-block-start: -16vmax; inset-inline-end: -12vmax;
-    background: radial-gradient(circle, rgba(109, 74, 255, .5), transparent 68%);
+    background: radial-gradient(circle, rgba(255, 111, 181, .5), transparent 68%);
     animation: drift-a 26s var(--e-soft) infinite alternate;
   }
   .blob--2 {
     width: 40vmax; height: 40vmax;
     inset-block-end: -14vmax; inset-inline-start: -10vmax;
-    background: radial-gradient(circle, rgba(255, 111, 181, .48), transparent 68%);
+    background: radial-gradient(circle, rgba(109, 74, 255, .44), transparent 68%);
     animation: drift-b 32s var(--e-soft) infinite alternate;
   }
   .blob--3 {
@@ -140,13 +142,6 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
     mask-image: radial-gradient(78% 62% at 50% 34%, #000 0%, transparent 78%);
     -webkit-mask-image: radial-gradient(78% 62% at 50% 34%, #000 0%, transparent 78%);
   }
-
-  /* الخلفية تتفاعل مع حالة الصفحة */
-  [data-phase="late"] .blob--1 { background: radial-gradient(circle, rgba(255, 77, 109, .5), transparent 68%); }
-  [data-phase="late"] .blob--2 { background: radial-gradient(circle, rgba(245, 158, 11, .42), transparent 68%); }
-  [data-phase="due"]  .blob--1 { background: radial-gradient(circle, rgba(245, 158, 11, .48), transparent 68%); }
-  [data-phase="taken"] .blob--1 { background: radial-gradient(circle, rgba(18, 185, 129, .46), transparent 68%); }
-  [data-phase="taken"] .blob--2 { background: radial-gradient(circle, rgba(109, 74, 255, .34), transparent 68%); }
 
   @keyframes drift-a {
     to { transform: translate3d(-6vmax, 5vmax, 0) scale(1.14); }
