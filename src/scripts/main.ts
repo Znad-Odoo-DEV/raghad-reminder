@@ -656,8 +656,32 @@ function initPanel(): void {
    الإقلاع
    ========================================================================= */
 
+/**
+ * إعادة تحميل مرة واحدة حين يستلم عامل خدمة جديد.
+ *
+ * بدونها تبقى الصفحة المفتوحة على الشيفرة القديمة حتى بعد أن يُثبَّت الإصدار
+ * الجديد ويطالب بالسيطرة. الحارس في `sessionStorage` يمنع حلقة إعادة تحميل لو
+ * تكرّر الحدث لأي سبب.
+ */
+function reloadOnNewWorker(): void {
+  if (!('serviceWorker' in navigator)) return;
+  const GUARD = 'raghd:reloaded:v1';
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    try {
+      if (sessionStorage.getItem(GUARD) === '1') return;
+      sessionStorage.setItem(GUARD, '1');
+    } catch {
+      /* بلا تخزين لا حارس — نكتفي بعدم إعادة التحميل */
+      return;
+    }
+    location.reload();
+  });
+}
+
 function boot(): void {
   dropRetiredKeys();
+  reloadOnNewWorker();
 
   for (const b of $$('[data-open]')) b.addEventListener('click', () => openEnvelope(b));
   for (const b of $$('[data-next]')) b.addEventListener('click', advance);

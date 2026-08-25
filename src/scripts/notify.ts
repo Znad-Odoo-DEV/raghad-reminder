@@ -46,9 +46,14 @@ export function state(): NotifyState {
 export async function registerWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator) || !window.isSecureContext) return null;
   try {
+    // `updateViaCache: 'none'` يمنع قراءة سكربت العامل نفسه من كاش HTTP.
+    // بدونه قد لا يرى المتصفّح إصداراً جديداً من العامل أصلاً، فيبقى يخدم
+    // نسخة قديمة من الموقع.
     swReg = await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
       scope: import.meta.env.BASE_URL,
+      updateViaCache: 'none',
     });
+    void swReg.update();
     return swReg;
   } catch {
     return null;

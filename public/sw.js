@@ -12,11 +12,11 @@
  * (cache-first)، وكل ما عداها network-first حتى لا تعلق نسخة قديمة أبداً.
  */
 
-// v9: العدّاد صار بالأيام، ونصّه تغيّر.
+// v10: التنقّل يتجاوز كاش المتصفّح، فتصل آخر نسخة عند كل فتح.
 //
 // القاعدة: كل تغيير في الهيكل المخزَّن يرفع هذا الرقم. نسيانه يعني أن متصفّحاً
 // زار الموقع من قبل يبقى على النسخة القديمة.
-const VERSION = 'raghd-v9';
+const VERSION = 'raghd-v10';
 const CACHE = `raghd-${VERSION}`;
 
 /** جذر التطبيق — يصح في "/" وفي "/raghad-reminder/" على السواء. */
@@ -67,6 +67,33 @@ self.addEventListener('fetch', (event) => {
             return res;
           }),
       ),
+    );
+    return;
+  }
+
+  /**
+   * التنقّل: اطلب الشبكة متجاوزاً كاش المتصفّح.
+   *
+   * `network-first` وحده لا يكفي: طلب الشبكة نفسه قد يُخدَم من كاش HTTP
+   * (‎max-age=600‎ على GitHub Pages)، فتصل صفحة قديمة رغم أننا "ذهبنا للشبكة".
+   * `cache: 'reload'` يفرض طلباً حقيقياً.
+   */
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(request.url, { cache: 'reload' });
+          if (fresh.ok) {
+            const copy = fresh.clone();
+            caches.open(CACHE).then((c) => c.put(BASE, copy));
+          }
+          return fresh;
+        } catch {
+          const shell = await caches.match(BASE);
+          if (shell) return shell;
+          throw new Error('offline and not cached');
+        }
+      })(),
     );
     return;
   }
