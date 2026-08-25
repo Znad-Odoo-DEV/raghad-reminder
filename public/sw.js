@@ -2,18 +2,19 @@
 /**
  * sw.js — عامل الخدمة
  *
- * يخدم غرضين:
- *  1. إظهار التنبيهات — على أندرويد/كروم لا يعمل `new Notification()` إطلاقاً،
- *     والطريق الوحيد هو registration.showNotification() من هنا.
- *  2. تشغيل الموقع بدون إنترنت بعد أول زيارة.
+ * يخدم ثلاثة أغراض:
+ *  1. استقبال Web Push — هذا هو الطريق الوحيد لإشعار يصل والمتصفّح مغلق تماماً.
+ *  2. إظهار التنبيهات المحلية — على أندرويد/كروم لا يعمل `new Notification()`
+ *     إطلاقاً، والطريق الوحيد هو registration.showNotification() من هنا.
+ *  3. تشغيل الموقع بدون إنترنت بعد أول زيارة.
  *
  * سياسة التخزين: ملفات _astro تحمل بصمة في اسمها فهي ثابتة إلى الأبد
  * (cache-first)، وكل ما عداها network-first حتى لا تعلق نسخة قديمة أبداً.
  */
 
-// v4: الموقع صار ترقّب مفاجأة. رفع الرقم يمسح كل نسخة مخزّنة من أي إصدار
-// سابق عند أول زيارة، فلا ترى رغد صفحة قديمة من الذاكرة.
-const VERSION = 'raghd-v4';
+// v5: أُضيف Web Push. رفع الرقم يمسح كل نسخة مخزّنة من أي إصدار سابق عند أول
+// زيارة، فلا ترى رغد صفحة قديمة من الذاكرة.
+const VERSION = 'raghd-v5';
 const CACHE = `raghd-${VERSION}`;
 
 /** جذر التطبيق — يصح في "/" وفي "/raghad-reminder/" على السواء. */
@@ -91,16 +92,56 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+/**
+ * وصول دفعة Push.
+ *
+ * المواصفة تُلزم بإظهار إشعار مرئي عند كل دفعة (`userVisibleOnly`)، وإلا عاقب
+ * المتصفح الموقع وألغى اشتراكه. لذلك نُظهر إشعاراً في كل الحالات — حتى لو جاءت
+ * الحمولة فارغة أو غير صالحة، فلها نصّ احتياطي.
+ */
+self.addEventListener('push', (event) => {
+  const fallback = {
+    title: 'رغد 🤍',
+    body: 'في مفاجأة عم تتحضر على نار هادية',
+    url: BASE,
+  };
+
+  let data = fallback;
+  if (event.data) {
+    try {
+      data = { ...fallback, ...event.data.json() };
+    } catch {
+      // حمولة نصّية لا JSON — نعتبرها جسم الإشعار
+      data = { ...fallback, body: event.data.text() || fallback.body };
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: `${BASE}icon-192.png`,
+      badge: `${BASE}icon-192.png`,
+      lang: 'ar',
+      dir: 'rtl',
+      tag: data.tag || 'raghd-push',
+      renotify: true,
+      data: { url: data.url || BASE },
+    }),
+  );
+});
+
 /** النقر على التنبيه يفتح الموقع أو يركّز التبويب المفتوح. */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const target = event.notification.data?.url || BASE;
+
   event.waitUntil(
     (async () => {
       const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const client of all) {
         if (client.url.startsWith(BASE) && 'focus' in client) return client.focus();
       }
-      return self.clients.openWindow(BASE);
+      return self.clients.openWindow(target);
     })(),
   );
 });

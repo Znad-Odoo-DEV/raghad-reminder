@@ -1,0 +1,16 @@
+name = "raghd-push"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# مساحة تخزين اشتراك رغد. أنشئها مرة واحدة بـ:
+#   npx wrangler kv namespace create SUBS
+# ثم ضع المعرّف الذي يطبعه مكان PUT_KV_ID_HERE.
+[[kv_namespaces]]
+binding = "SUBS"
+id = "PUT_KV_ID_HERE"
+
+[vars]
+ALLOWED_ORIGIN = "https://znad-odoo-dev.github.io"
+
+# ADMIN_TOKEN ليس هنا عمداً — يُضبط كسرّ:
+#   npx wrangler secret put ADMIN_TOKEN

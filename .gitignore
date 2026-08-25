@@ -12,3 +12,11 @@ dist/
 public/music/*.mp3
 public/music/*.ogg
 public/music/*.wav
+
+# مفاتيح VAPID — المفتاح الخاص لا يُودَع أبداً
+.vapid.json
+
+# Worker
+push-worker/node_modules/
+push-worker/.wrangler/
+push-worker/.dev.vars

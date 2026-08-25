@@ -54,6 +54,22 @@ export const SURPRISE = {
   footnote: '',
 } as const;
 
+/**
+ * Web Push — الإشعار الذي يصل والمتصفّح مغلق تماماً
+ *
+ * المفتاح العام يُشحن مع الصفحة عمداً؛ هو ليس سرّاً، ولا يصلح لإرسال أي شيء
+ * وحده. السرّ هو المفتاح الخاص، وهو محفوظ في أسرار المستودع (`VAPID_PRIVATE_KEY`)
+ * ولا يوجد في أي ملف هنا.
+ *
+ * `endpoint` هو عنوان الـWorker الذي يستقبل اشتراك رغد ويخزّنه. ما دام فارغاً،
+ * لا يُطلب اشتراك Push إطلاقاً ويبقى الإشعار اليومي محلياً فقط — فيعمل الموقع
+ * كما هو بلا أعطال حتى يُنشر الـWorker.
+ */
+export const PUSH = {
+  publicKey: 'BEN4ah0KM0YmbXjwz6EMi9gBeolZiTYTL2d6MrstTmXRYDlHid-A9poYACkbeBByBMuQR8cSutjhcDuMNjR3sIY',
+  endpoint: '',
+} as const;
+
 /** الأغنية التي تشتغل بالخلفية. */
 export const SONG = {
   track: 'عيني اليمين',

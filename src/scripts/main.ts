@@ -42,6 +42,7 @@ import {
 } from './copy';
 
 import { burst, heartRain, butterflies } from './celebrate';
+import { pushConfigured, pushSupported, subscribe as pushSubscribe } from './push';
 import { initAudio } from './music';
 
 import {
@@ -406,7 +407,9 @@ function paintNotify(): void {
       notifBtn.dataset.notifTest = '1';
       notifBadge.classList.add('opt__badge--on');
       notifBadge.textContent = 'مفعّل ✓';
-      notifStatus.textContent = 'صرنا رسميين 🤝 جملة وحدة كل يوم — طالما الصفحة مفتوحة.';
+      notifStatus.textContent = pushConfigured()
+        ? 'صرنا رسميين 🤝 بتوصلك حتى والمتصفح مسكّر.'
+        : 'صرنا رسميين 🤝 جملة وحدة كل يوم — طالما الصفحة مفتوحة.';
       break;
     case 'denied':
       notifBtn.hidden = true;
@@ -423,6 +426,19 @@ function paintNotify(): void {
   }
 }
 
+/**
+ * يسجّل اشتراك Web Push إن كان مضبوطاً.
+ *
+ * الاشتراك هو ما يجعل الإشعار يصل والمتصفّح مغلق تماماً؛ بدونه يبقى الإشعار
+ * محلياً لا يعمل إلا والصفحة مفتوحة. نستدعيه بعد منح الإذن وعند كل إقلاع، لأن
+ * خدمات الدفع تدوّر العناوين أحياناً فيلزم إعادة التسليم.
+ */
+async function armPush(reg: ServiceWorkerRegistration | null): Promise<void> {
+  if (!reg || !pushSupported() || !pushConfigured()) return;
+  if (notifyState() !== 'granted') return;
+  await pushSubscribe(reg);
+}
+
 function initNotify(): void {
   if (!notifBtn) return;
 
@@ -433,17 +449,26 @@ function initNotify(): void {
     }
     notifBtn.disabled = true;
     await requestPermission();
+    const reg = await registerWorker();
+    await armPush(reg);
     notifBtn.disabled = false;
     paintNotify();
-    if (notifyState() === 'granted') say('تمام. صار عندك جملة حلوة كل يوم 🤍');
+    if (notifyState() === 'granted') {
+      say(
+        pushConfigured()
+          ? 'تمام. صار فيني رنّ عليكِ حتى والموبايل مقفول 🤍'
+          : 'تمام. صار عندك جملة حلوة كل يوم 🤍',
+      );
+    }
   });
 
   paintNotify();
 
   if (notifySupported()) {
-    void registerWorker().then(() => {
+    void registerWorker().then((reg) => {
       scheduleNotify();
       initResync();
+      void armPush(reg);
     });
   }
 }

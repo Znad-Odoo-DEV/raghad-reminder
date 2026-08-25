@@ -1,11 +1,15 @@
 ---
-import { FROM } from '../site.config';
+import { FROM, PUSH } from '../site.config';
 import { sweetLabelAr } from '../scripts/schedule';
 
 const WA = 'https://wa.me/971525691003?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20%D8%A5%D8%A8%D8%B1%D8%A7%D9%87%D9%8A%D9%85%20%F0%9F%A4%8D';
 const IG = 'https://www.instagram.com/znad_0';
 const icsHref = `${import.meta.env.BASE_URL}raghd-daily.ics`;
 const at = sweetLabelAr();
+
+// Web Push يغيّر ما يستطيعه هذا الخيار جذرياً، فالنص يتبع الواقع لا الأمنية:
+// بلا Worker مضبوط يبقى الإشعار محلياً لا يعمل إلا والصفحة مفتوحة.
+const canPush = PUSH.endpoint.length > 0;
 ---
 
 <section class="sweet section" id="daily" aria-labelledby="daily-heading">
@@ -54,12 +58,21 @@ const at = sweetLabelAr();
           <span class="opt__badge opt__badge--soft" data-notif-badge>اختياري</span>
         </div>
 
-        <h3 class="opt__title">تنبيه من المتصفح</h3>
-        <p class="opt__body">
-          نفس الجملة بالضبط، بس هاد <b>دلّوع</b>: بيشتغل إذا الصفحة مفتوحة ولو
-          بالخلفية. سكّرتي المتصفح؟ بينام معه 😴
-          <br />عشان هيك التقويم هو الأساس، وهاد بس مساعد.
-        </p>
+        <h3 class="opt__title">{canPush ? 'إشعار على الموبايل' : 'تنبيه من المتصفح'}</h3>
+        {
+          canPush ? (
+            <p class="opt__body">
+              فعّليه مرة وحدة، وبيوصلك <b>حتى والمتصفح مسكّر والموبايل مقفول</b>.
+              <br />ما بيجي كل شوي — بس لمّا يكون في شي يستاهل 🎁
+            </p>
+          ) : (
+            <p class="opt__body">
+              نفس الجملة بالضبط، بس هاد <b>دلّوع</b>: بيشتغل إذا الصفحة مفتوحة ولو
+              بالخلفية. سكّرتي المتصفح؟ بينام معه 😴
+              <br />عشان هيك التقويم هو الأساس، وهاد بس مساعد.
+            </p>
+          )
+        }
 
         <button class="btn btn--ghost" type="button" data-notif-enable>
           فعّليه، ما بيعضّ 🔔

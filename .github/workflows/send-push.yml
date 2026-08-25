@@ -1,0 +1,53 @@
+name: إرسال إشعار لرغد
+
+# يُشغَّل يدوياً من تبويب Actions. الحقول تأتي مملوءة بالنص المتّفق عليه،
+# فالإرسال المعتاد ضغطة زر واحدة.
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: عنوان الإشعار
+        required: true
+        default: رغد 🤍
+      body:
+        description: نص الإشعار
+        required: true
+        default: في مفاجأة عم تتحضر على نار هادية
+      url:
+        description: الرابط الذي يفتحه النقر
+        required: false
+        default: https://znad-odoo-dev.github.io/raghad-reminder/
+
+# لا يقرأ الكود ولا يكتب شيئاً — أقلّ صلاحية ممكنة.
+permissions: {}
+
+concurrency:
+  group: send-push
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # المدخلات تمرّ عبر البيئة لا داخل سطر الأمر: وضع ${{ inputs.* }} مباشرة
+      # في run يجعل نصّاً فيه $(...) ينفَّذ كأمر shell.
+      - name: Send
+        env:
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          PUSH_WORKER_URL: ${{ secrets.PUSH_WORKER_URL }}
+          PUSH_ADMIN_TOKEN: ${{ secrets.PUSH_ADMIN_TOKEN }}
+          PUSH_TITLE: ${{ inputs.title }}
+          PUSH_BODY: ${{ inputs.body }}
+          PUSH_URL: ${{ inputs.url }}
+        run: node scripts/send-push.mjs
