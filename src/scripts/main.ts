@@ -33,6 +33,7 @@ import {
 import { finale, burst } from './celebrate';
 import { initAudio, type MusicHandle } from './music';
 import { dropRetiredKeys, resetAll } from './store';
+import { logVisit } from './visit';
 import { pushConfigured, pushSupported, subscribe as pushSubscribe } from './push';
 
 import {
@@ -682,6 +683,7 @@ function reloadOnNewWorker(): void {
 function boot(): void {
   dropRetiredKeys();
   reloadOnNewWorker();
+  logVisit();
 
   for (const b of $$('[data-open]')) b.addEventListener('click', () => openEnvelope(b));
   for (const b of $$('[data-next]')) b.addEventListener('click', advance);

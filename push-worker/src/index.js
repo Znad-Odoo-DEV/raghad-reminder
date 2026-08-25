@@ -14,6 +14,8 @@
  *   DELETE /sub     ← إلغاء اشتراك
  *   GET    /subs    ← قائمة الاشتراكات   (Bearer ADMIN_TOKEN)
  *   POST   /prune   ← حذف اشتراك ميت      (Bearer ADMIN_TOKEN)
+ *   POST   /visit   ← تسجيل فتحة للصفحة
+ *   GET    /visits  ← سجل الفتحات         (Bearer ADMIN_TOKEN)
  */
 
 const DEFAULT_ORIGIN = 'https://znad-odoo-dev.github.io';
@@ -93,6 +95,49 @@ export default {
 
       await env.SUBS.delete(keyOf(body.endpoint));
       return json({ ok: true }, 200, cors);
+    }
+
+    /* ---- تسجيل فتحة ----
+       نخزّن الوقت ومعرّفاً عشوائياً للجهاز فقط. لا اسم، لا موقع، لا بصمة
+       متصفّح — المعرّف يفيد لتمييز جهاز عن جهاز ولا يدلّ على أحد.
+       صلاحية ستة أشهر، فالسجل لا ينمو إلى الأبد. */
+    if (url.pathname === '/visit' && request.method === 'POST') {
+      let body = {};
+      try {
+        body = await request.json();
+      } catch {
+        /* فتحة بلا جسم مقبولة */
+      }
+
+      const at = new Date().toISOString();
+      const id = typeof body.id === 'string' ? body.id.slice(0, 12) : 'anon';
+
+      await env.SUBS.put(
+        `visit:${at}:${id}`,
+        JSON.stringify({ at, id }),
+        { expirationTtl: 60 * 60 * 24 * 180 },
+      );
+      return json({ ok: true }, 200, cors);
+    }
+
+    /* ---- سجل الفتحات (إداري) ---- */
+    if (url.pathname === '/visits' && request.method === 'GET') {
+      if (!authorised(request, env)) return json({ error: 'unauthorised' }, 401);
+
+      const out = [];
+      let cursor;
+      do {
+        const page = await env.SUBS.list({ prefix: 'visit:', cursor });
+        for (const k of page.keys) {
+          const raw = await env.SUBS.get(k.name);
+          if (raw) out.push(JSON.parse(raw));
+        }
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+
+      out.sort((a, b) => (a.at < b.at ? 1 : -1));
+      const devices = [...new Set(out.map((v) => v.id))];
+      return json({ total: out.length, devices, visits: out }, 200);
     }
 
     /* ---- قائمة الاشتراكات (إداري) ---- */
