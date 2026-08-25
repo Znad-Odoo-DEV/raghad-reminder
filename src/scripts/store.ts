@@ -41,6 +41,7 @@ function blank(dayKey: string): DayState {
  * في متصفح رغد إلى الأبد إن لم نحذفها — فنحذفها مرة واحدة عند الإقلاع.
  */
 const RETIRED_KEYS = [
+  'raghd:story:v1',
   'raghd:dose:v1',
   'raghd:streak:v1',
   'raghd:notified:v2',

@@ -59,6 +59,8 @@ function read(): StoryState {
 }
 
 function write(s: StoryState): void {
+  // بلا استئناف لا أحد يقرأ هذا، فلا داعي لترك مفتاح معلّق في متصفّحها
+  if (!STORY.resume) return;
   try {
     localStorage.setItem(KEY, JSON.stringify(s));
   } catch {

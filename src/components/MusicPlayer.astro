@@ -1,6 +1,7 @@
 ---
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { SONG } from '../site.config';
 
 /**
@@ -25,7 +26,18 @@ const found = fs.existsSync(AUDIO_DIR)
   ? EXTS.map((e) => `track.${e}`).find((f) => fs.existsSync(path.join(AUDIO_DIR, f)))
   : undefined;
 
-const localSrc = found ? `${import.meta.env.BASE_URL}music/${found}` : null;
+/**
+ * بصمة محتوى في الرابط.
+ *
+ * اسم الملف ثابت (`track.m4a`) فتبديل الأغنية لا يغيّر الرابط، ويبقى المتصفّح
+ * وعامل الخدمة يخدمان النسخة القديمة إلى أن تنتهي صلاحيتها. البصمة تجعل كل
+ * أغنية رابطاً جديداً، فالتبديل يصل فوراً.
+ */
+const stamp = found
+  ? createHash('sha1').update(fs.readFileSync(path.join(AUDIO_DIR, found))).digest('hex').slice(0, 8)
+  : '';
+
+const localSrc = found ? `${import.meta.env.BASE_URL}music/${found}?v=${stamp}` : null;
 const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
 ---
 
