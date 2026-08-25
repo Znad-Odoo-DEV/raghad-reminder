@@ -2,15 +2,18 @@ name = "raghd-push"
 main = "src/index.js"
 compatibility_date = "2026-08-01"
 
+# صريحان بدل الاعتماد على الافتراضي: النشر على workers.dev مقصود، وروابط
+# المعاينة مطفأة لأنها تنشر نسخة إضافية من نقطة الاستقبال بلا داعٍ.
+workers_dev = true
+preview_urls = false
+
 # مساحة تخزين اشتراك رغد.
 #
-# كتلة [[kv_namespaces]] غير موجودة هنا عمداً: أمر الإنشاء أدناه يضيفها بنفسه
-# مع المعرّف الصحيح. كتابة كتلة بمعرّف وهمي مسبقاً تجعل الأمر يضيف كتلة ثانية
-# فيصير في ربطان بالاسم نفسه.
-#
-#   npx wrangler kv namespace create SUBS --update-config
-#
-# وإن نسيتها، ينهار النشر برسالة واضحة بدل أن يعمل بربط خاطئ.
+# أُنشئت بـ:  npx wrangler kv namespace create SUBS
+# المعرّف ليس سرّاً — لا يفيد أحداً بلا صلاحيات الحساب.
+[[kv_namespaces]]
+binding = "SUBS"
+id = "af38b2015c554357b66b542dbc64c462"
 
 [vars]
 ALLOWED_ORIGIN = "https://znad-odoo-dev.github.io"

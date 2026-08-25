@@ -67,7 +67,7 @@ export const SURPRISE = {
  */
 export const PUSH = {
   publicKey: 'BEN4ah0KM0YmbXjwz6EMi9gBeolZiTYTL2d6MrstTmXRYDlHid-A9poYACkbeBByBMuQR8cSutjhcDuMNjR3sIY',
-  endpoint: '',
+  endpoint: 'https://raghd-push.znad.workers.dev',
 } as const;
 
 /** الأغنية التي تشتغل بالخلفية. */
