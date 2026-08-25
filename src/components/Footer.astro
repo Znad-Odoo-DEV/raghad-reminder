@@ -1,6 +1,7 @@
 ---
 import { ANALYTICS } from '../analytics.config';
 import { FROM, HER } from '../site.config';
+import { VOW } from '../scripts/copy';
 
 const year = new Date().getFullYear();
 
@@ -19,8 +20,10 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     </p>
 
     <p class="foot__sign reveal" style="--reveal-delay: 60ms">
-      من {FROM} — والحمد لله إنك بخير.
+      من {FROM} — وفي شي جاي 🎁
     </p>
+
+    <p class="foot__vow reveal" style="--reveal-delay: 90ms">{VOW}</p>
 
     <p class="foot__brand reveal" style="--reveal-delay: 110ms">
       <button class="foot__heart" type="button" data-foot-egg aria-label="قلب صغير">🤍</button>
@@ -76,7 +79,7 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     color: var(--c-ink);
   }
   .foot__em {
-    background: linear-gradient(transparent 62%, var(--c-pink-wash) 62%);
+    background: linear-gradient(transparent 62%, var(--c-lav-wash) 62%);
     padding-inline: .1em;
   }
 
@@ -84,6 +87,18 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     font-size: var(--t-sm);
     font-weight: 600;
     color: var(--c-accent-deep);
+  }
+
+  /* الوعد — سطر هادئ بإطار خفيف، يُقرأ كعهد لا كشعار */
+  .foot__vow {
+    max-width: 40ch;
+    padding: var(--s-3) var(--s-5);
+    border-radius: var(--r-md);
+    border: 1px dashed rgba(167, 139, 250, .38);
+    background: rgba(255, 255, 255, .5);
+    font-size: var(--t-sm);
+    line-height: 1.85;
+    color: var(--c-ink-soft);
   }
 
   .foot__brand {

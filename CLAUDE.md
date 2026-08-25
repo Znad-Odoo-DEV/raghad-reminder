@@ -4,9 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-page Astro static site for one person: an up-counter from a date plus one
-kind Arabic sentence per day. No backend, no accounts, no database — everything runs
-in the browser and every persisted value stays on the visitor's device.
+A single-page Astro static site for one person. Three things: a sealed **surprise**
+card, an **up-counter** from the day they met, and one kind Arabic sentence per day.
+No backend, no accounts, no database — everything runs in the browser and every
+persisted value stays on the visitor's device.
+
+The site has been re-themed twice (medication reminder → recovery → surprise). Never
+reintroduce illness, recovery, or medication wording — that chapter is closed
+deliberately; see `VOW` in `copy.ts`.
 
 The site is Arabic (`lang="ar" dir="rtl"`). Comments, copy, and commit messages are
 written in Arabic; keep that convention.
@@ -25,7 +30,7 @@ Two generators are run **manually, only when their inputs change** — their out
 are committed to the repo and the CI build does not run them:
 
 ```bash
-node scripts/gen-ics.mjs     # -> public/raghd-sweet.ics
+node scripts/gen-ics.mjs     # -> public/raghd-daily.ics
 node scripts/gen-icons.mjs   # -> public/icon-*.png, apple-touch-icon.png (needs sharp)
 ```
 
@@ -38,12 +43,23 @@ To reproduce a project-site build locally: `BASE_PATH=/repo-name/ npm run build`
 
 ### Configuration seams — change facts here, not in components
 
-- `src/site.config.ts` — names, both counter dates, the daily-dose hour/minute, song
-  metadata. Dates are **Damascus wall-clock**, `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM`;
-  `null` or an invalid value hides that counter rather than inventing numbers.
+- `src/site.config.ts` — names, both counter dates, the daily-note hour/minute, the
+  `SURPRISE` block, song metadata. Dates are **Damascus wall-clock**, `YYYY-MM-DD` or
+  `YYYY-MM-DDTHH:MM`; `null` or an invalid value hides that counter rather than
+  inventing numbers.
+
+  **`SURPRISE` carries no date on purpose.** The site must not know when. While
+  `revealed: false`, `SurpriseCard.astro` emits no message markup at all, so the text
+  is absent from both HTML and JS — hiding it with CSS or `hidden` would ship it to
+  her browser where devtools reads it. Publishing *is* the reveal: write `message`,
+  flip `revealed`, deploy.
 - `src/scripts/copy.ts` — every user-facing Arabic string, plus `pick()` (random with
-  no immediate repeat) and `sweetLineFor(dayKey)` (deterministic per calendar day, so
+  no immediate repeat) and `dailyLineFor(dayKey)` (deterministic per calendar day, so
   the sentence is stable within a day and never flickers on refresh).
+
+  Dialect is settled: **«هاد» not «هيدا»، «هي» not «هيدي»، «هالـ» not «هيدي الـ»**.
+  Latin phrases inside Arabic prose (`super special`) use U+00A0 so they never break
+  across lines.
 - `src/analytics.config.ts` — GoatCounter / Cloudflare / hits.sh. Empty fields mean
   nothing is loaded at all; `Base.astro` conditionally emits the script tags.
 
@@ -74,7 +90,7 @@ the hidden time simulator honest: swap the time source, and everything follows.
 `.astro` components ship markup and scoped CSS only — they have no client scripts.
 The single `<script>` in `src/pages/index.astro` imports `main.ts`, which wires
 behaviour by querying `data-*` hooks (`data-card`, `data-heart`, `data-unit`,
-`data-whisper`, `data-sim`, `data-music-*`, `data-notif-*`, …). Renaming or removing
+`data-whisper`, `data-surprise*`, `data-sim`, `data-music-*`, `data-notif-*`, …). Renaming or removing
 a `data-` attribute in a component silently breaks its behaviour — grep `main.ts`
 before touching one. The one exception is `MusicPlayer.astro`, which does build-time
 work (see below).
@@ -87,9 +103,9 @@ wrapped in try/catch because private browsing throws. `dropRetiredKeys()` purges
 from the site's previous incarnation on boot; add to `RETIRED_KEYS` when a key is
 abandoned rather than leaving it stranded in her browser.
 
-### Daily dose: calendar first, notification second
+### Daily note: calendar first, notification second
 
-- `public/raghd-sweet.ics` (from `scripts/gen-ics.mjs`) is the **primary** mechanism —
+- `public/raghd-daily.ics` (from `scripts/gen-ics.mjs`) is the **primary** mechanism —
   the phone's own calendar fires it with the browser closed. RFC 5545 is strict: CRLF
   line endings and 75-octet line folding that must not split a UTF-8 char. The
   generator handles both and prints a verification. `.gitattributes` marks `*.ics`
@@ -152,4 +168,9 @@ Push to `main` → `.github/workflows/deploy.yml` builds and publishes to GitHub
 - Screen-reader announcements go to `#live-region` on **day change only**, using the
   prose helpers in `schedule.ts` — never the per-second digits.
 - Design tokens live at the top of `src/styles/global.css`; components use them rather
-  than raw colour values.
+  than raw colour values. The palette is **lavender**; `--c-lav` is decoration only
+  (2.5:1 on the page), `--c-lav-deep` is the one safe for text (5.5:1). The primary
+  button gradient starts at `--c-lav-deep` for the same reason.
+- The celebration draws hearts, butterflies, and confetti. The butterfly has its own
+  physics and silhouette (triangular forewing, body, antennae) — a rounded shape
+  without antennae reads as a flower at 13px.

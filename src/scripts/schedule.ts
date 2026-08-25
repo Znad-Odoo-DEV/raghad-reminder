@@ -3,7 +3,7 @@
  *
  * كل شيء هنا يقوم على لحظات مطلقة (epoch ms) ويتحوّل إلى ساعة الحائط في دمشق
  * عبر Intl فقط — أبداً عبر توقيت جهاز الزائرة. فلو فتحت رغد الموقع من أي بلد،
- * العدّادات وموعد جرعة اللطافة تبقى صحيحة بتوقيت سوريا.
+ * العدّادات وموعد رسالة اللطافة تبقى صحيحة بتوقيت سوريا.
  *
  * سوريا اليوم على UTC+3 ثابتة، لكن الإزاحة غير مكتوبة في أي سطر: تُقرأ من
  * قاعدة المناطق الزمنية عند كل لحظة، فيبقى الموقع صحيحاً لو تغيّرت القواعد.
@@ -196,17 +196,17 @@ export function sinceFirstTalk(at: number = nowMs()): SinceSnapshot | null {
 }
 
 /* -------------------------------------------------------------------------
-   جرعة اللطافة اليومية
+   رسالة اللطافة اليومية
    ------------------------------------------------------------------------- */
 
 export { SWEET_HOUR, SWEET_MINUTE };
 
-/** لحظة جرعة اليوم الذي تقع فيه ساعة الحائط المعطاة. */
+/** لحظة رسالة اليوم الذي تقع فيه ساعة الحائط المعطاة. */
 function sweetInstantFor(w: Wall): number {
   return instantOfWall(w.year, w.month, w.day, SWEET_HOUR, SWEET_MINUTE);
 }
 
-/** لحظة جرعة الغد بالنسبة لساعة الحائط المعطاة. */
+/** لحظة رسالة الغد بالنسبة لساعة الحائط المعطاة. */
 function nextDaySweetInstant(w: Wall): number {
   // نتقدّم يوماً بحساب التقويم لا بإضافة 24 ساعة — الأخيرة تنكسر عند تغيير التوقيت.
   const d = new Date(Date.UTC(w.year, w.month - 1, w.day));
@@ -216,12 +216,12 @@ function nextDaySweetInstant(w: Wall): number {
   );
 }
 
-/** لحظة جرعة اليوم. */
+/** لحظة رسالة اليوم. */
 export function sweetInstantToday(at: number = nowMs()): number {
   return sweetInstantFor(wallOf(at));
 }
 
-/** لحظة جرعة الغد. */
+/** لحظة رسالة الغد. */
 export function sweetInstantTomorrow(at: number = nowMs()): number {
   return nextDaySweetInstant(wallOf(at));
 }
@@ -229,7 +229,7 @@ export function sweetInstantTomorrow(at: number = nowMs()): number {
 export interface SweetSnapshot {
   /** تاريخ اليوم في دمشق — مفتاح "اليوم" في التخزين */
   dayKey: string;
-  /** ميلي ثانية حتى الجرعة القادمة (اليوم أو الغد) */
+  /** ميلي ثانية حتى الرسالة القادمة (اليوم أو الغد) */
   msUntil: number;
   /** هل موعد اليوم قد مضى؟ */
   passed: boolean;
@@ -237,7 +237,7 @@ export interface SweetSnapshot {
   parts: { hours: number; minutes: number; seconds: number };
 }
 
-/** حالة جرعة اللطافة الآن — للعرض داخل قسم الجرعة. */
+/** حالة رسالة اللطافة الآن — للعرض داخل قسمها. */
 export function sweetSnapshot(at: number = nowMs()): SweetSnapshot {
   const w = wallOf(at);
   const today = sweetInstantFor(w);
@@ -302,7 +302,7 @@ export function humanSince(s: SinceSnapshot): string {
   return 'أقل من دقيقة';
 }
 
-/** وصف مقروء للوقت المتبقّي لجرعة اللطافة. */
+/** وصف مقروء للوقت المتبقّي لرسالة اللطافة. */
 export function humanRemaining(p: SweetSnapshot['parts']): string {
   if (p.hours > 0) return `${hoursAr(p.hours)} و${minutesAr(p.minutes)}`;
   if (p.minutes > 0) return minutesAr(p.minutes);

@@ -1,15 +1,15 @@
 ---
-import { GRACE } from '../scripts/copy';
+import { SINCE_COPY } from '../scripts/copy';
 import { COINCIDENCE_AT, FIRST_TALK_AT, dateAr } from '../scripts/schedule';
 import HeartGlyph from './HeartGlyph.astro';
 
 /**
- * البطاقة الرئيسية — عدّاد الصدفة.
+ * بطاقة العدّادات — كم صار لنا من يوم الصدفة.
  *
  * الأيام هي البطل: رقم واحد كبير، وتحته ساعة:دقيقة:ثانية بحجم أصغر. أربعة
  * أرقام متساوية الحجم كانت تخنق شاشة الموبايل ولا يبقى فيها شيء «بطل».
  *
- * التاريخ يُقرأ وقت البناء من site.config.ts. إن لم يُضبط، تُعرض البطاقة بلا
+ * التواريخ تُقرأ وقت البناء من site.config.ts. إن لم تُضبط، تُعرض البطاقة بلا
  * أرقام — عدّاد بتاريخ مخترع أسوأ من لا عدّاد.
  */
 const coincidenceDate = dateAr(COINCIDENCE_AT);
@@ -17,9 +17,9 @@ const firstTalkDate = dateAr(FIRST_TALK_AT);
 const hasCounter = COINCIDENCE_AT !== null;
 ---
 
-<section class="grace" id="grace" aria-labelledby="grace-heading">
+<section class="since-sec" id="since" aria-labelledby="since-heading">
   <div class="wrap">
-    <h2 id="grace-heading" class="sr-only">رغد طابت — الحمد لله</h2>
+    <h2 id="since-heading" class="sr-only">من يوم الصدفة</h2>
 
     <article class="card" data-card>
       <span class="card__aura" aria-hidden="true"></span>
@@ -36,12 +36,12 @@ const hasCounter = COINCIDENCE_AT !== null;
         </button>
 
         <div class="card__id">
-          <p class="card__eyebrow">{GRACE.eyebrow}</p>
+          <p class="card__eyebrow">{SINCE_COPY.eyebrow}</p>
           <p class="card__date">{coincidenceDate ?? '—'}</p>
           <p class="card__tz">بتوقيت سوريا</p>
         </div>
 
-        <span class="chip">{GRACE.chip}</span>
+        <span class="chip">{SINCE_COPY.chip}</span>
       </header>
 
       <!-- ================= اللوحة ================= -->
@@ -49,7 +49,7 @@ const hasCounter = COINCIDENCE_AT !== null;
         {
           hasCounter ? (
             <>
-              <p class="card__label">{GRACE.label}</p>
+              <p class="card__label">{SINCE_COPY.label}</p>
 
               <div
                 class="since"
@@ -71,31 +71,23 @@ const hasCounter = COINCIDENCE_AT !== null;
               </div>
             </>
           ) : (
-            <p class="card__label card__label--alone">{GRACE.noDate}</p>
+            <p class="card__label card__label--alone">{SINCE_COPY.noDate}</p>
           )
         }
 
-        <p class="card__title">{GRACE.title}</p>
-        <p class="card__note">{GRACE.note}</p>
+        <p class="card__title">{SINCE_COPY.title}</p>
+        <p class="card__note">{SINCE_COPY.note}</p>
 
         {
           firstTalkDate && (
             <p class="second">
-              <span class="second__k">ومن يوم ما بلّشنا نحكي</span>
+              <span class="second__k">{SINCE_COPY.talk}</span>
               <b class="second__v tnum" data-talk>—</b>
               <span class="second__d">{firstTalkDate}</span>
             </p>
           )
         }
       </div>
-
-      <!-- ================= الزر ================= -->
-      <footer class="card__actions">
-        <button class="btn btn--primary" type="button" data-act="thanks">
-          الحمد لله 🤍
-        </button>
-        <p class="actions__hint" data-thanks-hint>اضغطي، وأنا كمان رح قولها معك.</p>
-      </footer>
     </article>
 
     <!-- همسة اللطافة المتغيّرة تحت البطاقة -->
@@ -104,7 +96,7 @@ const hasCounter = COINCIDENCE_AT !== null;
 </section>
 
 <style>
-  .grace {
+  .since-sec {
     position: relative;
     padding-block-end: clamp(2rem, 1rem + 3vw, 3.5rem);
   }
@@ -165,8 +157,8 @@ const hasCounter = COINCIDENCE_AT !== null;
     width: clamp(56px, 13vw, 74px);
     height: clamp(56px, 13vw, 74px);
     border-radius: var(--r-md);
-    background: linear-gradient(160deg, #fff, var(--c-pink-wash));
-    border: 1px solid rgba(255, 77, 141, .16);
+    background: linear-gradient(160deg, #fff, var(--c-lav-wash));
+    border: 1px solid rgba(167, 139, 250, .16);
     padding: clamp(11px, 2.4vw, 15px);
     box-shadow: var(--sh-sm);
     transition: transform var(--d-fast) var(--e-back), box-shadow var(--d-base) var(--e-soft);
@@ -234,6 +226,9 @@ const hasCounter = COINCIDENCE_AT !== null;
     font-size: var(--t-xs);
     font-weight: 700;
     white-space: nowrap;
+    /* «super special» لاتينية داخل واجهة عربية — تُعزل حتى لا يقلبها المحرّك */
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
   /* ================= اللوحة ================= */
@@ -243,16 +238,14 @@ const hasCounter = COINCIDENCE_AT !== null;
   }
 
   .card__label {
+    max-width: 42ch;
+    margin-inline: auto;
     font-size: var(--t-sm);
     font-weight: 600;
     color: var(--c-ink-faint);
     letter-spacing: .02em;
   }
-  .card__label--alone {
-    max-width: 40ch;
-    margin-inline: auto;
-    margin-block-end: var(--s-5);
-  }
+  .card__label--alone { margin-block-end: var(--s-5); }
 
   /* ---- العدّاد: الأيام هي البطل ---- */
   .since {
@@ -290,6 +283,7 @@ const hasCounter = COINCIDENCE_AT !== null;
     font-weight: 700;
     color: var(--c-accent-deep);
     letter-spacing: -.01em;
+    cursor: pointer;
   }
 
   .since__clock {
@@ -347,22 +341,6 @@ const hasCounter = COINCIDENCE_AT !== null;
     opacity: .8;
   }
 
-  /* ================= الزر ================= */
-  .card__actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: .7rem;
-    margin-block-start: var(--s-6);
-  }
-
-  .actions__hint {
-    flex-basis: 100%;
-    text-align: center;
-    font-size: var(--t-xs);
-    color: var(--c-ink-faint);
-  }
-
   /* ================= همسة اللطافة ================= */
   .whisper {
     min-height: 2.8em;
@@ -380,11 +358,9 @@ const hasCounter = COINCIDENCE_AT !== null;
   @media (max-width: 480px) {
     .card__head { flex-wrap: wrap; }
     .chip { order: -1; margin-inline-start: auto; }
-    .btn { flex: 1 1 100%; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .card, .heart { animation: none; }
-    .btn--primary::after { animation: none; opacity: 0; }
   }
 </style>

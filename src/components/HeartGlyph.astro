@@ -3,7 +3,7 @@
  * HeartGlyph — القلب
  *
  * منحنيان بيزيه متناظران حول محور الرمز، فيبقى القلب متوازناً تماماً في كل
- * الأحجام. حلّ محلّ كبسولة الدواء لمّا صار الموقع رسالة فرح لا تذكير بجرعة.
+ * الأحجام. يرافق علبة الهدية: الهدية للمفاجأة، والقلب لعدّاد الصدفة.
  */
 interface Props {
   /** معرّف فريد للتدرّجات — لتفادي تضارب الـIDs عند تكرار الرمز */
@@ -22,8 +22,8 @@ const { id = 'heart', class: className } = Astro.props;
 >
   <defs>
     <linearGradient id={`${id}-a`} x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff8ec7" />
-      <stop offset="55%" stop-color="#ff4d8d" />
+      <stop offset="0%" stop-color="#c4b5fd" />
+      <stop offset="55%" stop-color="#8b6bff" />
       <stop offset="100%" stop-color="#6d4aff" />
     </linearGradient>
     <radialGradient id={`${id}-shine`} cx="32%" cy="26%" r="42%">

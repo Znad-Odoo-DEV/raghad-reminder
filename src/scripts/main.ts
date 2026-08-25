@@ -19,16 +19,25 @@ import {
   type SinceSnapshot,
 } from './schedule';
 
-import { loadDay, patchDay, bumpStreak, resetAll, dropRetiredKeys, type DayState } from './store';
+import {
+  loadDay,
+  patchDay,
+  bumpStreak,
+  resetAll,
+  dropRetiredKeys,
+  surpriseSeen,
+  markSurpriseSeen,
+  type DayState,
+} from './store';
 
 import {
-  GRACE,
+  SINCE_COPY,
+  LOCKED_LINES,
   LATAFA,
   HEART_TAPS,
   HEART_TAPS_AFTER,
   AWAY_TITLES,
   EGG_TOASTS,
-  thanksLine,
   pick,
 } from './copy';
 
@@ -57,7 +66,6 @@ const $$ = <T extends Element = HTMLElement>(sel: string) =>
 const card = $('[data-card]');
 const heartBtn = $<HTMLButtonElement>('[data-heart]');
 const elWhisper = $('[data-whisper]');
-const elThanksHint = $('[data-thanks-hint]');
 const elTalk = $('[data-talk]');
 const live = $('#live-region');
 
@@ -79,7 +87,6 @@ const BASE_TITLE = document.title;
 let day: DayState = loadDay();
 let lastDays = -1;
 let lastWhisperIndex = -1;
-let lastThanksIndex = -1;
 let whisperTimer = 0;
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -123,7 +130,7 @@ function paint(): void {
 /** إعلان لقارئات الشاشة — عند تغيّر اليوم فقط، لا كل ثانية. */
 function announce(s: SinceSnapshot): void {
   if (!live) return;
-  live.textContent = `مرّ من يوم الصدفة ${humanSince(s)}. ${GRACE.title}`;
+  live.textContent = `مرّ من يوم الصدفة ${humanSince(s)}. ${SINCE_COPY.title}`;
 }
 
 /* =========================================================================
@@ -151,28 +158,76 @@ function scheduleWhisper(): void {
 }
 
 /* =========================================================================
-   الأفعال
+   المفاجأة 🎁
    ========================================================================= */
 
-function thanks(source?: Element | null): void {
-  const next = patchDay({ thanks: loadDay().thanks + 1 });
-  day = next;
+const surprise = $('[data-surprise]');
+const surpriseBtn = $<HTMLButtonElement>('[data-surprise-open]');
+const surpriseHint = $('[data-surprise-hint]');
 
-  burst(source);
+/**
+ * البطاقة مقفولة أو مفتوحة بحسب ما بُني — لا يوجد هنا أي منطق يفتحها.
+ *
+ * نص المفاجأة لا يصل إلى المتصفّح إطلاقاً وهي مقفولة (انظر SurpriseCard.astro)،
+ * فلا شيء هنا يستطيع كشفه ولو أراد. لحظة النشر هي لحظة الكشف.
+ */
+const isOpen = surprise?.dataset.open === 'yes';
 
-  const { text, index } = thanksLine(next.thanks, lastThanksIndex);
-  lastThanksIndex = index;
+let lastLockedIndex = -1;
 
-  // نوقف الدوران لحظة حتى تُقرأ الجملة، ثم نرجع للهمسات
-  window.clearInterval(whisperTimer);
-  say(text);
-  window.setTimeout(scheduleWhisper, 9000);
+function nudgeLocked(): void {
+  if (!surprise) return;
 
-  if (elThanksHint) {
-    elThanksHint.textContent =
-      next.thanks >= 5
-        ? `قلتيها ${next.thanks} مرات اليوم. ولا مرة زادت عن اللزوم 🤍`
-        : 'اضغطي، وأنا كمان رح قولها معك.';
+  const taps = loadDay().lockTaps + 1;
+  day = patchDay({ lockTaps: taps });
+
+  surprise.classList.remove('is-nudging');
+  void (surprise as HTMLElement).offsetWidth;
+  surprise.classList.add('is-nudging');
+  window.setTimeout(() => surprise.classList.remove('is-nudging'), 500);
+
+  const { text, index } = pick(LOCKED_LINES, lastLockedIndex);
+  lastLockedIndex = index;
+
+  if (surpriseHint) {
+    surpriseHint.classList.add('is-swapping');
+    window.setTimeout(() => {
+      surpriseHint.textContent = text;
+      surpriseHint.classList.remove('is-swapping');
+    }, 180);
+  }
+
+  // مثابرة تستحق فراشة
+  if (taps % 5 === 0) butterflies(8);
+}
+
+function celebrateOpen(from?: Element | null): void {
+  surprise?.classList.add('is-open');
+  burst(from ?? surpriseBtn);
+  window.setTimeout(() => butterflies(16), 220);
+}
+
+function initSurprise(): void {
+  if (!surpriseBtn) return;
+
+  surpriseBtn.addEventListener('click', () => {
+    if (isOpen) celebrateOpen(surpriseBtn);
+    else nudgeLocked();
+  });
+
+  if (!isOpen) return;
+
+  // الغطاء يبقى مرفوعاً دائماً بعد الكشف
+  surprise?.classList.add('is-open');
+
+  // الاحتفال الكبير مرة واحدة فقط — أول مرة تفتح فيها الصفحة بعد الكشف.
+  //
+  // موجتان لا سحابة واحدة: الرشقة والمطر معاً يعطيان ~200 جسيم تحجب الرسالة
+  // نفسها التي جاءت لتقرأها. نفصل بينهما فتُقرأ الرسالة بين الموجتين.
+  if (!surpriseSeen()) {
+    markSurpriseSeen();
+    window.setTimeout(celebrateOpen, 900);
+    window.setTimeout(heartRain, 3600);
   }
 }
 
@@ -325,7 +380,7 @@ function initCommittee(): void {
 }
 
 /* =========================================================================
-   جرعة اللطافة — الإشعارات
+   رسالة اللطافة — الإشعارات
    ========================================================================= */
 
 const notifBtn = $<HTMLButtonElement>('[data-notif-enable]');
@@ -508,10 +563,7 @@ function initReveal(): void {
 function boot(): void {
   dropRetiredKeys();
 
-  for (const btn of $$<HTMLButtonElement>('[data-act="thanks"]')) {
-    btn.addEventListener('click', () => thanks(btn));
-  }
-
+  initSurprise();
   initEggs();
   initCommittee();
   initReveal();

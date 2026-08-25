@@ -4,20 +4,20 @@ import { sweetLabelAr } from '../scripts/schedule';
 
 const WA = 'https://wa.me/971525691003?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20%D8%A5%D8%A8%D8%B1%D8%A7%D9%87%D9%8A%D9%85%20%F0%9F%A4%8D';
 const IG = 'https://www.instagram.com/znad_0';
-const icsHref = `${import.meta.env.BASE_URL}raghd-sweet.ics`;
+const icsHref = `${import.meta.env.BASE_URL}raghd-daily.ics`;
 const at = sweetLabelAr();
 ---
 
-<section class="sweet section" id="sweet" aria-labelledby="sweet-heading">
+<section class="sweet section" id="daily" aria-labelledby="daily-heading">
   <div class="wrap">
     <div class="sweet__head reveal">
-      <p class="eyebrow">جرعة اللطافة اليومية</p>
-      <h2 id="sweet-heading" class="sweet__title">
+      <p class="eyebrow">رسالة اللطافة اليومية</p>
+      <h2 id="daily-heading" class="sweet__title">
         منرنّ عليكِ. <span class="gradient-text">كل يوم.</span> بجملة حلوة.
       </h2>
       <p class="sweet__lead">
         رسالة وحدة، الساعة {at} بتوقيت سوريا. مو إلحاح ولا مواعيد — بس تذكير
-        إنك بخير، وإنك super special 🤍
+        صغير إنك super special، ولإنه في شي جاي 🎁
       </p>
     </div>
 
@@ -37,7 +37,7 @@ const at = sweetLabelAr();
           <br /><b>بتضيفيها مرة وحدة وبتنسيها</b> — وهي ما تنساك.
         </p>
 
-        <a class="btn btn--primary" href={icsHref} download="raghd-sweet.ics" data-ics>
+        <a class="btn btn--primary" href={icsHref} download="raghd-daily.ics" data-ics>
           حمّليها 🤍
         </a>
 
@@ -76,7 +76,7 @@ const at = sweetLabelAr();
       <span aria-hidden="true">📲</span>
       وإذا بدك تكرّمينا: ضيفي الموقع للشاشة الرئيسية من قائمة المتصفح. بيصير
       له أيقونة وبيفتح متل تطبيق حقيقي — تطبيق وظيفته الوحيدة بالحياة إنه
-      يقول «الحمد لله إنك بخير». طموح، صح؟
+      يقلك «في شي جاي» وما يقلك شو. طموح، صح؟
     </p>
 
     <!-- ============ التواصل ============ -->
@@ -87,7 +87,7 @@ const at = sweetLabelAr();
         </h3>
         <p class="reach__body">
           <b>إشعار واحد باليوم</b>، الساعة <b>{at}</b>، وبكلمتين حلوين. ما في
-          إلحاح، ما في تكرار، ولا في موعد لازم تلحقيه — خلص، الحمد لله.
+          إلحاح، ما في تكرار، ولا في موعد لازم تلحقيه. وما فيه تلميح كمان 🙂
         </p>
         <p class="reach__body">
           تعبتي منّا؟ بدك تلغي الإشعارات أو تغيّري الموعد؟ أو بس بدك تحكي؟
@@ -171,8 +171,8 @@ const at = sweetLabelAr();
   .opt:hover { transform: translateY(-3px); box-shadow: var(--sh-md); }
 
   .opt--primary {
-    border-color: color-mix(in srgb, var(--c-pink) 30%, transparent);
-    box-shadow: var(--sh-md), 0 0 0 4px rgba(255, 111, 181, .09);
+    border-color: color-mix(in srgb, var(--c-lav) 30%, transparent);
+    box-shadow: var(--sh-md), 0 0 0 4px rgba(167, 139, 250, .09);
   }
 
   .opt__top {
@@ -186,7 +186,7 @@ const at = sweetLabelAr();
     place-items: center;
     width: 44px; height: 44px;
     border-radius: var(--r-sm);
-    background: var(--c-pink-wash);
+    background: var(--c-lav-wash);
     font-size: 1.3rem;
     line-height: 1;
   }
@@ -195,7 +195,7 @@ const at = sweetLabelAr();
     margin-inline-start: auto;
     padding: .28rem .7rem;
     border-radius: var(--r-pill);
-    background: var(--c-pink);
+    background: var(--c-lav);
     color: #fff;
     font-size: var(--t-xs);
     font-weight: 700;
@@ -250,8 +250,8 @@ const at = sweetLabelAr();
     margin: var(--s-4) auto 0;
     padding: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
     border-radius: var(--r-lg);
-    background: linear-gradient(135deg, rgba(255, 111, 181, .09), rgba(109, 74, 255, .07));
-    border: 1px solid rgba(255, 111, 181, .2);
+    background: linear-gradient(135deg, rgba(167, 139, 250, .09), rgba(109, 74, 255, .07));
+    border: 1px solid rgba(167, 139, 250, .2);
   }
 
   .reach__text { flex: 1 1 300px; }

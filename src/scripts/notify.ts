@@ -1,8 +1,8 @@
 /**
- * notify.ts — جرعة اللطافة اليومية
+ * notify.ts — رسالة اللطافة اليومية
  *
- * الجدول: إشعار واحد كل يوم عند 11:00 بتوقيت دمشق. واحد فقط — الموقع صار
- * رسالة فرح لا نظام إلحاح، وستّ رنّات متصاعدة كانت تناسب الدوا لا اللطافة.
+ * الجدول: إشعار واحد كل يوم عند 11:00 بتوقيت دمشق. واحد فقط — هذا موقع ترقّب
+ * لا نظام إلحاح، وجملة حلوة واحدة تكفي.
  *
  * ما يستطيعه موقع ثابت بلا سيرفر، وما لا يستطيعه:
  *  ✅ الإشعار اليومي — بينما الصفحة مفتوحة (ولو في الخلفية).
@@ -16,9 +16,9 @@
  */
 
 import { dayKeyOf, nowMs, sweetInstantToday, sweetInstantTomorrow, sweetLabelAr } from './schedule';
-import { SWEET, sweetLineFor } from './copy';
+import { DAILY, dailyLineFor } from './copy';
 
-const LOG_KEY = 'raghd:sweet-sent:v1';
+const LOG_KEY = 'raghd:daily-sent:v1';
 
 export type NotifyState = 'unsupported' | 'default' | 'granted' | 'denied';
 
@@ -73,7 +73,7 @@ export async function requestPermission(): Promise<NotifyState> {
 
 /* ------------------------------------------------------ سجلّ ما أُرسل */
 
-/** آخر يوم أُرسلت فيه جرعة اللطافة — إشعار واحد لكل يوم، لا أكثر. */
+/** آخر يوم أُرسلت فيه الرسالة — إشعار واحد لكل يوم، لا أكثر. */
 function lastSentDay(): string | null {
   try {
     return localStorage.getItem(LOG_KEY);
@@ -112,19 +112,19 @@ async function show(title: string, body: string, tag: string): Promise<void> {
 export async function showTest(): Promise<void> {
   const reg = swReg ?? (await registerWorker());
   if (!reg) return;
-  await reg.showNotification(SWEET.title, {
-    body: SWEET.test,
+  await reg.showNotification(DAILY.title, {
+    body: DAILY.test,
     icon: `${import.meta.env.BASE_URL}icon-192.png`,
     lang: 'ar',
     dir: 'rtl',
-    tag: 'raghd-sweet-test',
+    tag: 'raghd-daily-test',
   } as NotificationOptions);
 }
 
 /* ---------------------------------------------------------- الجدولة */
 
 /**
- * يجدول جرعة الغد، ويطلق جرعة اليوم إن فات وقتها ولم تُرسل.
+ * يجدول رسالة الغد، ويطلق رسالة اليوم إن فات وقتها ولم تُرسل.
  *
  * يُستدعى عند الإقلاع وعند العودة إلى التبويب — لأن مؤقتات الخلفية على
  * الموبايل تُخنق أو تُقتل، فلا نعتمد على المؤقّت وحده.
@@ -141,7 +141,7 @@ export function schedule(): void {
     // فات موعد اليوم — أطلقه الآن إن لم يكن قد أُرسل، ثم انتقل للغد.
     if (lastSentDay() !== today) {
       markSent(today);
-      void show(SWEET.title, sweetLineFor(today), 'raghd-sweet');
+      void show(DAILY.title, dailyLineFor(today), 'raghd-daily');
     }
     arm(sweetInstantTomorrow(now) - now);
     return;
@@ -151,14 +151,14 @@ export function schedule(): void {
 }
 
 function arm(wait: number, dayToSend?: string): void {
-  // setTimeout ينهار عند تجاوز حدّ 32 بت، وجرعة الغد قد تبعد أكثر من ذلك؟
-  // لا — أقصى انتظار أقل من 48 ساعة، لكن نحرس على أي حال.
+  // setTimeout ينهار عند تجاوز حدّ 32 بت. أقصى انتظار هنا أقل من 48 ساعة،
+  // لكن نحرس على أي حال.
   if (wait <= 0 || wait >= 2_147_483_647) return;
 
   timer = window.setTimeout(() => {
     if (dayToSend && lastSentDay() !== dayToSend) {
       markSent(dayToSend);
-      void show(SWEET.title, sweetLineFor(dayToSend), 'raghd-sweet');
+      void show(DAILY.title, dailyLineFor(dayToSend), 'raghd-daily');
     }
     schedule();
   }, wait + 300);
@@ -181,6 +181,6 @@ export function debugInfo() {
     at: sweetInstantToday(now),
     label: sweetLabelAr(),
     lastSent: lastSentDay(),
-    lineToday: sweetLineFor(dayKeyOf(now)),
+    lineToday: dailyLineFor(dayKeyOf(now)),
   };
 }

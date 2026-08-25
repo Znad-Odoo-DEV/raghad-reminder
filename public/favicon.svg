@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff6fb5"/>
-      <stop offset="55%" stop-color="#ff4d8d"/>
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="55%" stop-color="#8b6bff"/>
       <stop offset="100%" stop-color="#6d4aff"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="15" fill="url(#bg)"/>
   <g transform="translate(32 33) scale(.66) translate(-32 -28.5)">
     <path d="M32 53C32 53 4 36.5 4 20.5 4 11.4 11.2 4 20.2 4 25.6 4 30.2 6.9 32 11.2 33.8 6.9 38.4 4 43.8 4 52.8 4 60 11.4 60 20.5 60 36.5 32 53 32 53Z" fill="#ffffff"/>
-    <ellipse cx="20" cy="17" rx="8" ry="5" fill="#ffe1ef" opacity=".7" transform="rotate(-24 20 17)"/>
+    <ellipse cx="20" cy="17" rx="8" ry="5" fill="#e9e2ff" opacity=".7" transform="rotate(-24 20 17)"/>
   </g>
 </svg>

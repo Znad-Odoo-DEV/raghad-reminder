@@ -147,8 +147,8 @@ const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
   .music.is-playing .music__note { display: none; }
   .music.is-playing .music__eq { display: flex; }
   .music.is-playing .music__pill {
-    background: linear-gradient(135deg, rgba(255, 111, 181, .16), rgba(109, 74, 255, .14)), rgba(255,255,255,.86);
-    border-color: rgba(255, 77, 141, .3);
+    background: linear-gradient(135deg, rgba(167, 139, 250, .16), rgba(109, 74, 255, .14)), rgba(255,255,255,.86);
+    border-color: rgba(167, 139, 250, .3);
   }
 
   /* حالة "بانتظار أول لمسة" — نبضة خفيفة تلمّح أن في شي جاهز */
@@ -157,7 +157,7 @@ const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
   }
   @keyframes waiting {
     0%, 100% { box-shadow: var(--sh-md); }
-    50%      { box-shadow: var(--sh-md), 0 0 0 6px rgba(255, 77, 141, .14); }
+    50%      { box-shadow: var(--sh-md), 0 0 0 6px rgba(167, 139, 250, .14); }
   }
 
   /* ---- بطاقة يوتيوب ---- */

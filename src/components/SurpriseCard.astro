@@ -1,0 +1,214 @@
+---
+import { SURPRISE } from '../site.config';
+import { SURPRISE_COPY } from '../scripts/copy';
+import GiftGlyph from './GiftGlyph.astro';
+
+/**
+ * بطاقة المفاجأة — قلب الصفحة.
+ *
+ * لا يوجد عدّاد ولا موعد هنا عن قصد: الموقع لا يعرف متى، فلا شيء يمكن أن
+ * ينكشف قبل وقته. الحالة تُحسم **وقت البناء** من `SURPRISE.revealed`:
+ *
+ *  - مقفولة → نص المفاجأة غير موجود في الصفحة إطلاقاً. لا في HTML ولا في JS.
+ *    لا يكفي إخفاؤه بـCSS أو بـ`hidden`؛ أي نص مُرسَل يُقرأ من أدوات المطوّر.
+ *  - مفتوحة → يُطبع النص، وmain.ts تشغّل الاحتفال أول مرة فقط.
+ *
+ * أي أن لحظة النشر هي لحظة الكشف.
+ */
+const open = SURPRISE.revealed;
+const message = open ? (SURPRISE.message.trim() || SURPRISE_COPY.emptyMessage) : '';
+const footnote = open ? SURPRISE.footnote.trim() : '';
+---
+
+<section class="surprise" id="surprise" aria-labelledby="surprise-heading">
+  <div class="wrap">
+    <h2 id="surprise-heading" class="sr-only">{open ? 'المفاجأة' : 'مفاجأة قيد التحضير'}</h2>
+
+    <article class="gcard" data-surprise data-open={open ? 'yes' : 'no'}>
+      <span class="gcard__aura" aria-hidden="true"></span>
+
+      <div class="gcard__glyph">
+        <GiftGlyph id="surprise-gift" />
+      </div>
+
+      <p class="gcard__eyebrow">{open ? SURPRISE_COPY.eyebrowOpen : SURPRISE_COPY.eyebrow}</p>
+      <p class="gcard__chip" data-surprise-chip>
+        {open ? SURPRISE_COPY.chipOpen : SURPRISE_COPY.chipLocked}
+      </p>
+
+      <h3 class="gcard__title">{SURPRISE_COPY.title}</h3>
+      <p class="gcard__note">{SURPRISE_COPY.note}</p>
+
+      {
+        open && (
+          <div class="gcard__reveal" data-surprise-message>
+            <p class="gcard__message">{message}</p>
+            {footnote && <p class="gcard__footnote">{footnote}</p>}
+          </div>
+        )
+      }
+
+      <button class="btn btn--primary gcard__btn" type="button" data-surprise-open>
+        {open ? SURPRISE_COPY.buttonOpen : SURPRISE_COPY.button}
+      </button>
+
+      <p class="gcard__hint" data-surprise-hint aria-live="polite">
+        {open ? SURPRISE_COPY.hintOpen : SURPRISE_COPY.hint}
+      </p>
+    </article>
+  </div>
+</section>
+
+<style>
+  .surprise {
+    position: relative;
+    padding-block-end: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  }
+
+  .gcard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 620px;
+    margin-inline: auto;
+    padding: clamp(1.6rem, 1rem + 2.6vw, 2.8rem);
+    border-radius: clamp(var(--r-lg), 4vw, var(--r-xl));
+    background: rgba(255, 255, 255, .8);
+    border: 1px solid rgba(255, 255, 255, .9);
+    box-shadow: var(--sh-lg);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    overflow: hidden;
+    animation: gcard-in 1s var(--e-out) .1s backwards;
+  }
+
+  @keyframes gcard-in {
+    from { opacity: 0; transform: translateY(26px) scale(.97); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .gcard__aura {
+    position: absolute;
+    inset-block-start: -60%;
+    inset-inline-start: 50%;
+    translate: 50% 0;
+    width: 140%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 26%, transparent), transparent 62%);
+    pointer-events: none;
+    transition: background var(--d-slow) var(--e-soft);
+  }
+
+  /* ---- الهدية ---- */
+  .gcard__glyph {
+    width: clamp(94px, 26vw, 136px);
+    margin-block-end: var(--s-4);
+    /* الغطاء يطير للأعلى عند الفتح، فنترك له مجالاً بلا قصّ */
+    padding-block-start: clamp(14px, 5vw, 26px);
+  }
+
+  /* ---- النصوص ---- */
+  .gcard__eyebrow {
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--c-ink-faint);
+  }
+
+  .gcard__chip {
+    margin-block: .5rem var(--s-4);
+    padding: .34rem .85rem;
+    border-radius: var(--r-pill);
+    background: var(--c-accent-wash);
+    color: var(--c-accent-deep);
+    font-size: var(--t-xs);
+    font-weight: 700;
+  }
+
+  .gcard__title {
+    font-size: var(--t-h2);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    margin-block-end: var(--s-3);
+  }
+
+  .gcard__note {
+    max-width: 40ch;
+    color: var(--c-ink-soft);
+    font-size: var(--t-body);
+  }
+
+  /* ---- الرسالة المكشوفة ---- */
+  .gcard__reveal {
+    width: 100%;
+    margin-block-start: var(--s-5);
+    padding: clamp(1rem, .8rem + 1vw, 1.5rem);
+    border-radius: var(--r-md);
+    background: linear-gradient(135deg, rgba(167, 139, 250, .1), rgba(109, 74, 255, .08));
+    border: 1px solid rgba(167, 139, 250, .24);
+  }
+
+  .gcard__message {
+    font-size: var(--t-lead);
+    font-weight: 600;
+    line-height: 1.75;
+    color: var(--c-ink);
+    white-space: pre-line;   /* يحترم أسطر الرسالة كما كُتبت في الإعدادات */
+  }
+
+  .gcard__footnote {
+    margin-block-start: var(--s-3);
+    font-size: var(--t-sm);
+    color: var(--c-ink-faint);
+  }
+
+  /* ---- الزر ---- */
+  .gcard__btn {
+    margin-block-start: var(--s-6);
+    min-width: min(100%, 240px);
+  }
+
+  /* مقفولة: الزر لا يَعِد بما لا يستطيع — لا بريق يوحي بأنه سيفتح شيئاً */
+  .gcard[data-open='no'] .gcard__btn::after { animation: none; opacity: 0; }
+  .gcard[data-open='no'] .gcard__btn {
+    background: rgba(255, 255, 255, .8);
+    color: var(--c-ink-soft);
+    border: 1px solid rgba(23, 18, 56, .12);
+    box-shadow: var(--sh-sm);
+  }
+  .gcard[data-open='no'] .gcard__btn:hover {
+    background: #fff;
+    box-shadow: var(--sh-md);
+  }
+
+  .gcard__hint {
+    min-height: 2.6em;
+    max-width: 38ch;
+    margin-block-start: var(--s-3);
+    font-size: var(--t-sm);
+    color: var(--c-ink-faint);
+    transition: opacity var(--d-base) var(--e-soft);
+  }
+  .gcard__hint.is-swapping { opacity: 0; }
+
+  /* هزّة البطاقة كلها مع هزّة الغطاء */
+  .gcard.is-nudging { animation: card-nudge .42s var(--e-soft); }
+
+  @keyframes card-nudge {
+    0%, 100% { transform: none; }
+    30%      { transform: translateX(-5px); }
+    65%      { transform: translateX(5px); }
+  }
+
+  @media (max-width: 480px) {
+    .gcard__btn { width: 100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gcard { animation: none; }
+    .gcard.is-nudging { animation: none; }
+  }
+</style>

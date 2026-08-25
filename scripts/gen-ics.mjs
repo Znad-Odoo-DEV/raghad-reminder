@@ -1,12 +1,11 @@
 /**
- * Builds public/raghd-sweet.ics — a daily 11:00 Asia/Damascus reminder that the
+ * Builds public/raghd-daily.ics — a daily 11:00 Asia/Damascus reminder that the
  * phone's own calendar fires, with no server and no browser involved.
  *
  * Run with: node scripts/gen-ics.mjs
  *
- * كان هذا الملف ينبّه ست مرات متصاعدة على موعد الدوا. صار تنبيهاً واحداً
- * لطيفاً: الموقع تحوّل من تذكير بالجرعة إلى رسالة فرح، وستّ رنّات لا تناسب
- * جملة حلوة.
+ * تنبيه واحد لطيف في وقته. هذا موقع ترقّب لا نظام إلحاح، وجملة حلوة واحدة
+ * تكفي — ولا شيء غيرها.
  *
  * RFC 5545 details that matter:
  *  - lines MUST be CRLF-terminated
@@ -16,15 +15,15 @@
 import { writeFileSync } from 'node:fs';
 
 const URL_SITE = 'https://znad-odoo-dev.github.io/raghad-reminder/';
-const OUT = 'public/raghd-sweet.ics';
+const OUT = 'public/raghd-daily.ics';
 
 const lines = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
-  'PRODID:-//Raghd//Daily Sweet Dose//AR',
+  'PRODID:-//Raghd//Daily Note//AR',
   'CALSCALE:GREGORIAN',
   'METHOD:PUBLISH',
-  'X-WR-CALNAME:جرعة اللطافة اليومية 🤍',
+  'X-WR-CALNAME:رسالة اللطافة اليومية 🤍',
   'X-WR-TIMEZONE:Asia/Damascus',
 
   // سوريا ألغت التوقيت الصيفي في 2022-10-28 وثبتت على +03.
@@ -39,15 +38,15 @@ const lines = [
   'END:VTIMEZONE',
 
   'BEGIN:VEVENT',
-  // UID جديد عن ملف الدوا القديم عن قصد: لو حمل أحدهم الملفين، لا نريد أن
-  // يستبدل التقويم أحدهما بالآخر بصمت.
-  'UID:raghd-daily-sweet@znad-odoo-dev.github.io',
+  // UID جديد عن أي ملف سابق عن قصد: لو حُمِّل الملفان، لا نريد أن يستبدل
+  // التقويم أحدهما بالآخر بصمت.
+  'UID:raghd-daily-note@znad-odoo-dev.github.io',
   'DTSTAMP:20260824T000000Z',
   'DTSTART;TZID=Asia/Damascus:20260101T110000',
   'DURATION:PT5M',
   'RRULE:FREQ=DAILY',
-  'SUMMARY:🤍 جرعة اللطافة اليومية',
-  'DESCRIPTION:تذكير إنك بخير، وإنك super special. الحمد لله 🤍',
+  'SUMMARY:🤍 رسالة اللطافة اليومية',
+  'DESCRIPTION:تذكير صغير إنك super special. وإنه في شي جاي 🎁',
   `URL:${URL_SITE}`,
   'TRANSP:TRANSPARENT',
 
@@ -55,7 +54,7 @@ const lines = [
   'BEGIN:VALARM',
   'ACTION:DISPLAY',
   'TRIGGER:PT0S',
-  'DESCRIPTION:🤍 صباح الخير يا ألطف صدفة. تضلي بخير.',
+  'DESCRIPTION:🤍 صباح الخير يا ألطف صدفة.',
   'END:VALARM',
 
   'END:VEVENT',

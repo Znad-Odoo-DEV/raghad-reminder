@@ -3,16 +3,16 @@
  * لجنة اللطافة العليا — بيضة مخفية + أداة اختبار
  *
  * تُفتح بثلاث نقرات على تسمية «يوم» تحت العدّاد، أو بـShift+L. تحاكي الساعة،
- * وهو ما تحتاجه لاختبار جرعة اللطافة اليومية بلا انتظار حتى الحادية عشرة.
+ * وهو ما تحتاجه لاختبار رسالة اللطافة اليومية بلا انتظار حتى الحادية عشرة.
  */
 import { sweetLabelAr } from '../scripts/schedule';
 
 const at = sweetLabelAr();
 
 const shortcuts = [
-  { key: 'before', label: 'قبل الجرعة',  hint: '10:15 صباحاً' },
-  { key: 'due',    label: 'وقت الجرعة',  hint: `${at} تماماً` },
-  { key: 'after',  label: 'بعد الجرعة',  hint: '1:40 ظهراً' },
+  { key: 'before', label: 'قبل الرسالة', hint: '10:15 صباحاً' },
+  { key: 'due',    label: 'وقت الرسالة', hint: `${at} تماماً` },
+  { key: 'after',  label: 'بعد الرسالة', hint: '1:40 ظهراً' },
   { key: 'rain',   label: 'مطر لطافة',   hint: 'قلوب وفراشات' },
 ];
 ---
@@ -113,7 +113,7 @@ const shortcuts = [
   .committee__eyebrow {
     font-size: var(--t-xs);
     font-weight: 600;
-    color: var(--c-pink);
+    color: var(--c-lav);
   }
   .committee__title {
     font-size: var(--t-h3);
@@ -159,7 +159,7 @@ const shortcuts = [
   }
   .committee__btn:hover {
     transform: translateY(-2px);
-    border-color: var(--c-pink);
+    border-color: var(--c-lav);
   }
   .committee__btn-label { font-weight: 700; font-size: var(--t-sm); }
   .committee__btn-hint { font-size: var(--t-xs); color: var(--c-ink-faint); }

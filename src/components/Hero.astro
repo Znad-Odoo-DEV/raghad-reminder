@@ -1,27 +1,27 @@
 ---
-import { HER } from '../site.config';
+import { HER, SURPRISE } from '../site.config';
 ---
 
 <header class="hero">
   <div class="wrap hero__inner">
     <p class="hero__badge" data-intro="1">
       <span class="hero__pulse" aria-hidden="true"></span>
-      الحمد لله على السلامة
+      في شي جاي
     </p>
 
     <h1 class="hero__title" data-intro="2">
-      {HER} طابت،
-      <span class="gradient-text">الحمد لله.</span>
+      {HER}، ترقّبي
+      <span class="gradient-text">المفاجأة.</span>
     </h1>
 
     <p class="hero__lead" data-intro="3">
-      ألطف وأجمل صدفة بحياتي — وصارت بخير. هاد كل الخبر، وهاد كل الموقع.
+      ما رح قلك شو، ولا إيمتى. بس هي جاية — وهي إلك أنتِ.
     </p>
 
     <ul class="hero__facts" data-intro="4">
       <li class="fact">
-        <span class="fact__k">الحالة</span>
-        <span class="fact__v">بخير ✨</span>
+        <span class="fact__k">المفاجأة</span>
+        <span class="fact__v">{SURPRISE.revealed ? 'وصلت 🎁' : 'قيد التحضير 🎁'}</span>
       </li>
       <li class="fact">
         <span class="fact__k">التصنيف</span>
@@ -56,7 +56,7 @@ import { HER } from '../site.config';
     gap: .6rem;
     padding: .48rem 1.05rem;
     border-radius: var(--r-pill);
-    border: 1px solid rgba(255, 77, 141, .2);
+    border: 1px solid rgba(167, 139, 250, .2);
     background: rgba(255, 255, 255, .72);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);

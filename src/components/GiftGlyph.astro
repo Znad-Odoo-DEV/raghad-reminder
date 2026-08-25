@@ -1,0 +1,80 @@
+---
+/**
+ * GiftGlyph — علبة الهدية المقفولة
+ *
+ * الغطاء عنصر مستقل (`.gift__lid`) حتى تقدر main.ts ترفعه وتميّله عند الكشف،
+ * وتهزّه هزّة صغيرة عند كل ضغطة وهي مقفولة. لو رسمنا العلبة قطعة واحدة لما
+ * أمكن تحريك الغطاء وحده.
+ */
+interface Props {
+  /** معرّف فريد للتدرّجات — لتفادي تضارب الـIDs عند تكرار الرمز */
+  id?: string;
+  class?: string;
+}
+
+const { id = 'gift', class: className } = Astro.props;
+---
+
+<svg
+  class:list={['gift-glyph', className]}
+  viewBox="0 0 64 60"
+  aria-hidden="true"
+  focusable="false"
+>
+  <defs>
+    <linearGradient id={`${id}-box`} x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c4b5fd" />
+      <stop offset="55%" stop-color="#8b6bff" />
+      <stop offset="100%" stop-color="#6d4aff" />
+    </linearGradient>
+    <linearGradient id={`${id}-lid`} x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c4b5fd" />
+      <stop offset="100%" stop-color="#8b6bff" />
+    </linearGradient>
+  </defs>
+
+  <!-- الصندوق -->
+  <rect x="9" y="26" width="46" height="29" rx="4" fill={`url(#${id}-box)`} />
+  <rect x="28.5" y="26" width="7" height="29" fill="#fff" opacity=".9" />
+
+  <!-- الغطاء والعقدة — يتحرّكان معاً -->
+  <g class="gift__lid">
+    <rect x="5" y="17.5" width="54" height="11.5" rx="3.5" fill={`url(#${id}-lid)`} />
+    <rect x="28.5" y="17.5" width="7" height="11.5" fill="#fff" opacity=".9" />
+    <g fill="#ffffff" stroke="#7c5cf0" stroke-width="1.5" stroke-linejoin="round">
+      <path d="M32 16.4C24.6 16.6 18.6 12.4 19.4 8.2 20.1 4.6 25.2 4.6 28 8.2c1.9 2.4 3.2 5.2 4 8.2Z" />
+      <path d="M32 16.4c7.4.2 13.4-4 12.6-8.2C43.9 4.6 38.8 4.6 36 8.2c-1.9 2.4-3.2 5.2-4 8.2Z" />
+      <circle cx="32" cy="17" r="3.4" />
+    </g>
+  </g>
+</svg>
+
+<style>
+  .gift-glyph {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .gift__lid {
+    transform-origin: 32px 23px;
+    transition: transform .6s var(--e-back);
+  }
+
+  /* مقفولة: هزّة رفض قصيرة عند الضغط */
+  :global(.is-nudging) .gift__lid { animation: lid-nudge .42s var(--e-soft); }
+
+  @keyframes lid-nudge {
+    0%, 100% { transform: none; }
+    30%      { transform: translateY(-2px) rotate(-5deg); }
+    65%      { transform: translateY(-1px) rotate(4deg); }
+  }
+
+  /* مفتوحة: الغطاء يطير ويميل ويبقى */
+  :global(.is-open) .gift__lid { transform: translate(6px, -22px) rotate(-18deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gift__lid { transition: none; }
+    :global(.is-nudging) .gift__lid { animation: none; }
+  }
+</style>

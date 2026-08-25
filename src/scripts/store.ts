@@ -4,23 +4,25 @@
  * سجل واحد لكل يوم تقويمي. فتح الموقع في يوم جديد يصفّر كل شيء تلقائياً، لأن
  * الـ`dayKey` المحفوظ لم يعد يطابق يوم دمشق الحالي.
  *
+ * الاستثناء الوحيد `surpriseSeen`: هي لحظة لا تتكرّر، فلا يصحّ أن يمحوها
+ * انقلاب اليوم — لها مفتاح مستقل خارج سجل اليوم.
+ *
  * لا شيء من هذا يخرج من جهاز رغد: لا سيرفر، لا حساب، لا تتبّع.
  */
 
 import { dayKeyOf, nowMs, wallOf } from './schedule';
 
-const KEY = 'raghd:grace:v1';
+const KEY = 'raghd:day:v2';
 const STREAK_KEY = 'raghd:visits:v1';
+const SURPRISE_KEY = 'raghd:surprise-seen:v1';
 
 export interface DayState {
   /** YYYY-MM-DD بتوقيت دمشق — إذا اختلف عن اليوم الحالي نبدأ من الصفر */
   dayKey: string;
-  /** كم مرة ضغطت «الحمد لله» اليوم */
-  thanks: number;
   /** كم مرة نقرت على القلب (easter egg) */
   heartTaps: number;
-  /** هل قرأت جرعة اللطافة اليوم؟ */
-  sweetSeen: boolean;
+  /** كم مرة حاولت تفتح الظرف وهو مقفول */
+  lockTaps: number;
 }
 
 export interface StreakState {
@@ -31,14 +33,20 @@ export interface StreakState {
 }
 
 function blank(dayKey: string): DayState {
-  return { dayKey, thanks: 0, heartTaps: 0, sweetSeen: false };
+  return { dayKey, heartTaps: 0, lockTaps: 0 };
 }
 
 /**
- * مفاتيح الموقع القديم (تذكير الدوا). لا شيء يقرأها بعد اليوم، لكنها تبقى
- * معلّقة في متصفح رغد إلى الأبد إن لم نحذفها — فنحذفها مرة واحدة عند الإقلاع.
+ * مفاتيح النسخ السابقة من الموقع. لا شيء يقرأها بعد اليوم، لكنها تبقى معلّقة
+ * في متصفح رغد إلى الأبد إن لم نحذفها — فنحذفها مرة واحدة عند الإقلاع.
  */
-const RETIRED_KEYS = ['raghd:dose:v1', 'raghd:streak:v1', 'raghd:notified:v2'];
+const RETIRED_KEYS = [
+  'raghd:dose:v1',
+  'raghd:streak:v1',
+  'raghd:notified:v2',
+  'raghd:grace:v1',
+  'raghd:sweet-sent:v1',
+];
 
 export function dropRetiredKeys(): void {
   try {
@@ -75,9 +83,8 @@ export function loadDay(): DayState {
 
   return {
     dayKey: today,
-    thanks: Number(saved.thanks) || 0,
     heartTaps: Number(saved.heartTaps) || 0,
-    sweetSeen: Boolean(saved.sweetSeen),
+    lockTaps: Number(saved.lockTaps) || 0,
   };
 }
 
@@ -89,6 +96,26 @@ export function patchDay(patch: Partial<DayState>): DayState {
   const next = { ...loadDay(), ...patch };
   saveDay(next);
   return next;
+}
+
+/* ---- المفاجأة: هل شافتها من قبل؟ ---------------------------------------- */
+
+export function surpriseSeen(): boolean {
+  try {
+    return localStorage.getItem(SURPRISE_KEY) === '1';
+  } catch {
+    // لا نقدر أن نتذكّر → نعتبرها لم تُرَ، فتحصل على الاحتفال في كل زيارة.
+    // احتفال زائد أرحم من لحظة انكشاف ضائعة.
+    return false;
+  }
+}
+
+export function markSurpriseSeen(): void {
+  try {
+    localStorage.setItem(SURPRISE_KEY, '1');
+  } catch {
+    /* noop */
+  }
 }
 
 /* ---- سلسلة الزيارات: كم يوم متتالي فتحت فيه رغد الموقع ------------------ */
@@ -128,6 +155,7 @@ export function resetAll(): void {
   try {
     localStorage.removeItem(KEY);
     localStorage.removeItem(STREAK_KEY);
+    localStorage.removeItem(SURPRISE_KEY);
   } catch {
     /* noop */
   }

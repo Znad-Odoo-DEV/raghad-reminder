@@ -8,9 +8,9 @@
  * وجناحاها يرفرفان. لو أعطيناها نفس فيزياء القصاصة لبدت ورقة ساقطة.
  */
 
-const HEART_COLORS = ['#ff4d8d', '#ff6fb5', '#ff8ec7', '#e0367f'];
-const WING_COLORS = ['#6d4aff', '#8b6bff', '#4b2fd6', '#ff9ad2', '#f59e0b'];
-const CONFETTI_COLORS = ['#6d4aff', '#ff6fb5', '#f59e0b', '#4b2fd6', '#ffffff'];
+const HEART_COLORS = ['#8b6bff', '#a78bfa', '#c4b5fd', '#6d4aca'];
+const WING_COLORS = ['#6d4aff', '#8b6bff', '#4b2fd6', '#d5c7ff', '#c8a2f5'];
+const CONFETTI_COLORS = ['#6d4aff', '#a78bfa', '#c4b5fd', '#4b2fd6', '#ffffff'];
 
 /** 0 = قصاصة · 1 = قلب · 2 = فراشة */
 type Kind = 0 | 1 | 2;

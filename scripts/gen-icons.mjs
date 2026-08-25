@@ -21,15 +21,15 @@ const HEART_PATH =
 const heart = (scale, cx, cy) => `
   <g transform="translate(${cx} ${cy}) scale(${scale}) translate(-32 -28.5)">
     <path d="${HEART_PATH}" fill="#ffffff"/>
-    <ellipse cx="20" cy="17" rx="8" ry="5" fill="#ffe1ef" opacity=".7"
+    <ellipse cx="20" cy="17" rx="8" ry="5" fill="#e9e2ff" opacity=".7"
              transform="rotate(-24 20 17)"/>
   </g>`;
 
 const grad = `
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff6fb5"/>
-      <stop offset="55%" stop-color="#ff4d8d"/>
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="55%" stop-color="#8b6bff"/>
       <stop offset="100%" stop-color="#6d4aff"/>
     </linearGradient>
   </defs>`;
