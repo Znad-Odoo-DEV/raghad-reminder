@@ -1,0 +1,22 @@
+نشر الـWorker — أوامر جاهزة للصق في cmd.exe
+
+انسخ سطراً سطراً. لا تنسخ أي شيء بعد علامة #، فـcmd لا يعرف التعليقات.
+
+d:
+cd "\New folder (3)\raghad\push-worker"
+npx wrangler login
+npx wrangler kv namespace create SUBS --update-config
+npx wrangler secret put ADMIN_TOKEN < ..\.push-admin-token.txt
+npx wrangler deploy
+
+ملاحظات:
+
+- السطران الأولان معاً: cd وحده لا ينقلك بين الأقراص في cmd. البديل سطر واحد:
+      cd /d "d:\New folder (3)\raghad\push-worker"
+
+- أمر ADMIN_TOKEN يقرأ التوكن من ملف جاهز، فلا تحتاج أن تخترعه ولا أن تنسخه.
+  الملف نفسه متجاهَل في git، ونفس القيمة محفوظة أصلاً في أسرار المستودع.
+
+- آخر أمر يطبع رابط الـWorker، شكله:
+      https://raghd-push.<اسم-حسابك>.workers.dev
+  أرسل هذا الرابط، وأنا أكمل الباقي.

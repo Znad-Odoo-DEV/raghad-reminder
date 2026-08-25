@@ -2,12 +2,15 @@ name = "raghd-push"
 main = "src/index.js"
 compatibility_date = "2026-08-01"
 
-# مساحة تخزين اشتراك رغد. أنشئها مرة واحدة بـ:
-#   npx wrangler kv namespace create SUBS
-# ثم ضع المعرّف الذي يطبعه مكان PUT_KV_ID_HERE.
-[[kv_namespaces]]
-binding = "SUBS"
-id = "PUT_KV_ID_HERE"
+# مساحة تخزين اشتراك رغد.
+#
+# كتلة [[kv_namespaces]] غير موجودة هنا عمداً: أمر الإنشاء أدناه يضيفها بنفسه
+# مع المعرّف الصحيح. كتابة كتلة بمعرّف وهمي مسبقاً تجعل الأمر يضيف كتلة ثانية
+# فيصير في ربطان بالاسم نفسه.
+#
+#   npx wrangler kv namespace create SUBS --update-config
+#
+# وإن نسيتها، ينهار النشر برسالة واضحة بدل أن يعمل بربط خاطئ.
 
 [vars]
 ALLOWED_ORIGIN = "https://znad-odoo-dev.github.io"
