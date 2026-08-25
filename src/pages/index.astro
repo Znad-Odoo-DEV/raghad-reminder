@@ -1,32 +1,26 @@
 ---
 import Base from '../layouts/Base.astro';
-import Ticker from '../components/Ticker.astro';
-import Hero from '../components/Hero.astro';
-import SurpriseCard from '../components/SurpriseCard.astro';
-import SinceCard from '../components/SinceCard.astro';
+import Stage from '../components/Stage.astro';
 import DailyNote from '../components/DailyNote.astro';
-import Wishes from '../components/Wishes.astro';
+import Footer from '../components/Footer.astro';
 import CommitteePanel from '../components/CommitteePanel.astro';
 import MusicPlayer from '../components/MusicPlayer.astro';
-import Footer from '../components/Footer.astro';
 
-const title = 'رغد، ترقّبي المفاجأة 🎁';
-const description =
-  'في شي جاي. ما رح نقول شو ولا إيمتى — بس هي جاية. وعدّاد من يوم الصدفة، وجملة حلوة كل يوم.';
+const title = 'رغد 🤍';
+const description = 'في كم شغلة صغيرة لازم تتذكّريها.';
 ---
 
 <Base title={title} description={description}>
-  <Ticker />
-
   <main id="main">
-    <Hero />
-    <SurpriseCard />
-    <SinceCard />
-    <DailyNote />
-    <Wishes />
+    <Stage />
   </main>
 
-  <Footer />
+  {/* لا يظهر إلا بعد أن تنتهي الحكاية — أثناءها يكسر الإحساس */}
+  <div id="after" hidden>
+    <DailyNote />
+    <Footer />
+  </div>
+
   <CommitteePanel />
   <MusicPlayer />
 </Base>

@@ -9,11 +9,12 @@
  */
 
 const HEART_COLORS = ['#8b6bff', '#a78bfa', '#c4b5fd', '#6d4aca'];
-const WING_COLORS = ['#6d4aff', '#8b6bff', '#4b2fd6', '#d5c7ff', '#c8a2f5'];
+const WING_COLORS = ['#8b6bff', '#a78bfa', '#c4b5fd', '#d5c7ff', '#e9e2ff'];
 const CONFETTI_COLORS = ['#6d4aff', '#a78bfa', '#c4b5fd', '#4b2fd6', '#ffffff'];
+const STAR_COLORS = ['#ffffff', '#e9e2ff', '#c4b5fd'];
 
-/** 0 = قصاصة · 1 = قلب · 2 = فراشة */
-type Kind = 0 | 1 | 2;
+/** 0 = قصاصة · 1 = قلب · 2 = فراشة · 3 = نجمة */
+type Kind = 0 | 1 | 2 | 3;
 
 interface Particle {
   x: number; y: number;
@@ -170,6 +171,25 @@ function drawButterfly(c: CanvasRenderingContext2D, p: Particle): void {
   }
 }
 
+
+/**
+ * نجمة رباعية بأربعة منحنيات — لا رؤوس حادّة.
+ * الخماسية الحادّة تُقرأ «زينة عيد ميلاد جاهزة»؛ هذه أهدأ وتناسب المشهد.
+ */
+function drawStar(c: CanvasRenderingContext2D, p: Particle): void {
+  const r = p.size / 2;
+  const w = r * 0.28;
+  c.beginPath();
+  c.moveTo(0, -r);
+  c.quadraticCurveTo(w, -w, r, 0);
+  c.quadraticCurveTo(w, w, 0, r);
+  c.quadraticCurveTo(-w, w, -r, 0);
+  c.quadraticCurveTo(-w, -w, 0, -r);
+  c.closePath();
+  c.fillStyle = p.color;
+  c.fill();
+}
+
 function frame(time: number): void {
   if (!ctx || !canvas) {
     // فقدنا الـcanvas بينما كانت هناك رشقة مجدولة — ننظّف بدل أن نتسرّب.
@@ -200,6 +220,12 @@ function frame(time: number): void {
       // ميلان طفيف يتبع اتجاه الحركة — فراشة مقلوبة تقرأ خطأ
       p.rot = Math.sin(p.phase * 0.5) * 0.22;
       p.vx *= Math.pow(0.985, step);
+    } else if (p.kind === 3) {
+      // النجمة تطفو للأعلى وتخفت — لا تسقط
+      p.phase += 0.03 * step;
+      p.x += (p.vx + Math.sin(p.phase) * 0.4) * step;
+      p.y += p.vy * step;
+      p.rot += p.vr * 0.4 * step;
     } else {
       p.vy += 0.16 * step;              // جاذبية
       p.vx *= Math.pow(0.995, step);    // مقاومة هواء
@@ -224,6 +250,8 @@ function frame(time: number): void {
       drawHeart(ctx, p);
     } else if (p.kind === 2) {
       drawButterfly(ctx, p);
+    } else if (p.kind === 3) {
+      drawStar(ctx, p);
     } else {
       ctx.fillStyle = p.color;
       ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.62);
@@ -238,12 +266,15 @@ function frame(time: number): void {
 /** يبني جسيماً بالشكل المطلوب — الحجم واللون والفيزياء تتبع الشكل. */
 function make(kind: Kind, x: number, y: number, vx: number, vy: number, life: number): Particle {
   const color =
-    kind === 1 ? pick(HEART_COLORS) : kind === 2 ? pick(WING_COLORS) : pick(CONFETTI_COLORS);
+    kind === 1 ? pick(HEART_COLORS)
+    : kind === 2 ? pick(WING_COLORS)
+    : kind === 3 ? pick(STAR_COLORS)
+    : pick(CONFETTI_COLORS);
 
   return {
     x, y, vx, vy, color, kind, life,
     // الفراشة أكبر قليلاً حتى يُقرأ جناحاها
-    size: kind === 2 ? 15 + Math.random() * 10 : 8 + Math.random() * 8,
+    size: kind === 2 ? 15 + Math.random() * 10 : kind === 3 ? 5 + Math.random() * 7 : 8 + Math.random() * 8,
     rot: kind === 0 ? Math.random() * Math.PI * 2 : (Math.random() - 0.5) * 0.5,
     vr: (Math.random() - 0.5) * (kind === 0 ? 0.28 : 0.12),
     phase: Math.random() * Math.PI * 2,
@@ -342,4 +373,42 @@ export function butterflies(count = 14): void {
     particles.push(p);
   }
   if (!raf) raf = requestAnimationFrame(frame);
+}
+
+/**
+ * الختام — صعود لا انفجار.
+ *
+ * الرشقة تناسب لحظة مفاجئة؛ نهاية الحكاية تحتاج شيئاً يتنفّس. تصعد العناصر من
+ * الحافة السفلية عبر عرض الشاشة على دفعات، فيبقى المشهد مقروءاً والرسالة
+ * ظاهرة تحته بدل أن تُغطّى.
+ */
+export function finale(): void {
+  if (reduced()) return;
+  if (!ensureCanvas()) return;
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  const wave = (count: number, kinds: readonly Kind[]) => {
+    for (let i = 0; i < count; i++) {
+      const kind = kinds[i % kinds.length]!;
+      particles.push(
+        make(
+          kind,
+          (W / count) * i + Math.random() * (W / count),
+          H + 30 + Math.random() * 60,
+          (Math.random() - 0.5) * 1.2,
+          -(1.6 + Math.random() * 1.9),
+          7 + Math.random() * 3,
+        ),
+      );
+    }
+    if (!raf) raf = requestAnimationFrame(frame);
+  };
+
+  // موجات قليلة ومتباعدة: المشهد يتنفّس، والرسالة تبقى هي البطل
+  wave(9, [3, 1, 3]);
+  window.setTimeout(() => wave(7, [2, 3, 1]), 900);
+  window.setTimeout(() => wave(7, [1, 3, 2]), 2000);
+  window.setTimeout(() => wave(6, [3, 2]), 3200);
 }

@@ -9,7 +9,7 @@
  * قاعدة المناطق الزمنية عند كل لحظة، فيبقى الموقع صحيحاً لو تغيّرت القواعد.
  */
 
-import { COINCIDENCE, FIRST_TALK, SWEET_HOUR, SWEET_MINUTE } from '../site.config';
+import { BIRTHDAY, COINCIDENCE, FIRST_TALK, SWEET_HOUR, SWEET_MINUTE } from '../site.config';
 
 /** المنطقة الزمنية المرجعية — رغد في سوريا */
 export const TIMEZONE = 'Asia/Damascus';
@@ -193,6 +193,85 @@ export function sinceCoincidence(at: number = nowMs()): SinceSnapshot | null {
 /** من يوم ما بلّشنا نحكي حتى الآن. */
 export function sinceFirstTalk(at: number = nowMs()): SinceSnapshot | null {
   return elapsedSince(FIRST_TALK_AT, at);
+}
+
+/* -------------------------------------------------------------------------
+   عيد الميلاد — يُقاس بالنومات لا بالساعات
+   ------------------------------------------------------------------------- */
+
+/** لحظة منتصف ليل عيد الميلاد كما وردت في الإعدادات (قد تكون قد مضت). */
+const BIRTHDAY_AT: number | null = parseDamascusDate(BIRTHDAY);
+
+/** رقم اليوم التقويمي في دمشق — أساس فرق الأيام، لا طرح 24 ساعة. */
+function damascusDayNumber(instant: number): number {
+  const w = wallOf(instant);
+  return Math.floor(Date.UTC(w.year, w.month - 1, w.day) / 86_400_000);
+}
+
+/**
+ * أقرب عيد ميلاد قادم (أو اليوم نفسه إن كان اليوم).
+ *
+ * بعد مرور العيد نتقدّم سنة، فيبقى العدّاد حيّاً كل سنة بدل أن يتجمّد على
+ * تاريخ مضى.
+ */
+export function nextBirthdayInstant(at: number = nowMs()): number | null {
+  if (BIRTHDAY_AT === null) return null;
+
+  const b = wallOf(BIRTHDAY_AT);
+  const today = damascusDayNumber(at);
+
+  for (let year = wallOf(at).year - 1; year <= wallOf(at).year + 2; year++) {
+    const candidate = instantOfWall(year, b.month, b.day, 0, 0);
+    if (damascusDayNumber(candidate) >= today) return candidate;
+  }
+  return null;
+}
+
+export interface BirthdaySnapshot {
+  /** كم نومة باقية: 0 يعني اليوم، 1 يعني بكرا */
+  sleeps: number;
+  /**
+   * الوقت حتى منتصف الليل القادم — أي حتى تنقص «نومة».
+   *
+   * عمداً ليس مجموع الساعات حتى العيد: ‎270:14:38‎ رقم صحيح لكنه يُقرأ ساعةً
+   * مكسورة. وما يهمّ فعلاً هو متى ينقص العدّاد.
+   */
+  hours: number;
+  minutes: number;
+  seconds: number;
+  /** هل اليوم هو العيد؟ */
+  isToday: boolean;
+  /** يوم العيد وشهره — للعرض */
+  day: number;
+  month: number;
+}
+
+/** حالة العدّاد الآن، أو `null` إن لم يُضبط تاريخ صالح. */
+export function untilBirthday(at: number = nowMs()): BirthdaySnapshot | null {
+  const target = nextBirthdayInstant(at);
+  if (target === null || BIRTHDAY_AT === null) return null;
+
+  const b = wallOf(BIRTHDAY_AT);
+  const sleeps = damascusDayNumber(target) - damascusDayNumber(at);
+
+  // منتصف الليل القادم بتقويم دمشق — نخطو يوماً ولا نضيف 24 ساعة
+  const w = wallOf(at);
+  const d = new Date(Date.UTC(w.year, w.month - 1, w.day));
+  d.setUTCDate(d.getUTCDate() + 1);
+  const midnight = instantOfWall(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), 0, 0);
+
+  const ms = Math.max(0, midnight - at);
+  const s = Math.floor(ms / 1000);
+
+  return {
+    sleeps,
+    hours: Math.floor(s / 3600),
+    minutes: Math.floor((s % 3600) / 60),
+    seconds: s % 60,
+    isToday: sleeps === 0,
+    day: b.day,
+    month: b.month,
+  };
 }
 
 /* -------------------------------------------------------------------------

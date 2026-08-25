@@ -1,49 +1,39 @@
 /**
- * main.ts — تشغيل الموقع
+ * main.ts — تشغيل القصة
  *
- * يقرأ الوقت مرة كل ثانية ويرسمه. كل الكتابة في الـDOM تحدث داخل `paint()`؛
- * لا شيء غيرها يلمس الصفحة، وهذا ما يجعل محاكي الوقت المخفي (لجنة اللطافة
- * العليا) صادقاً: نغيّر مصدر الوقت فقط، فيتبعه كل شيء.
+ * الملف الوحيد الذي يلمس الـDOM. المكوّنات تحمل markup وCSS فقط، والربط كله
+ * عبر `data-*`.
+ *
+ * المبدأ: مشهد واحد ظاهر والباقي `hidden`. الانتقال إظهارٌ وإخفاء لا إعادة
+ * بناء، فتبقى الحركة ناعمة على الهاتف — وأنيميشن الدخول تعمل من جديد تلقائياً
+ * لأن العنصر يخرج من `display:none`.
  */
 
+import { STORY } from '../site.config';
+
 import {
-  sinceCoincidence,
-  sinceFirstTalk,
-  humanSince,
-  daysAr,
+  untilBirthday,
+  nextBirthdayInstant,
+  nowMs,
+  damascusClock,
+  damascusTodayAt,
   setOffset,
   getOffset,
-  damascusTodayAt,
-  damascusClock,
   SWEET_HOUR,
-  type SinceSnapshot,
 } from './schedule';
 
-import {
-  loadDay,
-  patchDay,
-  bumpStreak,
-  resetAll,
-  dropRetiredKeys,
-  surpriseSeen,
-  markSurpriseSeen,
-  type DayState,
-} from './store';
+import * as story from './story';
+import type { Scene } from './story';
 
 import {
-  SINCE_COPY,
-  LOCKED_LINES,
-  LATAFA,
-  HEART_TAPS,
-  HEART_TAPS_AFTER,
-  AWAY_TITLES,
-  EGG_TOASTS,
-  pick,
+  FRAGMENTS, HARMONY, DISHES_TIMER, COUNTDOWN, BIRTHDAY_COPY,
+  AWAY_TITLES, MISC, sleepsAr, pick,
 } from './copy';
 
-import { burst, heartRain, butterflies } from './celebrate';
+import { finale, burst } from './celebrate';
+import { initAudio, type MusicHandle } from './music';
+import { dropRetiredKeys, resetAll } from './store';
 import { pushConfigured, pushSupported, subscribe as pushSubscribe } from './push';
-import { initAudio } from './music';
 
 import {
   supported as notifySupported,
@@ -56,332 +46,403 @@ import {
 } from './notify';
 
 /* =========================================================================
-   مراجع DOM
+   مراجع
    ========================================================================= */
 
-const $ = <T extends Element = HTMLElement>(sel: string) =>
-  document.querySelector(sel) as T | null;
-const $$ = <T extends Element = HTMLElement>(sel: string) =>
-  Array.from(document.querySelectorAll(sel)) as T[];
+const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) =>
+  r.querySelector(s) as T | null;
+const $$ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) =>
+  Array.from(r.querySelectorAll(s)) as T[];
 
-const card = $('[data-card]');
-const heartBtn = $<HTMLButtonElement>('[data-heart]');
-const elWhisper = $('[data-whisper]');
-const elTalk = $('[data-talk]');
+const scenes = $$<HTMLElement>('[data-scene]');
+const thread = $('[data-thread]');
+const after = $('#after');
 const live = $('#live-region');
 
-const units: Record<'d' | 'h' | 'm' | 's', HTMLElement | null> = {
-  d: $('[data-unit="d"]'),
-  h: $('[data-unit="h"]'),
-  m: $('[data-unit="m"]'),
-  s: $('[data-unit="s"]'),
-};
-
-const dayLabel = $('[data-unit-k="d"]');
-
 const BASE_TITLE = document.title;
+const CD_START_KEY = 'raghd:cd-start:v1';
+
+let music: MusicHandle | null = null;
+let musicStarted = false;
+let tickTimer = 0;
+let lastSleeps = -1;
+
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /* =========================================================================
-   حالة التشغيل
+   المشاهد
    ========================================================================= */
 
-let day: DayState = loadDay();
-let lastDays = -1;
-let lastWhisperIndex = -1;
-let whisperTimer = 0;
+function show(name: Scene): void {
+  for (const el of scenes) el.hidden = el.dataset.scene !== name;
 
-const pad = (n: number) => String(n).padStart(2, '0');
+  if (thread) thread.style.width = `${Math.round(story.progress() * 100)}%`;
 
-/* =========================================================================
-   الرسم
-   ========================================================================= */
+  // الأدوات الجانبية لا تظهر إلا بعد أن تنتهي الحكاية
+  if (after) after.hidden = !(name === 'countdown' || name === 'birthday');
 
-function setText(el: HTMLElement | null, value: string): void {
-  if (!el || el.textContent === value) return;
-  el.textContent = value;
+  window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
+  onEnter(name);
 }
 
-/** الأيام هي الرقم البطل — تستحق أنيميشن عند التغيّر، بخلاف الثواني. */
-function setDays(el: HTMLElement | null, value: string): void {
-  if (!el || el.textContent === value) return;
-  el.textContent = value;
-  el.classList.remove('is-tick');
-  void el.offsetWidth; // إعادة تشغيل الأنيميشن
-  el.classList.add('is-tick');
-}
+/** ما يحتاج تشغيلاً عند دخول مشهد بعينه. */
+function onEnter(name: Scene): void {
+  window.clearInterval(tickTimer);
 
-function paint(): void {
-  const s = sinceCoincidence();
-  if (s) {
-    setDays(units.d, String(s.days));
-    setText(units.h, pad(s.hours));
-    setText(units.m, pad(s.minutes));
-    setText(units.s, pad(s.seconds));
-
-    if (s.days !== lastDays) {
-      lastDays = s.days;
-      announce(s);
-    }
+  switch (name) {
+    case 'fragments': paintFragment(story.current().fragment); break;
+    case 'gather':    runGather(); break;
+    case 'reveal':    fillBirthdayDate(); break;
+    case 'countdown': startCountdown(); break;
+    case 'birthday':  runBirthday(); break;
   }
-
-  const t = sinceFirstTalk();
-  if (t && elTalk) setText(elTalk, daysAr(t.days));
 }
 
-/** إعلان لقارئات الشاشة — عند تغيّر اليوم فقط، لا كل ثانية. */
-function announce(s: SinceSnapshot): void {
-  if (!live) return;
-  live.textContent = `مرّ من يوم الصدفة ${humanSince(s)}. ${SINCE_COPY.title}`;
+function advance(): void {
+  show(story.next().scene);
 }
 
 /* =========================================================================
-   همسات اللطافة
+   الظروف
    ========================================================================= */
-
-function say(text: string): void {
-  if (!elWhisper) return;
-  elWhisper.classList.add('is-swapping');
-  window.setTimeout(() => {
-    elWhisper.textContent = text;
-    elWhisper.classList.remove('is-swapping');
-  }, 220);
-}
-
-function scheduleWhisper(): void {
-  window.clearInterval(whisperTimer);
-  const rotate = () => {
-    const { text, index } = pick(LATAFA, lastWhisperIndex);
-    lastWhisperIndex = index;
-    say(text);
-  };
-  rotate();
-  whisperTimer = window.setInterval(rotate, 9000);
-}
-
-/* =========================================================================
-   المفاجأة 🎁
-   ========================================================================= */
-
-const surprise = $('[data-surprise]');
-const surpriseBtn = $<HTMLButtonElement>('[data-surprise-open]');
-const surpriseHint = $('[data-surprise-hint]');
 
 /**
- * البطاقة مقفولة أو مفتوحة بحسب ما بُني — لا يوجد هنا أي منطق يفتحها.
- *
- * نص المفاجأة لا يصل إلى المتصفّح إطلاقاً وهي مقفولة (انظر SurpriseCard.astro)،
- * فلا شيء هنا يستطيع كشفه ولو أراد. لحظة النشر هي لحظة الكشف.
+ * الفتح ليس تبديل صورة: الختم ينكسر، ثم يُقلب الغطاء، ثم تطلع الورقة. ننتظر
+ * انتهاء ذلك قبل الانتقال، وإلا ضاعت اللحظة التي بُني عليها المشهد.
  */
-const isOpen = surprise?.dataset.open === 'yes';
+function openEnvelope(el: HTMLElement): void {
+  const scene = el.closest<HTMLElement>('[data-scene]');
+  if (!scene || scene.dataset.opening === '1') return;
+  scene.dataset.opening = '1';
 
-let lastLockedIndex = -1;
+  for (const b of $$<HTMLButtonElement>('[data-open]', scene)) b.disabled = true;
+  $('.env', scene)?.classList.add('is-open');
 
-function nudgeLocked(): void {
-  if (!surprise) return;
+  // أول ظرف يفتح الأغنية معه — لا عند تحميل الصفحة
+  if (STORY.musicOnFirstOpen) void startMusic();
 
-  const taps = loadDay().lockTaps + 1;
-  day = patchDay({ lockTaps: taps });
+  window.setTimeout(() => {
+    scene.dataset.opening = '0';
+    for (const b of $$<HTMLButtonElement>('[data-open]', scene)) b.disabled = false;
+    $('.env', scene)?.classList.remove('is-open');
+    advance();
+  }, reduced() ? 120 : 1250);
+}
 
-  surprise.classList.remove('is-nudging');
-  void (surprise as HTMLElement).offsetWidth;
-  surprise.classList.add('is-nudging');
-  window.setTimeout(() => surprise.classList.remove('is-nudging'), 500);
+/* =========================================================================
+   القصاصات
+   ========================================================================= */
 
-  const { text, index } = pick(LOCKED_LINES, lastLockedIndex);
-  lastLockedIndex = index;
+const fragNext = $<HTMLButtonElement>('[data-frag-next]');
+const fragDots = $('[data-frag-dots]');
 
-  if (surpriseHint) {
-    surpriseHint.classList.add('is-swapping');
+function paintFragment(i: number): void {
+  const items = $$<HTMLElement>('[data-frag]');
+  items.forEach((el) => (el.hidden = Number(el.dataset.frag) !== i));
+
+  if (fragDots) {
+    fragDots.innerHTML = items.map((_, n) => `<span class="${n === i ? 'on' : ''}"></span>`).join('');
+  }
+
+  const kind = FRAGMENTS[i]?.kind;
+  if (fragNext) {
+    fragNext.hidden = kind === 'harmony';
+    fragNext.textContent = 'كمّلي';
+  }
+
+  if (kind === 'timer') runDishes();
+  if (kind === 'harmony') runHarmony();
+}
+
+function nextFragment(): void {
+  if (story.nextFragment(FRAGMENTS.length)) paintFragment(story.current().fragment);
+  else advance();
+}
+
+/* ---- الجلي: الرقم بيركض لتحت ---- */
+
+function runDishes(): void {
+  const el = $('[data-dishes]');
+  if (!el) return;
+
+  const total = DISHES_TIMER.seconds;
+  const fmt = (s: number) => `${pad2(Math.floor(s / 60))}:${pad2(s % 60)}`;
+
+  if (reduced()) {
+    el.textContent = fmt(0);
+    return;
+  }
+
+  const DURATION = 2200;
+  const start = performance.now();
+  el.textContent = fmt(total);
+
+  const step = (now: number) => {
+    const t = Math.min((now - start) / DURATION, 1);
+    // يهبط بسرعة ثم يستقرّ — أطرف من هبوط خطّي
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = fmt(Math.round(total * (1 - eased)));
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ---- الانسجام: مهما اختارت، نفس الجواب ---- */
+
+function runHarmony(): void {
+  const q = $('[data-harmony-q]');
+  const opts = $('[data-harmony-opts]');
+  const verdict = $('[data-harmony-verdict]');
+  const result = $('[data-harmony-result]');
+  if (!q || !opts || !verdict || !result) return;
+
+  let round = 0;
+  verdict.hidden = true;
+  result.hidden = true;
+
+  const render = () => {
+    const r = HARMONY.rounds[round]!;
+    q.textContent = r.question;
+    opts.hidden = false;
+    opts.innerHTML = '';
+    for (const label of r.options) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.addEventListener('click', answer, { once: true });
+      opts.appendChild(b);
+    }
+  };
+
+  const answer = () => {
+    const r = HARMONY.rounds[round]!;
+    opts.hidden = true;
+    verdict.hidden = false;
+    verdict.textContent = r.verdict;
+
     window.setTimeout(() => {
-      surpriseHint.textContent = text;
-      surpriseHint.classList.remove('is-swapping');
-    }, 180);
-  }
-
-  // مثابرة تستحق فراشة
-  if (taps % 5 === 0) butterflies(8);
-}
-
-function celebrateOpen(from?: Element | null): void {
-  surprise?.classList.add('is-open');
-  burst(from ?? surpriseBtn);
-  window.setTimeout(() => butterflies(16), 220);
-}
-
-function initSurprise(): void {
-  if (!surpriseBtn) return;
-
-  surpriseBtn.addEventListener('click', () => {
-    if (isOpen) celebrateOpen(surpriseBtn);
-    else nudgeLocked();
-  });
-
-  if (!isOpen) return;
-
-  // الغطاء يبقى مرفوعاً دائماً بعد الكشف
-  surprise?.classList.add('is-open');
-
-  // الاحتفال الكبير مرة واحدة فقط — أول مرة تفتح فيها الصفحة بعد الكشف.
-  //
-  // موجتان لا سحابة واحدة: الرشقة والمطر معاً يعطيان ~200 جسيم تحجب الرسالة
-  // نفسها التي جاءت لتقرأها. نفصل بينهما فتُقرأ الرسالة بين الموجتين.
-  if (!surpriseSeen()) {
-    markSurpriseSeen();
-    window.setTimeout(celebrateOpen, 900);
-    window.setTimeout(heartRain, 3600);
-  }
-}
-
-/* =========================================================================
-   النبضة
-   ========================================================================= */
-
-function tick(): void {
-  const fresh = loadDay();
-  // انقلاب اليوم والصفحة مفتوحة، أو تعديل من تبويب آخر
-  if (fresh.dayKey !== day.dayKey) day = fresh;
-  paint();
-}
-
-/* =========================================================================
-   البيض المخفي 🥚
-   ========================================================================= */
-
-function initEggs(): void {
-  // 1) النقر على القلب
-  heartBtn?.addEventListener('click', () => {
-    const taps = loadDay().heartTaps + 1;
-    day = patchDay({ heartTaps: taps });
-
-    heartBtn.classList.remove('is-beating');
-    void heartBtn.offsetWidth;
-    heartBtn.classList.add('is-beating');
-
-    butterflies(taps >= 8 ? 18 : 10);
-
-    const line = HEART_TAPS[taps];
-    if (line) say(line);
-    if (taps === 12) heartRain();
-    if (taps > 12 && taps % 7 === 0) say(HEART_TAPS_AFTER);
-  });
-
-  // 2) قلب الفوتر
-  $('[data-foot-egg]')?.addEventListener('click', () => {
-    heartRain();
-    say(EGG_TOASTS.bottom);
-  });
-
-  // 3) نسخ نص من الصفحة
-  document.addEventListener('copy', () => say(EGG_TOASTS.copy), { passive: true });
-
-  // 4) تغيير عنوان التبويب عند الخروج
-  let awayIndex = -1;
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      const { text, index } = pick(AWAY_TITLES, awayIndex);
-      awayIndex = index;
-      document.title = text;
-    } else {
-      document.title = BASE_TITLE;
-      tick();
-    }
-  });
-
-  // 5) لجنة اللطافة العليا — ثلاث نقرات على تسمية «يوم»، أو Shift+L
-  let taps = 0;
-  let tapTimer = 0;
-  dayLabel?.addEventListener('click', () => {
-    taps += 1;
-    window.clearTimeout(tapTimer);
-    tapTimer = window.setTimeout(() => (taps = 0), 1500);
-    if (taps >= 3) {
-      taps = 0;
-      openCommittee();
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.shiftKey && (e.key === 'L' || e.key === 'l')) openCommittee();
-    if (e.key === 'Escape') closeCommittee();
-  });
-}
-
-/* =========================================================================
-   لجنة اللطافة العليا (محاكي الوقت)
-   ========================================================================= */
-
-const committee = $('[data-committee]');
-const committeeStatus = $('[data-committee-status]');
-let lastFocused: HTMLElement | null = null;
-
-function openCommittee(): void {
-  if (!committee || !committee.hidden) return;
-  lastFocused = document.activeElement as HTMLElement | null;
-  committee.hidden = false;
-  say(EGG_TOASTS.panel);
-  committee.querySelector<HTMLButtonElement>('.committee__x')?.focus();
-  refreshCommitteeStatus();
-}
-
-function closeCommittee(): void {
-  if (!committee || committee.hidden) return;
-  committee.hidden = true;
-  lastFocused?.focus();
-}
-
-function refreshCommitteeStatus(): void {
-  if (!committeeStatus) return;
-  committeeStatus.textContent = getOffset()
-    ? `الوقت مُحاكى الآن: ${damascusClock()} بتوقيت سوريا`
-    : `الوقت حقيقي — الساعة ${damascusClock()} بتوقيت سوريا.`;
-}
-
-/** يضبط الإزاحة بحيث تصبح "الآن" هي الساعة المطلوبة اليوم بتوقيت دمشق. */
-function simulateAt(hour: number, minute: number): void {
-  const real = Date.now();
-  setOffset(damascusTodayAt(hour, minute, real) - real);
-  tick();
-  scheduleNotify();
-  refreshCommitteeStatus();
-}
-
-function initCommittee(): void {
-  for (const el of $$('[data-committee-close]')) {
-    el.addEventListener('click', closeCommittee);
-  }
-
-  for (const btn of $$<HTMLButtonElement>('[data-sim]')) {
-    btn.addEventListener('click', () => {
-      switch (btn.dataset.sim) {
-        case 'before': simulateAt(SWEET_HOUR - 1, 15); break;
-        case 'due':    simulateAt(SWEET_HOUR, 0); break;
-        case 'after':  simulateAt(SWEET_HOUR + 2, 40); break;
-        case 'rain':
-          heartRain();
-          butterflies(16);
-          break;
-        case 'real':
-          setOffset(0);
-          tick();
-          scheduleNotify();
-          refreshCommitteeStatus();
-          break;
-        case 'reset':
-          resetAll();
-          setOffset(0);
-          day = loadDay();
-          lastDays = -1;
-          tick();
-          refreshCommitteeStatus();
-          say(EGG_TOASTS.reset);
-          break;
+      round += 1;
+      if (round < HARMONY.rounds.length) {
+        verdict.hidden = true;
+        render();
+      } else {
+        verdict.hidden = true;
+        result.hidden = false;
+        if (fragNext) {
+          fragNext.hidden = false;
+          fragNext.textContent = HARMONY.next;
+        }
       }
-    });
+    }, reduced() ? 300 : 1200);
+  };
+
+  render();
+}
+
+/* =========================================================================
+   التجمّع
+   ========================================================================= */
+
+function runGather(): void {
+  const box = $('[data-gather]');
+  if (!box) return;
+
+  box.innerHTML = '';
+  // مواضع ثابتة لا عشوائية: التكوين نفسه في كل مرة، فيبدو مقصوداً
+  const spots = [
+    { x: 6, y: 8, r: -12 },
+    { x: 68, y: 4, r: 9 },
+    { x: 2, y: 58, r: 7 },
+    { x: 72, y: 62, r: -8 },
+    { x: 38, y: 30, r: -3 },
+  ];
+
+  for (let i = 0; i < FRAGMENTS.length; i++) {
+    const s = spots[i] ?? spots[0]!;
+    const piece = document.createElement('i');
+    piece.style.insetInlineStart = `${s.x}%`;
+    piece.style.insetBlockStart = `${s.y}%`;
+    piece.style.transform = `rotate(${s.r}deg)`;
+    box.appendChild(piece);
+  }
+
+  if (reduced()) {
+    window.setTimeout(advance, 900);
+    return;
+  }
+
+  window.setTimeout(() => {
+    for (const piece of $$<HTMLElement>('i', box)) {
+      piece.style.insetInlineStart = '50%';
+      piece.style.insetBlockStart = '50%';
+      piece.style.marginInlineStart = '-22px';
+      piece.style.marginBlockStart = '-15px';
+      piece.style.transform = 'rotate(0deg) scale(.7)';
+    }
+  }, 1400);
+
+  window.setTimeout(() => {
+    for (const piece of $$<HTMLElement>('i', box)) piece.style.opacity = '0';
+  }, 2700);
+
+  window.setTimeout(advance, 3300);
+}
+
+/* =========================================================================
+   الكشف والعدّاد
+   ========================================================================= */
+
+/** التاريخ ليس في الـHTML — يُحقن هنا فقط، وعند الوصول إلى المشهد. */
+function fillBirthdayDate(): void {
+  const b = untilBirthday();
+  if (!b) return;
+  const d = $('[data-bd-day]');
+  const m = $('[data-bd-month]');
+  if (d) d.textContent = pad2(b.day);
+  if (m) m.textContent = pad2(b.month);
+}
+
+/** أول لحظة رأت فيها العدّاد — منها يُقاس امتلاء الخط. */
+function countdownStart(target: number): number {
+  try {
+    const saved = Number(localStorage.getItem(CD_START_KEY));
+    if (saved && saved < target) return saved;
+    const now = nowMs();
+    localStorage.setItem(CD_START_KEY, String(now));
+    return now;
+  } catch {
+    return nowMs();
+  }
+}
+
+function startCountdown(): void {
+  paintCountdown();
+  tickTimer = window.setInterval(paintCountdown, 1000);
+}
+
+function paintCountdown(): void {
+  const b = untilBirthday();
+  const target = nextBirthdayInstant();
+  if (!b || target === null) return;
+
+  // وصل اليوم — ننتقل لوحدنا
+  if (b.isToday) {
+    window.clearInterval(tickTimer);
+    show(story.go('birthday').scene);
+    return;
+  }
+
+  const bigWrap = $('[data-cd-big]');
+  const big = $('[data-cd-n]');
+  const unit = $('[data-cd-u]');
+  const one = $('[data-cd-one]');
+  const label = $('[data-cd-label]');
+  const clock = $('[data-cd-clock]');
+  const fill = $('[data-cd-fill]');
+
+  if (b.sleeps === 1) {
+    // «بكرا» أصدق من الرقم ١
+    if (bigWrap) bigWrap.hidden = true;
+    if (one) {
+      one.hidden = false;
+      one.textContent = COUNTDOWN.tomorrow;
+    }
+    if (label) label.textContent = COUNTDOWN.tomorrowSub;
+  } else {
+    if (bigWrap) bigWrap.hidden = false;
+    if (one) one.hidden = true;
+    if (big) big.textContent = String(b.sleeps);
+    if (unit) unit.textContent = sleepsAr(b.sleeps).replace(/^\d+\s*/, '');
+    if (label) label.textContent = COUNTDOWN.label;
+  }
+
+  if (clock) clock.textContent = `${pad2(b.hours)}:${pad2(b.minutes)}:${pad2(b.seconds)}`;
+
+  if (fill) {
+    const from = countdownStart(target);
+    const span = target - from;
+    const done = span > 0 ? Math.min(1, Math.max(0, (nowMs() - from) / span)) : 1;
+    fill.style.width = `${(done * 100).toFixed(2)}%`;
+  }
+
+  if (b.sleeps !== lastSleeps) {
+    lastSleeps = b.sleeps;
+    announce(b.sleeps === 1 ? COUNTDOWN.tomorrow : `باقي ${sleepsAr(b.sleeps)}`);
   }
 }
 
 /* =========================================================================
-   رسالة اللطافة — الإشعارات
+   عيد الميلاد
+   ========================================================================= */
+
+function runBirthday(): void {
+  announce(BIRTHDAY_COPY.greeting);
+  void startMusic();
+
+  if (story.current().celebrated) return;
+  story.markCelebrated();
+
+  if (reduced()) return;
+  window.setTimeout(() => finale(), 700);
+  window.setTimeout(() => burst(null), 2600);
+}
+
+/* =========================================================================
+   قارئات الشاشة
+   ========================================================================= */
+
+function announce(text: string): void {
+  if (live) live.textContent = text;
+}
+
+/* =========================================================================
+   الموسيقى
+   ========================================================================= */
+
+async function startMusic(): Promise<void> {
+  if (musicStarted || !music) return;
+  const res = await music.boot(() => setMusicUi(true));
+  musicStarted = res === 'playing';
+  setMusicUi(res === 'playing', res === 'waiting');
+}
+
+function setMusicUi(playing: boolean, waiting = false): void {
+  const root = $('[data-music]');
+  const toggle = $<HTMLButtonElement>('[data-music-toggle]');
+  const label = $('[data-music-label]');
+  if (!root || !toggle || !label) return;
+
+  root.hidden = false;
+  root.classList.toggle('is-playing', playing);
+  root.classList.toggle('is-waiting', waiting);
+  toggle.setAttribute('aria-pressed', String(playing));
+  label.textContent = playing ? 'شغالة' : waiting ? 'المسي الشاشة' : 'الأغنية';
+  toggle.setAttribute('aria-label', playing ? 'إيقاف الأغنية' : 'تشغيل الأغنية');
+}
+
+function initMusic(): void {
+  const el = $<HTMLAudioElement>('[data-music-audio]');
+  const toggle = $<HTMLButtonElement>('[data-music-toggle]');
+  const root = $('[data-music]');
+  if (!el || !toggle || !root) return;
+
+  music = initAudio(el);
+  root.hidden = true; // المشغّل لا يظهر قبل أن تبدأ الحكاية
+
+  toggle.addEventListener('click', async () => {
+    const playing = await music!.toggle();
+    musicStarted = playing;
+    setMusicUi(playing);
+    if (playing) announce(MISC.musicOn);
+  });
+
+  el.addEventListener('play', () => setMusicUi(true));
+  el.addEventListener('pause', () => setMusicUi(false));
+}
+
+/* =========================================================================
+   الإشعارات
    ========================================================================= */
 
 const notifBtn = $<HTMLButtonElement>('[data-notif-enable]');
@@ -415,8 +476,7 @@ function paintNotify(): void {
       notifBtn.hidden = true;
       notifBadge.classList.add('opt__badge--off');
       notifBadge.textContent = 'مرفوض';
-      notifStatus.textContent =
-        'رفضتينا من قبل 🤍 فعّليها من إعدادات الموقع بالمتصفح، أو خدي التقويم.';
+      notifStatus.textContent = 'رفضتينا من قبل 🤍 فعّليها من إعدادات الموقع بالمتصفح.';
       break;
     default:
       notifBtn.hidden = false;
@@ -426,13 +486,6 @@ function paintNotify(): void {
   }
 }
 
-/**
- * يسجّل اشتراك Web Push إن كان مضبوطاً.
- *
- * الاشتراك هو ما يجعل الإشعار يصل والمتصفّح مغلق تماماً؛ بدونه يبقى الإشعار
- * محلياً لا يعمل إلا والصفحة مفتوحة. نستدعيه بعد منح الإذن وعند كل إقلاع، لأن
- * خدمات الدفع تدوّر العناوين أحياناً فيلزم إعادة التسليم.
- */
 async function armPush(reg: ServiceWorkerRegistration | null): Promise<void> {
   if (!reg || !pushSupported() || !pushConfigured()) return;
   if (notifyState() !== 'granted') return;
@@ -453,13 +506,6 @@ function initNotify(): void {
     await armPush(reg);
     notifBtn.disabled = false;
     paintNotify();
-    if (notifyState() === 'granted') {
-      say(
-        pushConfigured()
-          ? 'تمام. صار فيني رنّ عليكِ حتى والموبايل مقفول 🤍'
-          : 'تمام. صار عندك جملة حلوة كل يوم 🤍',
-      );
-    }
   });
 
   paintNotify();
@@ -474,111 +520,55 @@ function initNotify(): void {
 }
 
 /* =========================================================================
-   الموسيقى
+   لوحة الاختبار المخفية — Shift+L
    ========================================================================= */
 
-/**
- * وضعان: ملف محلي (<audio>) أو مشغّل يوتيوب — يحدّده وجود الملف وقت البناء.
- *
- * التشغيل التلقائي بصوت ممنوع في كل المتصفحات قبل أي تفاعل، فلا نحاول خداعه:
- * نجرّب التشغيل فوراً، وإن رُفض ننتظر أول لمسة/سكرول من رغد فتبدأ عندها.
- */
-function initMusic(): void {
-  const root = $('[data-music]');
-  const toggle = $<HTMLButtonElement>('[data-music-toggle]');
-  const label = $('[data-music-label]');
-  if (!root || !toggle || !label) return;
+const panel = $('[data-committee]');
+const panelStatus = $('[data-committee-status]');
 
-  const setUi = (playing: boolean, waiting = false) => {
-    root.classList.toggle('is-playing', playing);
-    root.classList.toggle('is-waiting', waiting);
-    toggle.setAttribute('aria-pressed', String(playing));
-    label.textContent = playing ? 'الأغنية شغالة' : waiting ? 'المسي الشاشة' : 'شغّلي الأغنية';
-    toggle.setAttribute(
-      'aria-label',
-      playing ? 'إيقاف أغنية عيني اليمين' : 'تشغيل أغنية عيني اليمين لحمد العامري',
-    );
-  };
-
-  /* ---------- الوضع الأول: ملف محلي ---------- */
-  const el = $<HTMLAudioElement>('[data-music-audio]');
-  if (root.dataset.mode === 'local' && el) {
-    const handle = initAudio(el);
-
-    toggle.addEventListener('click', async () => {
-      const playing = await handle.toggle();
-      setUi(playing);
-      if (playing) say('حطّينا حمد العامري — عيني اليمين 🎶');
-    });
-
-    el.addEventListener('play', () => setUi(true));
-    el.addEventListener('pause', () => setUi(false));
-
-    void handle.boot(() => setUi(true)).then((res) => {
-      setUi(res === 'playing', res === 'waiting');
-    });
-    return;
-  }
-
-  /* ---------- الوضع الثاني: يوتيوب ---------- */
-  const cardEl = $('[data-music-card]');
-  const frame = $('[data-music-frame]');
-  const closeBtn = $<HTMLButtonElement>('[data-music-close]');
-  if (!cardEl || !frame || !closeBtn) return;
-
-  const videoId = frame.dataset.video ?? '';
-
-  const start = () => {
-    // playlist=<id> مع loop=1 هي الطريقة الوحيدة لتكرار فيديو مفرد.
-    const params = new URLSearchParams({
-      autoplay: '1', loop: '1', playlist: videoId,
-      rel: '0', playsinline: '1', modestbranding: '1',
-    });
-    frame.innerHTML =
-      `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?${params}" ` +
-      `title="عيني اليمين — حمد العامري" ` +
-      `allow="autoplay; encrypted-media; picture-in-picture" ` +
-      `allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-    cardEl.hidden = false;
-    setUi(true);
-    say('حطّينا حمد العامري — عيني اليمين 🎶');
-  };
-
-  const stop = () => {
-    frame.innerHTML = '';   // إزالة الإطار توقف الصوت فوراً
-    cardEl.hidden = true;
-    setUi(false);
-  };
-
-  toggle.addEventListener('click', () => (cardEl.hidden ? start() : stop()));
-  closeBtn.addEventListener('click', stop);
+function refreshPanel(): void {
+  if (!panelStatus) return;
+  panelStatus.textContent =
+    `${getOffset() ? 'وقت مُحاكى' : 'وقت حقيقي'} — ${damascusClock()} · مشهد: ${story.current().scene}`;
 }
 
-/* =========================================================================
-   كشف التمرير — مراقب واحد للجميع
-   ========================================================================= */
+function initPanel(): void {
+  if (!panel) return;
 
-function initReveal(): void {
-  const items = $$('.reveal');
-  if (!items.length) return;
-
-  if (!('IntersectionObserver' in window)) {
-    items.forEach((el) => el.classList.add('is-visible'));
-    return;
+  for (const el of $$('[data-committee-close]')) {
+    el.addEventListener('click', () => (panel.hidden = true));
   }
 
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.classList.add('is-visible');
-        io.unobserve(entry.target);
-      }
-    },
-    { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
-  );
+  document.addEventListener('keydown', (e) => {
+    if (e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+      panel.hidden = false;
+      refreshPanel();
+    }
+    if (e.key === 'Escape') panel.hidden = true;
+  });
 
-  items.forEach((el) => io.observe(el));
+  for (const btn of $$<HTMLButtonElement>('[data-sim]')) {
+    btn.addEventListener('click', () => {
+      const real = Date.now();
+      switch (btn.dataset.sim) {
+        case 'before': setOffset(damascusTodayAt(SWEET_HOUR - 1, 15, real) - real); break;
+        case 'due':    setOffset(damascusTodayAt(SWEET_HOUR, 0, real) - real); break;
+        case 'after':  setOffset(damascusTodayAt(SWEET_HOUR + 2, 40, real) - real); break;
+        case 'rain':   finale(); break;
+        case 'real':   setOffset(0); break;
+        case 'reset':
+          resetAll();
+          story.reset();
+          setOffset(0);
+          try { localStorage.removeItem(CD_START_KEY); } catch { /* noop */ }
+          show('intro');
+          break;
+      }
+      scheduleNotify();
+      refreshPanel();
+      if (story.current().scene === 'countdown') paintCountdown();
+    });
+  }
 }
 
 /* =========================================================================
@@ -588,33 +578,38 @@ function initReveal(): void {
 function boot(): void {
   dropRetiredKeys();
 
-  initSurprise();
-  initEggs();
-  initCommittee();
-  initReveal();
-  initNotify();
+  for (const b of $$('[data-open]')) b.addEventListener('click', () => openEnvelope(b));
+  for (const b of $$('[data-next]')) b.addEventListener('click', advance);
+  fragNext?.addEventListener('click', nextFragment);
+
+  $('[data-replay]')?.addEventListener('click', () => {
+    story.reset();
+    show('intro');
+    announce(MISC.replayDone);
+  });
+
   initMusic();
+  initNotify();
+  initPanel();
 
-  tick();
-  window.setInterval(tick, 1000);
+  let awayIndex = -1;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      const { text, index } = pick(AWAY_TITLES, awayIndex);
+      awayIndex = index;
+      document.title = text;
+    } else {
+      document.title = BASE_TITLE;
+    }
+  });
 
-  // سلسلة الزيارات — نحكي عنها فقط إذا كانت تستحق
-  const streak = bumpStreak(day.dayKey);
-  scheduleWhisper();
-  if (streak.count > 1) {
-    window.setTimeout(
-      () => say(`${streak.count} أيام ورا بعض وأنتِ عم تفوتي هون. شكراً 🤍`),
-      2600,
-    );
-  }
+  document.addEventListener('copy', () => announce(MISC.copyEgg), { passive: true });
 
-  // نبضة ترحيب بعد ما يوصل القلب إلى البطاقة
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    window.setTimeout(() => {
-      card?.classList.add('is-armed');
-      window.setTimeout(() => card?.classList.remove('is-armed'), 900);
-    }, 1150);
-  }
+  // لو وصل يوم العيد وقد بلغت القصة مرحلة الكشف، نفتح على الاحتفال مباشرة
+  const b = untilBirthday();
+  const saved = story.current().scene;
+  const reached = story.SCENES.indexOf(saved) >= story.SCENES.indexOf('reveal');
+  show(b?.isToday && reached ? story.go('birthday').scene : saved);
 }
 
 if (document.readyState === 'loading') {

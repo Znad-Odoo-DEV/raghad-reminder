@@ -154,10 +154,13 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
   }
 
   /* ---- canvas الاحتفال --------------------------------------------------- */
+  /* الاحتفال خلف النص لا فوقه.
+     فوقه كان يحجب الرسالة التي جاء الاحتفال من أجلها؛ خلفه يصير خلفية حيّة
+     والرسالة تبقى مقروءة. */
   .celebrate-canvas {
     position: fixed;
     inset: 0;
-    z-index: 90;
+    z-index: 0;
     pointer-events: none;
   }
 
