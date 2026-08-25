@@ -27,7 +27,7 @@ import type { Scene } from './story';
 
 import {
   FRAGMENTS, HARMONY, RPS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, BIRTHDAY_COPY,
-  AWAY_TITLES, MISC, sleepsAr, pick,
+  AWAY_TITLES, MISC, dayUnitAr, pick,
 } from './copy';
 
 import { finale, burst } from './celebrate';
@@ -412,19 +412,25 @@ function paintCountdown(): void {
   const clock = $('[data-cd-clock]');
   const fill = $('[data-cd-fill]');
 
-  if (b.sleeps === 1) {
-    // «بكرا» أصدق من الرقم ١
+  // الواحد والاثنان لهما صيغتان بلا رقم: «بكرا» و«يومين». والرقم مع «2» خطأ
+  // نحوي في العربية، فنعرض الكلمة وحدها بدله.
+  const phrase =
+    b.sleeps === 1 ? { text: COUNTDOWN.tomorrow, sub: COUNTDOWN.tomorrowSub }
+    : b.sleeps === 2 ? { text: COUNTDOWN.two, sub: COUNTDOWN.twoSub }
+    : null;
+
+  if (phrase) {
     if (bigWrap) bigWrap.hidden = true;
     if (one) {
       one.hidden = false;
-      one.textContent = COUNTDOWN.tomorrow;
+      one.textContent = phrase.text;
     }
-    if (label) label.textContent = COUNTDOWN.tomorrowSub;
+    if (label) label.textContent = phrase.sub;
   } else {
     if (bigWrap) bigWrap.hidden = false;
     if (one) one.hidden = true;
     if (big) big.textContent = String(b.sleeps);
-    if (unit) unit.textContent = sleepsAr(b.sleeps).replace(/^\d+\s*/, '');
+    if (unit) unit.textContent = dayUnitAr(b.sleeps);
     if (label) label.textContent = COUNTDOWN.label;
   }
 
@@ -439,7 +445,11 @@ function paintCountdown(): void {
 
   if (b.sleeps !== lastSleeps) {
     lastSleeps = b.sleeps;
-    announce(b.sleeps === 1 ? COUNTDOWN.tomorrow : `باقي ${sleepsAr(b.sleeps)}`);
+    announce(
+      b.sleeps === 1 ? COUNTDOWN.tomorrow
+      : b.sleeps === 2 ? COUNTDOWN.two
+      : `باقي ${b.sleeps} ${dayUnitAr(b.sleeps)}`,
+    );
   }
 }
 

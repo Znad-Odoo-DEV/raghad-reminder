@@ -346,10 +346,13 @@ const two = stampOf(FIRST_TALK_AT);
 
   /* ==================== الخَتم والتاريخ ==================== */
   .stamp-label {
+    max-width: 24ch;
     font-size: var(--t-xs);
     font-weight: 700;
-    letter-spacing: .12em;
+    letter-spacing: .1em;
+    line-height: 1.7;
     color: var(--c-lav-deep);
+    text-wrap: balance;
   }
 
   .datestamp {
