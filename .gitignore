@@ -24,3 +24,5 @@ push-worker/.dev.vars
 
 # ملف إرشادات محلي — لا يُودَع
 CLAUDE.md
+
+raghd-invite.ics
