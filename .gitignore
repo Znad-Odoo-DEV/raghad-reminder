@@ -21,3 +21,6 @@ push-worker/node_modules/
 push-worker/.wrangler/
 push-worker/.dev.vars
 .push-admin-token.txt
+
+# ملف إرشادات محلي — لا يُودَع
+CLAUDE.md
