@@ -1,7 +1,7 @@
 ---
 import {
   INTRO, LETTER_ONE, LETTER_TWO, LETTER_THREE, TURN,
-  FRAGMENTS, HARMONY, GATHER, REVEAL, COUNTDOWN, BIRTHDAY_COPY,
+  FRAGMENTS, HARMONY, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, BIRTHDAY_COPY,
 } from '../scripts/copy';
 import { COINCIDENCE_AT, FIRST_TALK_AT, wallOf } from '../scripts/schedule';
 import EnvelopeGlyph from './EnvelopeGlyph.astro';
@@ -28,12 +28,6 @@ function stampOf(instant: number | null) {
 const one = stampOf(COINCIDENCE_AT);
 const two = stampOf(FIRST_TALK_AT);
 
-const frag = (id: string) => FRAGMENTS.find((f) => f.id === id)!;
-const fSong = frag('song');
-const fDishes = frag('dishes');
-const fTalks = frag('talks');
-const fHarmony = frag('harmony');
-const fCalm = frag('calm');
 ---
 
 <div class="stage" data-stage>
@@ -120,47 +114,67 @@ const fCalm = frag('calm');
   <!-- ═══════════════ 6 · القصاصات ═══════════════ -->
   <section class="scene scene--frags" data-scene="fragments" hidden>
     <div class="frags" data-frags>
-      <!-- 0 · الأغنية -->
-      <article class="frag frag--note" data-frag="0" hidden>
-        <p class="frag__tag">{fSong.tag}</p>
-        {fSong.lines.map((l) => <p class="frag__l">{l}</p>)}
-        <p class="frag__punch">لأني تغيّرت.</p>
-        <p class="frag__foot">{fSong.foot}</p>
-      </article>
+      {FRAGMENTS.map((f, i) => (
+        <article class={`frag frag--${f.kind}`} data-frag={i} hidden>
+          <p class="frag__tag">{f.tag}</p>
 
-      <!-- 1 · الجلي -->
-      <article class="frag frag--timer" data-frag="1" hidden>
-        <p class="frag__tag">{fDishes.tag}</p>
-        {fDishes.lines.map((l) => <p class="frag__l">{l}</p>)}
-        <p class="timer tnum" data-dishes>10:00</p>
-        <p class="frag__foot">{fDishes.foot}</p>
-      </article>
+          {f.kind === 'chain' && (
+            <>
+              <p class="frag__l">{f.lines[0]}</p>
+              <div class="chain" data-chain></div>
+            </>
+          )}
 
-      <!-- 2 · الأحاديث -->
-      <article class="frag frag--thread" data-frag="2" hidden>
-        <p class="frag__tag">{fTalks.tag}</p>
-        <p class="frag__l">{fTalks.lines[0]}</p>
-        <span class="thread-line" aria-hidden="true"></span>
-        <p class="frag__l frag__l--soft">{fTalks.lines[1]}</p>
-      </article>
+          {f.kind === 'timer' && (
+            <>
+              {f.lines.map((l) => <p class="frag__l">{l}</p>)}
+              <p class="timer tnum" data-dishes>10:00</p>
+            </>
+          )}
 
-      <!-- 3 · الانسجام -->
-      <article class="frag frag--harmony" data-frag="3" hidden>
-        <p class="frag__tag">{fHarmony.tag}</p>
-        <p class="harmony__q" data-harmony-q>{HARMONY.rounds[0]!.question}</p>
-        <div class="harmony__opts" data-harmony-opts></div>
-        <p class="harmony__verdict" data-harmony-verdict hidden></p>
-        <div class="harmony__result" data-harmony-result hidden>
-          <p class="harmony__score">{HARMONY.result}</p>
-          <p class="frag__foot">{HARMONY.resultSub}</p>
-        </div>
-      </article>
+          {f.kind === 'rps' && (
+            <>
+              <p class="frag__l">{f.lines[0]}</p>
+              <div class="rps" data-rps-opts></div>
+              <div class="rps__out" data-rps-out hidden>
+                <p class="rps__mine" data-rps-mine></p>
+                <p class="rps__verdict" data-rps-verdict></p>
+              </div>
+            </>
+          )}
 
-      <!-- 4 · الراحة -->
-      <article class="frag frag--calm" data-frag="4" hidden>
-        <p class="frag__tag">{fCalm.tag}</p>
-        {fCalm.lines.map((l) => <p class="frag__l">{l}</p>)}
-      </article>
+          {f.kind === 'thread' && (
+            <>
+              <p class="frag__l">{f.lines[0]}</p>
+              <span class="thread-line" aria-hidden="true"></span>
+              <p class="frag__l frag__l--soft">{f.lines[1]}</p>
+            </>
+          )}
+
+          {f.kind === 'harmony' && (
+            <>
+              <p class="harmony__q" data-harmony-q>{HARMONY.rounds[0]!.question}</p>
+              <div class="harmony__opts" data-harmony-opts></div>
+              <p class="harmony__verdict" data-harmony-verdict hidden></p>
+              <div class="harmony__result" data-harmony-result hidden>
+                <p class="harmony__score">{HARMONY.result}</p>
+                <p class="frag__foot">{HARMONY.resultSub}</p>
+              </div>
+            </>
+          )}
+
+          {f.kind === 'chat' && (
+            <>
+              <p class="frag__l">{f.lines[0]}</p>
+              <p class="bubble">{CHAT_WINNER}</p>
+            </>
+          )}
+
+          {(f.kind === 'note' || f.kind === 'calm') && f.lines.map((l) => <p class="frag__l">{l}</p>)}
+
+          {f.foot && <p class="frag__foot">{f.foot}</p>}
+        </article>
+      ))}
     </div>
 
     <button class="btn btn--ghost frags__next" type="button" data-frag-next>كمّلي</button>
@@ -418,10 +432,13 @@ const fCalm = frag('calm');
   }
 
   /* ميل خفيف — موضوعة باليد لا مرصوفة */
+  .frag--chain  { --rot:  .5deg; }
   .frag--note   { --rot: -.7deg; }
   .frag--timer  { --rot:  .6deg; }
+  .frag--rps    { --rot: -.5deg; }
   .frag--thread { --rot: -.4deg; }
-  .frag--calm   { --rot:  .5deg; }
+  .frag--chat   { --rot:  .6deg; }
+  .frag--calm   { --rot:  .4deg; }
   .frag { transform: rotate(var(--rot, 0deg)); }
 
   .frag__tag {
@@ -438,7 +455,7 @@ const fCalm = frag('calm');
     text-wrap: balance;
   }
   .frag__l--soft { color: var(--c-ink-faint); }
-  .frag__punch { font-size: var(--t-body); font-weight: 700; color: var(--c-ink); }
+  .frag--note .frag__l:last-of-type { color: var(--c-ink); font-weight: 700; }
   .frag__foot {
     margin-block-start: .2rem;
     font-size: var(--t-xs);
@@ -453,6 +470,60 @@ const fCalm = frag('calm');
     letter-spacing: -.04em;
     color: var(--c-lav-deep);
     margin-block: .4rem;
+  }
+
+  /* سلسلة صباح الخير — تنكشف قطعة قطعة */
+  .chain { display: flex; flex-direction: column; gap: .3rem; margin-block: .3rem; }
+  .chain :global(span) {
+    font-size: clamp(1rem, .9rem + .6vw, 1.25rem);
+    font-weight: 700;
+    color: var(--c-ink);
+    opacity: 0;
+    transform: translateY(8px);
+    animation: chain-in .5s var(--e-out) forwards;
+  }
+  @keyframes chain-in { to { opacity: 1; transform: none; } }
+
+  /* حجرة ورقة مقص */
+  .rps { display: flex; gap: .5rem; justify-content: center; margin-block: .4rem; }
+  .rps :global(button) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .3rem;
+    padding: .8rem .4rem;
+    border-radius: var(--r-sm);
+    background: var(--c-lav-wash);
+    border: 1px solid color-mix(in srgb, var(--c-lav) 30%, transparent);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    color: var(--c-ink);
+    transition: transform var(--d-fast) var(--e-back), background var(--d-fast) var(--e-soft);
+  }
+  .rps :global(button span) { font-size: 1.6rem; line-height: 1; }
+  .rps :global(button:active) { transform: scale(.95); }
+
+  .rps__out { display: flex; flex-direction: column; gap: .35rem; animation: pop .5s var(--e-back); }
+  .rps__mine { font-size: var(--t-sm); color: var(--c-ink-soft); }
+  .rps__mine :global(b) { font-size: 1.5em; }
+  .rps__verdict {
+    font-size: clamp(1.2rem, 1rem + 1.2vw, 1.6rem);
+    font-weight: 700;
+    color: var(--c-lav-deep);
+  }
+
+  /* فقاعة الشات */
+  .bubble {
+    align-self: flex-start;
+    padding: .7rem 1.15rem;
+    border-radius: 18px 18px 18px 5px;
+    background: linear-gradient(135deg, var(--c-lav-deep), var(--c-violet-deep));
+    color: #fff;
+    font-size: clamp(1.15rem, .95rem + 1vw, 1.5rem);
+    font-weight: 700;
+    box-shadow: 0 10px 24px -12px rgba(77, 47, 214, .7);
+    animation: pop .5s var(--e-back);
   }
 
   /* خيط الأحاديث */
@@ -606,6 +677,8 @@ const fCalm = frag('calm');
     .scene__in { opacity: 1; transform: none; animation: none; }
     .env-btn, .env-btn--found { animation: none; }
     .frag { animation: none; }
+    .chain :global(span) { opacity: 1; transform: none; animation: none; }
+    .rps__out, .bubble { animation: none; }
     .harmony__verdict { animation: none; }
     .thread__fill, .cd-line :global(span), .gather :global(i) { transition: none; }
   }
