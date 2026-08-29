@@ -1,8 +1,8 @@
 /**
  * celebrate.ts — احتفال خفيف على canvas واحد، بدون أي مكتبة
  *
- * ثلاثة أشكال: قلوب، فراشات، وقصاصات. حلقة RAF واحدة، والـcanvas يُنشأ عند
- * الحاجة ويُهدم عند موت آخر جسيم — لا شيء يعمل بينما الصفحة ساكنة.
+ * خمسة أشكال: قلوب، فراشات، قصاصات، شرارات، وورود. حلقة RAF واحدة، والـcanvas
+ * يُنشأ عند الحاجة ويُهدم عند موت آخر جسيم — لا شيء يعمل بينما الصفحة ساكنة.
  *
  * الفراشة ليست قلباً بلون آخر: جاذبيتها أخفّ، وتتمايل جانبياً بجيب الزاوية،
  * وجناحاها يرفرفان. لو أعطيناها نفس فيزياء القصاصة لبدت ورقة ساقطة.
@@ -11,10 +11,13 @@
 const HEART_COLORS = ['#8b6bff', '#a78bfa', '#c4b5fd', '#6d4aca'];
 const WING_COLORS = ['#8b6bff', '#a78bfa', '#c4b5fd', '#d5c7ff', '#e9e2ff'];
 const CONFETTI_COLORS = ['#6d4aff', '#a78bfa', '#c4b5fd', '#4b2fd6', '#ffffff'];
-const STAR_COLORS = ['#ffffff', '#e9e2ff', '#c4b5fd'];
+// الشرارة على خلفية فاتحة: الأبيض واللافندر الفاتح يختفيان تماماً، فلا بدّ
+// من ألوان غامقة كي تُقرأ المفرقعة أصلاً.
+const STAR_COLORS = ['#6d4aca', '#8b6bff', '#a78bfa', '#4b2fd6'];
+const FLOWER_COLORS = ['#c4b5fd', '#e9e2ff', '#ffffff', '#d8b4fe', '#b9a5ff'];
 
-/** 0 = قصاصة · 1 = قلب · 2 = فراشة · 3 = نجمة */
-type Kind = 0 | 1 | 2 | 3;
+/** 0 = قصاصة · 1 = قلب · 2 = فراشة · 3 = شرارة · 4 = وردة */
+type Kind = 0 | 1 | 2 | 3 | 4;
 
 interface Particle {
   x: number; y: number;
@@ -190,6 +193,33 @@ function drawStar(c: CanvasRenderingContext2D, p: Particle): void {
   c.fill();
 }
 
+
+/**
+ * وردة: خمس بتلات حول قلب دافئ.
+ *
+ * البتلة قطع ناقص مزاح عن المركز ثم تُدار خمس مرات — أرخص من رسم مسار لكل
+ * بتلة، والشكل واحد في كل الأحجام. القلب بلون دافئ لأن الوردة كلها بلون واحد
+ * تُقرأ بقعة لا زهرة.
+ */
+function drawFlower(c: CanvasRenderingContext2D, p: Particle): void {
+  const r = p.size / 2;
+
+  c.fillStyle = p.color;
+  for (let i = 0; i < 5; i++) {
+    c.save();
+    c.rotate((i / 5) * Math.PI * 2);
+    c.beginPath();
+    c.ellipse(0, -r * 0.6, r * 0.34, r * 0.6, 0, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+  }
+
+  c.beginPath();
+  c.arc(0, 0, r * 0.26, 0, Math.PI * 2);
+  c.fillStyle = '#f2dfa0';
+  c.fill();
+}
+
 function frame(time: number): void {
   if (!ctx || !canvas) {
     // فقدنا الـcanvas بينما كانت هناك رشقة مجدولة — ننظّف بدل أن نتسرّب.
@@ -221,11 +251,22 @@ function frame(time: number): void {
       p.rot = Math.sin(p.phase * 0.5) * 0.22;
       p.vx *= Math.pow(0.985, step);
     } else if (p.kind === 3) {
-      // النجمة تطفو للأعلى وتخفت — لا تسقط
+      // شرارة: تنطلق ثم تُبطئ وتقوس للأسفل — الاحتكاك هو ما يجعلها مفرقعة
       p.phase += 0.03 * step;
-      p.x += (p.vx + Math.sin(p.phase) * 0.4) * step;
+      p.vy += 0.05 * step;
+      p.vx *= Math.pow(0.93, step);
+      p.vy *= Math.pow(0.95, step);
+      p.x += (p.vx + Math.sin(p.phase) * 0.3) * step;
       p.y += p.vy * step;
       p.rot += p.vr * 0.4 * step;
+    } else if (p.kind === 4) {
+      // وردة: تهبط ببطء وتتمايل وتدور حول نفسها
+      p.phase += 0.02 * step;
+      p.vy += 0.05 * step;
+      p.vy = Math.min(p.vy, 2.2);
+      p.x += (p.vx + Math.sin(p.phase) * 0.7) * step;
+      p.y += p.vy * step;
+      p.rot += p.vr * 0.5 * step;
     } else {
       p.vy += 0.16 * step;              // جاذبية
       p.vx *= Math.pow(0.995, step);    // مقاومة هواء
@@ -252,6 +293,8 @@ function frame(time: number): void {
       drawButterfly(ctx, p);
     } else if (p.kind === 3) {
       drawStar(ctx, p);
+    } else if (p.kind === 4) {
+      drawFlower(ctx, p);
     } else {
       ctx.fillStyle = p.color;
       ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.62);
@@ -269,12 +312,17 @@ function make(kind: Kind, x: number, y: number, vx: number, vy: number, life: nu
     kind === 1 ? pick(HEART_COLORS)
     : kind === 2 ? pick(WING_COLORS)
     : kind === 3 ? pick(STAR_COLORS)
+    : kind === 4 ? pick(FLOWER_COLORS)
     : pick(CONFETTI_COLORS);
 
   return {
     x, y, vx, vy, color, kind, life,
     // الفراشة أكبر قليلاً حتى يُقرأ جناحاها
-    size: kind === 2 ? 15 + Math.random() * 10 : kind === 3 ? 5 + Math.random() * 7 : 8 + Math.random() * 8,
+    size:
+      kind === 2 ? 15 + Math.random() * 10
+      : kind === 3 ? 7 + Math.random() * 7
+      : kind === 4 ? 14 + Math.random() * 12
+      : 8 + Math.random() * 8,
     rot: kind === 0 ? Math.random() * Math.PI * 2 : (Math.random() - 0.5) * 0.5,
     vr: (Math.random() - 0.5) * (kind === 0 ? 0.28 : 0.12),
     phase: Math.random() * Math.PI * 2,
@@ -411,4 +459,42 @@ export function finale(): void {
   window.setTimeout(() => wave(7, [2, 3, 1]), 900);
   window.setTimeout(() => wave(7, [1, 3, 2]), 2000);
   window.setTimeout(() => wave(6, [3, 2]), 3200);
+}
+
+/**
+ * احتفالية صغيرة: مفرقعات وورود.
+ *
+ * تُستدعى مرة عند فتح بطاقة التهنئة. المفرقعة رشقة شعاعية من نقطة، والورود
+ * تهبط بعدها — الترتيب مقصود: الطقطقة أولاً ثم ما يتساقط منها.
+ */
+export function bloom(): void {
+  if (reduced()) return;
+  if (!ensureCanvas()) return;
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  const pop = (x: number, y: number, n = 20) => {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.35;
+      const sp = 4.5 + Math.random() * 5.5;
+      particles.push(make(3, x, y, Math.cos(a) * sp, Math.sin(a) * sp, 1.5 + Math.random()));
+    }
+    if (!raf) raf = requestAnimationFrame(frame);
+  };
+
+  const flowers = (n: number) => {
+    for (let i = 0; i < n; i++) {
+      particles.push(
+        make(4, Math.random() * W, -40 - Math.random() * 300, (Math.random() - 0.5) * 1.3, 0.6 + Math.random() * 1.2, 8),
+      );
+    }
+    if (!raf) raf = requestAnimationFrame(frame);
+  };
+
+  pop(W * 0.27, H * 0.3);
+  window.setTimeout(() => flowers(22), 180);
+  window.setTimeout(() => pop(W * 0.73, H * 0.24), 480);
+  window.setTimeout(() => pop(W * 0.5, H * 0.4, 15), 1000);
+  window.setTimeout(() => flowers(16), 1400);
 }

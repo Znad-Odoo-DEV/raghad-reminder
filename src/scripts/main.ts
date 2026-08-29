@@ -30,7 +30,7 @@ import {
   AWAY_TITLES, MISC, dayUnitAr, pick,
 } from './copy';
 
-import { finale, burst } from './celebrate';
+import { finale, burst, bloom } from './celebrate';
 import { initAudio, type MusicHandle } from './music';
 import { dropRetiredKeys, resetAll } from './store';
 import { logVisit } from './visit';
@@ -153,6 +153,7 @@ function paintFragment(i: number): void {
     fragNext.textContent = 'كمّلي';
   }
 
+  if (kind === 'card') bloom();
   if (kind === 'chain') runChain();
   if (kind === 'timer') runDishes();
   if (kind === 'rps') runRps();
