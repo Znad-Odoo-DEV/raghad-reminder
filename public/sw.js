@@ -12,11 +12,11 @@
  * (cache-first)، وكل ما عداها network-first حتى لا تعلق نسخة قديمة أبداً.
  */
 
-// v13: حُذفت تجربة الانسجام وأُضيفت قصاصتان.
+// v14: الإشعار اليومي صار رسالة واحدة ثابتة.
 //
 // القاعدة: كل تغيير في الهيكل المخزَّن يرفع هذا الرقم. نسيانه يعني أن متصفّحاً
 // زار الموقع من قبل يبقى على النسخة القديمة.
-const VERSION = 'raghd-v13';
+const VERSION = 'raghd-v14';
 const CACHE = `raghd-${VERSION}`;
 
 /** جذر التطبيق — يصح في "/" وفي "/raghad-reminder/" على السواء. */
@@ -131,7 +131,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const fallback = {
     title: 'رغد 🤍',
-    body: 'في مفاجأة عم تتحضر على نار هادية',
+    body: 'صباح الخير لألطف مين رح يحضر عرس بفستان جديد 👗',
     url: BASE,
   };
 

@@ -16,7 +16,7 @@
  */
 
 import { dayKeyOf, nowMs, sweetInstantToday, sweetInstantTomorrow, sweetLabelAr } from './schedule';
-import { DAILY, dailyLineFor } from './copy';
+import { DAILY } from './copy';
 
 const LOG_KEY = 'raghd:daily-sent:v1';
 
@@ -146,7 +146,7 @@ export function schedule(): void {
     // فات موعد اليوم — أطلقه الآن إن لم يكن قد أُرسل، ثم انتقل للغد.
     if (lastSentDay() !== today) {
       markSent(today);
-      void show(DAILY.title, dailyLineFor(today), 'raghd-daily');
+      void show(DAILY.title, DAILY.line, 'raghd-daily');
     }
     arm(sweetInstantTomorrow(now) - now);
     return;
@@ -163,7 +163,7 @@ function arm(wait: number, dayToSend?: string): void {
   timer = window.setTimeout(() => {
     if (dayToSend && lastSentDay() !== dayToSend) {
       markSent(dayToSend);
-      void show(DAILY.title, dailyLineFor(dayToSend), 'raghd-daily');
+      void show(DAILY.title, DAILY.line, 'raghd-daily');
     }
     schedule();
   }, wait + 300);
@@ -186,6 +186,6 @@ export function debugInfo() {
     at: sweetInstantToday(now),
     label: sweetLabelAr(),
     lastSent: lastSentDay(),
-    lineToday: dailyLineFor(dayKeyOf(now)),
+    line: DAILY.line,
   };
 }
