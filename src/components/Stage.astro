@@ -170,9 +170,14 @@ const two = stampOf(FIRST_TALK_AT);
             </>
           )}
 
+          {f.kind === 'card' && f.lines.map((l, n) => (
+            <p class={n === 0 ? 'frag__head' : 'frag__l'}>{l}</p>
+          ))}
+
           {(f.kind === 'note' || f.kind === 'calm') && f.lines.map((l) => <p class="frag__l">{l}</p>)}
 
           {f.foot && <p class="frag__foot">{f.foot}</p>}
+          {f.sign && <p class="frag__sign">— {f.sign}</p>}
         </article>
       ))}
     </div>
@@ -435,6 +440,7 @@ const two = stampOf(FIRST_TALK_AT);
   }
 
   /* ميل خفيف — موضوعة باليد لا مرصوفة */
+  .frag--card   { --rot: -.6deg; }
   .frag--chain  { --rot:  .5deg; }
   .frag--note   { --rot: -.7deg; }
   .frag--timer  { --rot:  .6deg; }
@@ -463,6 +469,26 @@ const two = stampOf(FIRST_TALK_AT);
     margin-block-start: .2rem;
     font-size: var(--t-xs);
     color: var(--c-ink-faint);
+  }
+
+  /* عنوان بطاقة التهنئة */
+  .frag__head {
+    font-size: clamp(1.35rem, 1.1rem + 1.6vw, 1.9rem);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--c-ink);
+    text-wrap: balance;
+  }
+
+  /* التوقيع — يُقرأ رسمياً فوق بطاقة غير رسمية، وهنا النكتة */
+  .frag__sign {
+    margin-block-start: .5rem;
+    padding-block-start: .6rem;
+    border-block-start: 1px dashed rgba(23, 18, 56, .14);
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--c-lav-deep);
+    line-height: 1.7;
   }
 
   /* عدّاد الجلي */
