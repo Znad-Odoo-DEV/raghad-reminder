@@ -1,7 +1,7 @@
 ---
 import {
   INTRO, LETTER_ONE, LETTER_TWO, LETTER_THREE, TURN,
-  FRAGMENTS, HARMONY, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, BIRTHDAY_COPY,
+  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, BIRTHDAY_COPY,
 } from '../scripts/copy';
 import { COINCIDENCE_AT, FIRST_TALK_AT, wallOf } from '../scripts/schedule';
 import EnvelopeGlyph from './EnvelopeGlyph.astro';
@@ -148,18 +148,6 @@ const two = stampOf(FIRST_TALK_AT);
               <p class="frag__l">{f.lines[0]}</p>
               <span class="thread-line" aria-hidden="true"></span>
               <p class="frag__l frag__l--soft">{f.lines[1]}</p>
-            </>
-          )}
-
-          {f.kind === 'harmony' && (
-            <>
-              <p class="harmony__q" data-harmony-q>{HARMONY.rounds[0]!.question}</p>
-              <div class="harmony__opts" data-harmony-opts></div>
-              <p class="harmony__verdict" data-harmony-verdict hidden></p>
-              <div class="harmony__result" data-harmony-result hidden>
-                <p class="harmony__score">{HARMONY.result}</p>
-                <p class="frag__foot">{HARMONY.resultSub}</p>
-              </div>
             </>
           )}
 
@@ -564,44 +552,6 @@ const two = stampOf(FIRST_TALK_AT);
     background: linear-gradient(to bottom, var(--c-lav), transparent);
   }
 
-  /* الانسجام */
-  .harmony__q {
-    font-size: clamp(1.1rem, .95rem + .8vw, 1.35rem);
-    font-weight: 700;
-    color: var(--c-ink);
-  }
-  .harmony__opts { display: flex; flex-direction: column; gap: .5rem; }
-  .harmony__opts button {
-    padding: .7rem 1rem;
-    border-radius: var(--r-sm);
-    background: var(--c-lav-wash);
-    border: 1px solid color-mix(in srgb, var(--c-lav) 30%, transparent);
-    font-size: var(--t-sm);
-    font-weight: 600;
-    color: var(--c-ink);
-    text-align: start;
-    transition: transform var(--d-fast) var(--e-back), background var(--d-fast) var(--e-soft);
-  }
-  .harmony__opts button:active { transform: scale(.98); }
-  .harmony__opts button:hover { background: #e4dcff; }
-
-  .harmony__verdict {
-    font-size: clamp(1.3rem, 1rem + 1.4vw, 1.7rem);
-    font-weight: 700;
-    color: var(--c-lav-deep);
-    animation: pop .5s var(--e-back);
-  }
-  @keyframes pop {
-    from { opacity: 0; transform: scale(.86); }
-    to   { opacity: 1; transform: none; }
-  }
-
-  .harmony__score {
-    font-size: clamp(1.1rem, .95rem + .8vw, 1.4rem);
-    font-weight: 700;
-    color: var(--c-ink);
-  }
-
   .frags__next { margin-block-start: .3rem; }
 
   .frags__dots {
@@ -708,7 +658,6 @@ const two = stampOf(FIRST_TALK_AT);
     .frag { animation: none; }
     .chain :global(span) { opacity: 1; transform: none; animation: none; }
     .rps__out, .bubble { animation: none; }
-    .harmony__verdict { animation: none; }
     .thread__fill, .cd-line :global(span), .gather :global(i) { transition: none; }
   }
 </style>

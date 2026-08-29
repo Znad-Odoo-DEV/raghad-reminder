@@ -26,7 +26,7 @@ import * as story from './story';
 import type { Scene } from './story';
 
 import {
-  FRAGMENTS, HARMONY, RPS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, BIRTHDAY_COPY,
+  FRAGMENTS, RPS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, BIRTHDAY_COPY,
   AWAY_TITLES, MISC, dayUnitAr, pick,
 } from './copy';
 
@@ -149,14 +149,13 @@ function paintFragment(i: number): void {
   const kind = FRAGMENTS[i]?.kind;
   if (fragNext) {
     // التفاعلات تخفي زر المتابعة حتى تنتهي
-    fragNext.hidden = kind === 'harmony' || kind === 'rps';
+    fragNext.hidden = kind === 'rps';
     fragNext.textContent = 'كمّلي';
   }
 
   if (kind === 'chain') runChain();
   if (kind === 'timer') runDishes();
   if (kind === 'rps') runRps();
-  if (kind === 'harmony') runHarmony();
 }
 
 function nextFragment(): void {
@@ -258,58 +257,6 @@ function runDishes(): void {
     if (t < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
-}
-
-/* ---- الانسجام: مهما اختارت، نفس الجواب ---- */
-
-function runHarmony(): void {
-  const q = $('[data-harmony-q]');
-  const opts = $('[data-harmony-opts]');
-  const verdict = $('[data-harmony-verdict]');
-  const result = $('[data-harmony-result]');
-  if (!q || !opts || !verdict || !result) return;
-
-  let round = 0;
-  verdict.hidden = true;
-  result.hidden = true;
-
-  const render = () => {
-    const r = HARMONY.rounds[round]!;
-    q.textContent = r.question;
-    opts.hidden = false;
-    opts.innerHTML = '';
-    for (const label of r.options) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = label;
-      b.addEventListener('click', answer, { once: true });
-      opts.appendChild(b);
-    }
-  };
-
-  const answer = () => {
-    const r = HARMONY.rounds[round]!;
-    opts.hidden = true;
-    verdict.hidden = false;
-    verdict.textContent = r.verdict;
-
-    window.setTimeout(() => {
-      round += 1;
-      if (round < HARMONY.rounds.length) {
-        verdict.hidden = true;
-        render();
-      } else {
-        verdict.hidden = true;
-        result.hidden = false;
-        if (fragNext) {
-          fragNext.hidden = false;
-          fragNext.textContent = HARMONY.next;
-        }
-      }
-    }, reduced() ? 300 : 1200);
-  };
-
-  render();
 }
 
 /* =========================================================================

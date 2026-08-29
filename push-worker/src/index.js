@@ -174,6 +174,8 @@ export default {
       return json({ ok: true }, 200);
     }
 
-    return json({ error: 'not found' }, 404);
+    // ترويسات CORS حتى على 404: بدونها يرى المتصفّح خطأ CORS غامضاً بدل
+    // «غير موجود»، ويظهر في console الزائرة بلا سبب مفهوم.
+    return json({ error: 'not found' }, 404, cors);
   },
 };
