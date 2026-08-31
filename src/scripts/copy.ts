@@ -117,28 +117,6 @@ export interface Fragment {
 
 export const FRAGMENTS: readonly Fragment[] = [
   {
-    id: 'dress',
-    kind: 'card',
-    tag: 'خبر اليوم',
-    lines: [
-      'مبروك الفستان 👗',
-      'بعد كل هالدوران والتفتيش… لقيتيه.',
-      'واليوم العرس. الله يعمّ الفرح بدياركم 🤍',
-    ],
-    foot: 'وأكيد رح تكوني أحلى وحدة هونيك. مو مجاملة، إحصائياً.',
-    sign: 'إبراهيم الزناد، بتاع البرمجة النضيفة والبرمجة العالية',
-  },
-  {
-    id: 'wedding-songs',
-    kind: 'note',
-    tag: 'تحذير مسبق',
-    lines: [
-      'وإذا صار وشغّلوا «جيت أوفي وعودي وجيت»…',
-      'أو «جيب جاهة وجاهة»…',
-    ],
-    foot: 'بعينك الله 🤣',
-  },
-  {
     id: 'morning',
     kind: 'chain',
     tag: 'أول شي',
@@ -341,9 +319,7 @@ export const DAILY = {
   title: 'رغد 🤍',
 
   /** رسائل مربوطة بتاريخ — بصيغة يوم دمشق `YYYY-MM-DD`. */
-  special: [
-    { date: '2026-08-29', line: 'صباح الخير لألطف مين رح يحضر عرس بفستان جديد 👗' },
-  ] as readonly { date: string; line: string }[],
+  special: [] as readonly { date: string; line: string }[],
 
   lines: [
     'صباح الخير يا ألطف صدفة.',
@@ -393,7 +369,7 @@ export const VOW =
   'وإن شاء الله ما نستخدم هالموقع إلا لكل شي حلو — ولا مرة لشي تاني، لا سمح الله 🤍';
 
 export const MISC = {
-  musicOn: 'عمرو دياب — رايقة 🎶',
+  musicOn: 'وردة — قال إيه بيسألوني 🎶',
   copyEgg: 'نسختي النص؟ خديه، هو إلك أصلاً.',
   replayDone: 'رجعنا من الأول 🤍',
 } as const;
