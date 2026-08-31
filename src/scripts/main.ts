@@ -26,7 +26,7 @@ import * as story from './story';
 import type { Scene } from './story';
 
 import {
-  FRAGMENTS, RPS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, BIRTHDAY_COPY,
+  FRAGMENTS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, BIRTHDAY_COPY,
   AWAY_TITLES, MISC, dayUnitAr, pick,
 } from './copy';
 
@@ -148,15 +148,13 @@ function paintFragment(i: number): void {
 
   const kind = FRAGMENTS[i]?.kind;
   if (fragNext) {
-    // التفاعلات تخفي زر المتابعة حتى تنتهي
-    fragNext.hidden = kind === 'rps';
+    fragNext.hidden = false;
     fragNext.textContent = 'كمّلي';
   }
 
   if (kind === 'card') bloom();
   if (kind === 'chain') runChain();
   if (kind === 'timer') runDishes();
-  if (kind === 'rps') runRps();
 }
 
 function nextFragment(): void {
@@ -180,56 +178,6 @@ function runChain(): void {
     if (reduced()) el.style.animation = 'none';
     box.appendChild(el);
   });
-}
-
-/* ---- حجرة ورقة مقص: تعادل مُدبَّر ---- */
-
-function runRps(): void {
-  const opts = $('[data-rps-opts]');
-  const out = $('[data-rps-out]');
-  const mine = $('[data-rps-mine]');
-  const verdict = $('[data-rps-verdict]');
-  if (!opts || !out || !mine || !verdict) return;
-
-  let round = 0;
-  out.hidden = true;
-
-  const render = () => {
-    opts.hidden = false;
-    opts.innerHTML = '';
-    for (const m of RPS.moves) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.innerHTML = `<span aria-hidden="true">${m.sign}</span>${m.label}`;
-      b.setAttribute('aria-label', m.label);
-      b.addEventListener('click', () => play(m.sign, m.label), { once: true });
-      opts.appendChild(b);
-    }
-  };
-
-  /** «أنا» أختار ما اختارته دائماً — التشابه هو النكتة، لا الفوز. */
-  const play = (sign: string, label: string) => {
-    opts.hidden = true;
-    out.hidden = false;
-    mine.innerHTML = `${RPS.mine} <b>${sign}</b> ${label}`;
-    verdict.textContent = RPS.verdicts[round] ?? RPS.tie;
-
-    window.setTimeout(() => {
-      round += 1;
-      if (round < RPS.rounds) {
-        out.hidden = true;
-        render();
-      } else {
-        verdict.textContent = RPS.final;
-        if (fragNext) {
-          fragNext.hidden = false;
-          fragNext.textContent = RPS.next;
-        }
-      }
-    }, reduced() ? 300 : 1400);
-  };
-
-  render();
 }
 
 /* ---- الجلي: الرقم بيركض لتحت ---- */

@@ -132,17 +132,6 @@ const two = stampOf(FIRST_TALK_AT);
             </>
           )}
 
-          {f.kind === 'rps' && (
-            <>
-              <p class="frag__l">{f.lines[0]}</p>
-              <div class="rps" data-rps-opts></div>
-              <div class="rps__out" data-rps-out hidden>
-                <p class="rps__mine" data-rps-mine></p>
-                <p class="rps__verdict" data-rps-verdict></p>
-              </div>
-            </>
-          )}
-
           {f.kind === 'thread' && (
             <>
               <p class="frag__l">{f.lines[0]}</p>
@@ -432,7 +421,6 @@ const two = stampOf(FIRST_TALK_AT);
   .frag--chain  { --rot:  .5deg; }
   .frag--note   { --rot: -.7deg; }
   .frag--timer  { --rot:  .6deg; }
-  .frag--rps    { --rot: -.5deg; }
   .frag--thread { --rot: -.4deg; }
   .frag--chat   { --rot:  .6deg; }
   .frag--calm   { --rot:  .4deg; }
@@ -500,35 +488,6 @@ const two = stampOf(FIRST_TALK_AT);
     animation: chain-in .5s var(--e-out) forwards;
   }
   @keyframes chain-in { to { opacity: 1; transform: none; } }
-
-  /* حجرة ورقة مقص */
-  .rps { display: flex; gap: .5rem; justify-content: center; margin-block: .4rem; }
-  .rps :global(button) {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .3rem;
-    padding: .8rem .4rem;
-    border-radius: var(--r-sm);
-    background: var(--c-lav-wash);
-    border: 1px solid color-mix(in srgb, var(--c-lav) 30%, transparent);
-    font-size: var(--t-xs);
-    font-weight: 700;
-    color: var(--c-ink);
-    transition: transform var(--d-fast) var(--e-back), background var(--d-fast) var(--e-soft);
-  }
-  .rps :global(button span) { font-size: 1.6rem; line-height: 1; }
-  .rps :global(button:active) { transform: scale(.95); }
-
-  .rps__out { display: flex; flex-direction: column; gap: .35rem; animation: pop .5s var(--e-back); }
-  .rps__mine { font-size: var(--t-sm); color: var(--c-ink-soft); }
-  .rps__mine :global(b) { font-size: 1.5em; }
-  .rps__verdict {
-    font-size: clamp(1.2rem, 1rem + 1.2vw, 1.6rem);
-    font-weight: 700;
-    color: var(--c-lav-deep);
-  }
 
   /* فقاعة الشات */
   .bubble {
@@ -657,7 +616,7 @@ const two = stampOf(FIRST_TALK_AT);
     .env-btn, .env-btn--found { animation: none; }
     .frag { animation: none; }
     .chain :global(span) { opacity: 1; transform: none; animation: none; }
-    .rps__out, .bubble { animation: none; }
+    .bubble { animation: none; }
     .thread__fill, .cd-line :global(span), .gather :global(i) { transition: none; }
   }
 </style>

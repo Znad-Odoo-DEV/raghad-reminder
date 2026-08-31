@@ -98,7 +98,6 @@ export type FragmentKind =
   | 'chain'    // سلسلة ردّ صباح الخير
   | 'note'     // قصاصة نصّية
   | 'timer'    // رقم يركض
-  | 'rps'      // حجرة ورقة مقص
   | 'thread'   // سطران يربطهما خيط
   | 'chat'     // فقاعة شات
   | 'calm';    // الخاتمة الهادئة
@@ -133,6 +132,22 @@ export const FRAGMENTS: readonly Fragment[] = [
     ],
   },
   {
+    id: 'theory',
+    kind: 'note',
+    tag: 'نظرية مسجّلة',
+    lines: ['وصاحبة نظرية «شعبنا بده حرق».'],
+    foot: 'ولسا ما حدا قدر يردّ عليها.',
+  },
+  {
+    id: 'internet',
+    kind: 'note',
+    tag: 'أمنية',
+    lines: [
+      'وإن شاء الله النت بيشتغل عندك…',
+      'وبيعيّنوكي وزيرة اتصالات بدل عبد السلام هيكل 🤣',
+    ],
+  },
+  {
     id: 'song',
     kind: 'note',
     tag: 'قصاصة',
@@ -145,12 +160,6 @@ export const FRAGMENTS: readonly Fragment[] = [
     tag: 'وثيقة',
     lines: ['وأقنعتيني إنه الجلي ما بياخد أكتر من عشر دقايق.'],
     foot: 'حسب رواية رغد.',
-  },
-  {
-    id: 'rps',
-    kind: 'rps',
-    tag: 'تجربة',
-    lines: ['لعبناها كذا مرة، وكل مرة بنطلع نفس الشي.'],
   },
   {
     id: 'talks',
@@ -215,37 +224,6 @@ export const MORNING_CHAIN: readonly string[] = [
 
 /** أكثر ردّ يفوز في الشات. */
 export const CHAT_WINNER = 'على عيني';
-
-/* ==========================================================================
-   حجرة ورقة مقص — تعادل مُدبَّر
-   ==========================================================================
-   مهما اختارت، «أنا» اخترت نفس الشيء. الفكرة ليست الفوز، بل أن التشابه
-   يتكرّر حتى في لعبة حظّ.
-   ========================================================================== */
-
-export interface RpsMove { id: 'rock' | 'paper' | 'scissors'; label: string; sign: string }
-
-export const RPS: {
-  moves: readonly RpsMove[];
-  mine: string;
-  tie: string;
-  rounds: number;
-  verdicts: readonly string[];
-  final: string;
-  next: string;
-} = {
-  moves: [
-    { id: 'rock',     label: 'حجرة', sign: '✊' },
-    { id: 'paper',    label: 'ورقة', sign: '✋' },
-    { id: 'scissors', label: 'مقص',  sign: '✌️' },
-  ],
-  mine: 'وأنا كمان',
-  tie: 'تعادل.',
-  rounds: 3,
-  verdicts: ['تعادل.', 'كمان تعادل.', 'تلات مرات. نفس الشي.'],
-  final: 'طبعاً.',
-  next: 'كمّلي',
-};
 
 /* ==========================================================================
    التجمّع — القصاصات بتصير شي واحد
