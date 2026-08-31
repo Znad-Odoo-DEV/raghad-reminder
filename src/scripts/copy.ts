@@ -136,7 +136,6 @@ export const FRAGMENTS: readonly Fragment[] = [
     kind: 'note',
     tag: 'نظرية مسجّلة',
     lines: ['وصاحبة نظرية «شعبنا بده حرق».'],
-    foot: 'ولسا ما حدا قدر يردّ عليها.',
   },
   {
     id: 'internet',
