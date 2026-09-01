@@ -62,7 +62,10 @@ console.log(`اشتراكات: ${subs.length}`);
 console.log(`العنوان : ${title}`);
 console.log(`الجسم   : ${body}`);
 
-const payload = JSON.stringify({ title, body, url });
+// وسم فريد لكل إرسال.
+// الوسم الثابت يجعل الإشعار الجديد يحلّ محلّ السابق في شريط الإشعارات بدل أن
+// يظهر بجانبه — فيبدو وكأن شيئاً لم يصل.
+const payload = JSON.stringify({ title, body, url, tag: `raghd-${Date.now()}` });
 let sent = 0;
 let pruned = 0;
 
