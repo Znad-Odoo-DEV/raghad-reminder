@@ -146,13 +146,15 @@ function paintFragment(i: number): void {
     fragDots.innerHTML = items.map((_, n) => `<span class="${n === i ? 'on' : ''}"></span>`).join('');
   }
 
-  const kind = FRAGMENTS[i]?.kind;
+  const frag = FRAGMENTS[i];
+  const kind = frag?.kind;
   if (fragNext) {
     fragNext.hidden = false;
     fragNext.textContent = 'كمّلي';
   }
 
-  if (kind === 'card') bloom();
+  // الاحتفال يتبع نيّة القصاصة لا شكلها: بطاقة تهنئة أو أي قصاصة تطلبه
+  if (kind === 'card' || frag?.celebrate) bloom();
   if (kind === 'chain') runChain();
   if (kind === 'timer') runDishes();
 }

@@ -112,6 +112,8 @@ export interface Fragment {
   foot?: string;
   /** توقيع أسفل البطاقة — للتهاني */
   sign?: string;
+  /** قصاصة تستحقّ احتفالاً صغيراً عند ظهورها */
+  celebrate?: boolean;
 }
 
 export const FRAGMENTS: readonly Fragment[] = [
@@ -145,6 +147,12 @@ export const FRAGMENTS: readonly Fragment[] = [
       'وإن شاء الله النت بيشتغل عندك…',
       'وبيعيّنوكي وزيرة اتصالات بدل عبد السلام هيكل 🤣',
     ],
+  },
+  {
+    id: 'mloukhieh',
+    kind: 'note',
+    tag: 'سؤال وجودي',
+    lines: ['وأحلى موسم ملوخية ده ولا إيه 🤣'],
   },
   {
     id: 'song',
@@ -196,6 +204,13 @@ export const FRAGMENTS: readonly Fragment[] = [
     tag: 'اتفاق فاشل',
     lines: ['اتفقنا نوقف المجاملات.', 'هو الاتفاق الوحيد يلي ما ظبط.'],
     foot: 'ومبسوط إنه ما ظبط.',
+  },
+  {
+    id: 'moon',
+    kind: 'note',
+    tag: 'دعوة',
+    lines: ['وتشاء أنتِ من الأماني نجمة…', 'ويشاء ربّك أن يناولك القمر.'],
+    celebrate: true,
   },
   {
     id: 'calm',
