@@ -209,7 +209,7 @@ export const FRAGMENTS: readonly Fragment[] = [
     id: 'moon',
     kind: 'note',
     tag: 'دعوة',
-    lines: ['وتشاء أنتِ من الأماني نجمة…', 'ويشاء ربّك أن يناولك القمر.'],
+    lines: ['وتشاء أنتَ من الأماني نجمة…', 'ويشاء ربُّك أن يناولك القمر.'],
     celebrate: true,
   },
   {
