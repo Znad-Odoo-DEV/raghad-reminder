@@ -134,6 +134,12 @@ export const FRAGMENTS: readonly Fragment[] = [
     ],
   },
   {
+    id: 'homsi',
+    kind: 'note',
+    tag: 'تقدّم ملحوظ',
+    lines: ['صباح النور والسرور…', 'وعم نتعلّم نحكي حمصي pure 🤣'],
+  },
+  {
     id: 'theory',
     kind: 'note',
     tag: 'نظرية مسجّلة',
@@ -313,8 +319,8 @@ export const DAILY = {
   /** رسائل مربوطة بتاريخ — بصيغة يوم دمشق `YYYY-MM-DD`. */
   special: [
     {
-      date: '2026-08-31',
-      line: 'صباح الخيرات والليرات. وإذا ما اشتغل النت رح نعمل مظاهرات 🤣',
+      date: '2026-09-02',
+      line: 'صباح النور والسرور. وعم نتعلّم نحكي حمصي pure 🤣',
     },
   ] as readonly { date: string; line: string }[],
 
