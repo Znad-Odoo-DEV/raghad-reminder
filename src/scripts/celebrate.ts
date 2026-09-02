@@ -1,7 +1,7 @@
 /**
  * celebrate.ts — احتفال خفيف على canvas واحد، بدون أي مكتبة
  *
- * خمسة أشكال: قلوب، فراشات، قصاصات، شرارات، وورود. حلقة RAF واحدة، والـcanvas
+ * ستة أشكال: قلوب، فراشات، قصاصات، شرارات، ورود، وورق ملوخية. حلقة RAF واحدة، والـcanvas
  * يُنشأ عند الحاجة ويُهدم عند موت آخر جسيم — لا شيء يعمل بينما الصفحة ساكنة.
  *
  * الفراشة ليست قلباً بلون آخر: جاذبيتها أخفّ، وتتمايل جانبياً بجيب الزاوية،
@@ -16,8 +16,12 @@ const CONFETTI_COLORS = ['#6d4aff', '#a78bfa', '#c4b5fd', '#4b2fd6', '#ffffff'];
 const STAR_COLORS = ['#6d4aca', '#8b6bff', '#a78bfa', '#4b2fd6'];
 const FLOWER_COLORS = ['#c4b5fd', '#e9e2ff', '#ffffff', '#d8b4fe', '#b9a5ff'];
 
-/** 0 = قصاصة · 1 = قلب · 2 = فراشة · 3 = شرارة · 4 = وردة */
-type Kind = 0 | 1 | 2 | 3 | 4;
+// أخضر ملوخية: أوراق حقيقية ليست بلون واحد — فاتحة عند الطرف، غامقة عند
+// القاعدة، وبينها تدرّجات. اللون الوحيد يقتل الإيهام فوراً.
+const LEAF_COLORS = ['#5c9147', '#4a7c3f', '#6ba355', '#3f6b36', '#77ad5e'];
+
+/** 0 = قصاصة · 1 = قلب · 2 = فراشة · 3 = شرارة · 4 = وردة · 5 = ورقة ملوخية */
+type Kind = 0 | 1 | 2 | 3 | 4 | 5;
 
 interface Particle {
   x: number; y: number;
@@ -220,6 +224,85 @@ function drawFlower(c: CanvasRenderingContext2D, p: Particle): void {
   c.fill();
 }
 
+
+/**
+ * ورقة ملوخية.
+ *
+ * ما يجعلها تُقرأ ملوخيةً لا «ورقة شجر عامّة» ثلاثة تفاصيل:
+ *   • الشكل رمحيّ ممدود، أعرض ما يكون عند ثُلثها الأعلى لا في وسطها.
+ *   • الحافة مسنّنة — الأسنان تُرسم بإزاحة صغيرة متناوبة على المحيط.
+ *   • ذيلان رفيعان عند القاعدة، وهما علامة Corchorus olitorius المميّزة.
+ *
+ * والعروق ليست زينة: العرق الأوسط وأزواجه المائلة هي ما يعطي السطح عمقاً
+ * فلا يبدو قصاصةً خضراء.
+ */
+function drawLeaf(c: CanvasRenderingContext2D, p: Particle): void {
+  const L = p.size;
+  const W = L * 0.40;
+  const TEETH = 11;
+
+  /** نصف عرض الورقة عند نسبة t من الطرف (0) إلى القاعدة (1). */
+  const halfWidth = (t: number) => W * Math.sin(Math.pow(t, 0.78) * Math.PI);
+
+  const side = (dir: 1 | -1) => {
+    for (let i = 1; i <= TEETH; i++) {
+      const t = i / TEETH;
+      const y = -L / 2 + t * L;
+      // سنّ متناوب: داخل قليلاً ثم خارج، فتبدو الحافة مقصوصة لا ملساء
+      const tooth = i % 2 === 0 ? 0.86 : 1.04;
+      c.lineTo(dir * halfWidth(t) * tooth, y);
+    }
+  };
+
+  // نصل الورقة
+  c.beginPath();
+  c.moveTo(0, -L / 2);
+  side(1);
+  for (let i = TEETH; i >= 1; i--) {
+    const t = i / TEETH;
+    const y = -L / 2 + t * L;
+    const tooth = i % 2 === 0 ? 0.86 : 1.04;
+    c.lineTo(-halfWidth(t) * tooth, y);
+  }
+  c.closePath();
+  c.fillStyle = p.color;
+  c.fill();
+
+  // العرق الأوسط
+  c.strokeStyle = 'rgba(28, 58, 24, .38)';
+  c.lineWidth = Math.max(0.6, L * 0.028);
+  c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(0, -L / 2 + L * 0.04);
+  c.lineTo(0, L / 2 - L * 0.02);
+  c.stroke();
+
+  // عروق جانبية مائلة نحو الطرف
+  c.lineWidth = Math.max(0.4, L * 0.016);
+  c.strokeStyle = 'rgba(28, 58, 24, .26)';
+  for (let i = 1; i <= 3; i++) {
+    const t = 0.25 + i * 0.17;
+    const y = -L / 2 + t * L;
+    const w = halfWidth(t) * 0.72;
+    for (const dir of [1, -1]) {
+      c.beginPath();
+      c.moveTo(0, y);
+      c.quadraticCurveTo(dir * w * 0.6, y - L * 0.06, dir * w, y - L * 0.12);
+      c.stroke();
+    }
+  }
+
+  // الذيلان عند القاعدة — علامة الملوخية
+  c.lineWidth = Math.max(0.5, L * 0.02);
+  c.strokeStyle = p.color;
+  for (const dir of [1, -1]) {
+    c.beginPath();
+    c.moveTo(dir * halfWidth(0.94) * 0.5, L / 2 - L * 0.06);
+    c.quadraticCurveTo(dir * W * 0.5, L / 2 + L * 0.06, dir * W * 0.34, L / 2 + L * 0.16);
+    c.stroke();
+  }
+}
+
 function frame(time: number): void {
   if (!ctx || !canvas) {
     // فقدنا الـcanvas بينما كانت هناك رشقة مجدولة — ننظّف بدل أن نتسرّب.
@@ -259,6 +342,15 @@ function frame(time: number): void {
       p.x += (p.vx + Math.sin(p.phase) * 0.3) * step;
       p.y += p.vy * step;
       p.rot += p.vr * 0.4 * step;
+    } else if (p.kind === 5) {
+      // ورقة: تتمايل وتتقلّب وهي نازلة. الميل يتبع الجيب لا دوراناً ثابتاً،
+      // لأن الورقة الحقيقية تتأرجح حول محورها ولا تدور كالعجلة.
+      p.phase += 0.045 * step;
+      p.vy += 0.055 * step;
+      p.vy = Math.min(p.vy, 2.6);
+      p.x += (p.vx + Math.sin(p.phase) * p.sway * 1.6) * step;
+      p.y += p.vy * step;
+      p.rot = Math.sin(p.phase * 0.8) * 0.9 + p.vr * 4;
     } else if (p.kind === 4) {
       // وردة: تهبط ببطء وتتمايل وتدور حول نفسها
       p.phase += 0.02 * step;
@@ -295,6 +387,8 @@ function frame(time: number): void {
       drawStar(ctx, p);
     } else if (p.kind === 4) {
       drawFlower(ctx, p);
+    } else if (p.kind === 5) {
+      drawLeaf(ctx, p);
     } else {
       ctx.fillStyle = p.color;
       ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.62);
@@ -313,6 +407,7 @@ function make(kind: Kind, x: number, y: number, vx: number, vy: number, life: nu
     : kind === 2 ? pick(WING_COLORS)
     : kind === 3 ? pick(STAR_COLORS)
     : kind === 4 ? pick(FLOWER_COLORS)
+    : kind === 5 ? pick(LEAF_COLORS)
     : pick(CONFETTI_COLORS);
 
   return {
@@ -322,6 +417,7 @@ function make(kind: Kind, x: number, y: number, vx: number, vy: number, life: nu
       kind === 2 ? 15 + Math.random() * 10
       : kind === 3 ? 7 + Math.random() * 7
       : kind === 4 ? 14 + Math.random() * 12
+      : kind === 5 ? 24 + Math.random() * 18
       : 8 + Math.random() * 8,
     rot: kind === 0 ? Math.random() * Math.PI * 2 : (Math.random() - 0.5) * 0.5,
     vr: (Math.random() - 0.5) * (kind === 0 ? 0.28 : 0.12),
@@ -497,4 +593,50 @@ export function bloom(): void {
   window.setTimeout(() => pop(W * 0.73, H * 0.24), 480);
   window.setTimeout(() => pop(W * 0.5, H * 0.4, 15), 1000);
   window.setTimeout(() => flowers(16), 1400);
+}
+
+/**
+ * ورق ملوخية يتطاير — عند فتح الظرف الأول.
+ *
+ * يدخل من الأعلى ومن الجانبين معاً: المطر العمودي وحده يبدو «تساقطاً»، ودخول
+ * الجانب يعطي إحساس الطيران.
+ */
+export function leaves(): void {
+  if (reduced()) return;
+  if (!ensureCanvas()) return;
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  const fromTop = (n: number) => {
+    for (let i = 0; i < n; i++) {
+      particles.push(
+        make(5, Math.random() * W, -50 - Math.random() * 260, (Math.random() - 0.5) * 1.6, 0.5 + Math.random() * 1.2, 9),
+      );
+    }
+  };
+
+  const fromSide = (n: number) => {
+    for (let i = 0; i < n; i++) {
+      const left = Math.random() < 0.5;
+      particles.push(
+        make(
+          5,
+          left ? -50 : W + 50,
+          H * (0.1 + Math.random() * 0.5),
+          (left ? 1 : -1) * (2.2 + Math.random() * 2.2),
+          -0.6 - Math.random() * 1.2,
+          9,
+        ),
+      );
+    }
+  };
+
+  fromTop(16);
+  fromSide(6);
+  window.setTimeout(() => fromTop(12), 700);
+  window.setTimeout(() => fromSide(5), 1200);
+  window.setTimeout(() => fromTop(10), 1900);
+
+  if (!raf) raf = requestAnimationFrame(frame);
 }

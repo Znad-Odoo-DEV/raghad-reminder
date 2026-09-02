@@ -30,7 +30,7 @@ import {
   AWAY_TITLES, MISC, dayUnitAr, pick,
 } from './copy';
 
-import { finale, burst, bloom } from './celebrate';
+import { finale, burst, bloom, leaves } from './celebrate';
 import { initAudio, type MusicHandle } from './music';
 import { dropRetiredKeys, resetAll } from './store';
 import { logVisit } from './visit';
@@ -122,6 +122,9 @@ function openEnvelope(el: HTMLElement): void {
 
   // أول ظرف يفتح الأغنية معه — لا عند تحميل الصفحة
   if (STORY.musicOnFirstOpen) void startMusic();
+
+  // وورق الملوخية يتطاير مع الظرف الأول وحده
+  if (scene.dataset.scene === 'intro') leaves();
 
   window.setTimeout(() => {
     scene.dataset.opening = '0';
