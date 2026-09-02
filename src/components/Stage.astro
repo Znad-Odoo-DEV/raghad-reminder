@@ -153,6 +153,18 @@ const two = stampOf(FIRST_TALK_AT);
 
           {(f.kind === 'note' || f.kind === 'calm') && f.lines.map((l) => <p class="frag__l">{l}</p>)}
 
+          {f.photo && (
+            <img
+              class="frag__photo"
+              src={`${import.meta.env.BASE_URL}${f.photo.src}`}
+              alt={f.photo.alt}
+              width="447"
+              height="447"
+              loading="lazy"
+              decoding="async"
+            />
+          )}
+
           {f.foot && <p class="frag__foot">{f.foot}</p>}
           {f.sign && <p class="frag__sign">— {f.sign}</p>}
         </article>
@@ -441,6 +453,18 @@ const two = stampOf(FIRST_TALK_AT);
   }
   .frag__l--soft { color: var(--c-ink-faint); }
   .frag--note .frag__l:last-of-type { color: var(--c-ink); font-weight: 700; }
+  /* صورة داخل قصاصة: زوايا ناعمة لا دائرة — الدائرة تقصّ حافّة الصحن */
+  .frag__photo {
+    inline-size: min(12rem, 70%);
+    block-size: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--r-md);
+    margin-block-start: .55rem;
+    align-self: center;
+    box-shadow: 0 .5rem 1.4rem rgb(60 40 110 / .16);
+  }
+
   .frag__foot {
     margin-block-start: .2rem;
     font-size: var(--t-xs);

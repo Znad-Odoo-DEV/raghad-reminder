@@ -12,17 +12,17 @@
  * (cache-first)، وكل ما عداها network-first حتى لا تعلق نسخة قديمة أبداً.
  */
 
-// v29: ورق ملوخية عند فتح الظرف الأول.
+// v30: ورق الملوخية صار صورةً حقيقية، وصحن الملوخية على قصاصته.
 //
 // القاعدة: كل تغيير في الهيكل المخزَّن يرفع هذا الرقم. نسيانه يعني أن متصفّحاً
 // زار الموقع من قبل يبقى على النسخة القديمة.
-const VERSION = 'raghd-v29';
+const VERSION = 'raghd-v30';
 const CACHE = `raghd-${VERSION}`;
 
 /** جذر التطبيق — يصح في "/" وفي "/raghad-reminder/" على السواء. */
 const BASE = new URL('./', self.location).href;
 
-const PRECACHE = [BASE, `${BASE}manifest.webmanifest`, `${BASE}icon-192.png`];
+const PRECACHE = [BASE, `${BASE}manifest.webmanifest`, `${BASE}icon-192.png`, `${BASE}leaves.png`];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

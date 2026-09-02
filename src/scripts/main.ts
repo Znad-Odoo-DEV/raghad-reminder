@@ -30,7 +30,7 @@ import {
   AWAY_TITLES, MISC, dayUnitAr, pick,
 } from './copy';
 
-import { finale, burst, bloom, leaves } from './celebrate';
+import { finale, burst, bloom, leaves, preloadLeaves } from './celebrate';
 import { initAudio, type MusicHandle } from './music';
 import { dropRetiredKeys, resetAll } from './store';
 import { logVisit } from './visit';
@@ -585,6 +585,9 @@ function boot(): void {
   dropRetiredKeys();
   reloadOnNewWorker();
   logVisit();
+  // صفيحة الورق تُحمَّل الآن لا عند فتح الظرف: لو تأخّرت لحظةً واحدة لبدأت
+  // الموجة الأولى مرسومةً ثم انقلبت صوراً أمام العين.
+  preloadLeaves();
 
   for (const b of $$('[data-open]')) b.addEventListener('click', () => openEnvelope(b));
   for (const b of $$('[data-next]')) b.addEventListener('click', advance);

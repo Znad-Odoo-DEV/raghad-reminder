@@ -38,6 +38,29 @@ interface Particle {
   flap: number;
   /** مدى التمايل الجانبي */
   sway: number;
+  /** أي ورقة من صفيحة `leaves.png` — للورق فقط */
+  cell: number;
+}
+
+/**
+ * صفيحة ورق الملوخية: أربع ورقات نسيجها مقصوص من صورة حزمة حقيقية.
+ * الرسم المتجهيّ أدناه يبقى احتياطاً — إن تأخّرت الصورة أو فشلت، يتطاير الورق
+ * مرسوماً بدل ألّا يتطاير شيء.
+ */
+const LEAF_SHEET_CELLS = 4;
+const LEAF_CELL_W = 96;
+const LEAF_CELL_H = 260;
+let leafSheet: HTMLImageElement | null = null;
+let leafSheetReady = false;
+
+/** يُستدعى مبكراً حتى لا تُرسم الموجة الأولى متجهيّةً ثم تنقلب صورةً. */
+export function preloadLeaves(): void {
+  if (leafSheet) return;
+  const img = new Image();
+  img.decoding = 'async';
+  img.addEventListener('load', () => { leafSheetReady = true; });
+  img.src = `${import.meta.env.BASE_URL}leaves.png`;
+  leafSheet = img;
 }
 
 let canvas: HTMLCanvasElement | null = null;
@@ -225,10 +248,25 @@ function drawFlower(c: CanvasRenderingContext2D, p: Particle): void {
 }
 
 
+/** ورقة ملوخية: صورةٌ من الصفيحة، وإن لم تجهز بعدُ فرسمٌ متجهيّ. */
+function drawLeaf(c: CanvasRenderingContext2D, p: Particle): void {
+  if (leafSheetReady && leafSheet) {
+    const h = p.size;
+    const w = (h * LEAF_CELL_W) / LEAF_CELL_H;
+    c.drawImage(
+      leafSheet,
+      p.cell * LEAF_CELL_W, 0, LEAF_CELL_W, LEAF_CELL_H,
+      -w / 2, -h / 2, w, h,
+    );
+    return;
+  }
+  drawLeafVector(c, p);
+}
+
 /**
- * ورقة ملوخية.
+ * الرسم الاحتياطي.
  *
- * ما يجعلها تُقرأ ملوخيةً لا «ورقة شجر عامّة» ثلاثة تفاصيل:
+ * ما يجعله يُقرأ ملوخيةً لا «ورقة شجر عامّة» ثلاثة تفاصيل:
  *   • الشكل رمحيّ ممدود، أعرض ما يكون عند ثُلثها الأعلى لا في وسطها.
  *   • الحافة مسنّنة — الأسنان تُرسم بإزاحة صغيرة متناوبة على المحيط.
  *   • ذيلان رفيعان عند القاعدة، وهما علامة Corchorus olitorius المميّزة.
@@ -236,7 +274,7 @@ function drawFlower(c: CanvasRenderingContext2D, p: Particle): void {
  * والعروق ليست زينة: العرق الأوسط وأزواجه المائلة هي ما يعطي السطح عمقاً
  * فلا يبدو قصاصةً خضراء.
  */
-function drawLeaf(c: CanvasRenderingContext2D, p: Particle): void {
+function drawLeafVector(c: CanvasRenderingContext2D, p: Particle): void {
   const L = p.size;
   const W = L * 0.40;
   const TEETH = 11;
@@ -417,13 +455,14 @@ function make(kind: Kind, x: number, y: number, vx: number, vy: number, life: nu
       kind === 2 ? 15 + Math.random() * 10
       : kind === 3 ? 7 + Math.random() * 7
       : kind === 4 ? 14 + Math.random() * 12
-      : kind === 5 ? 24 + Math.random() * 18
+      : kind === 5 ? 30 + Math.random() * 22
       : 8 + Math.random() * 8,
     rot: kind === 0 ? Math.random() * Math.PI * 2 : (Math.random() - 0.5) * 0.5,
     vr: (Math.random() - 0.5) * (kind === 0 ? 0.28 : 0.12),
     phase: Math.random() * Math.PI * 2,
     flap: 0.26 + Math.random() * 0.2,
     sway: 0.5 + Math.random() * 1.1,
+    cell: Math.floor(Math.random() * LEAF_SHEET_CELLS),
   };
 }
 

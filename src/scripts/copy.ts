@@ -114,6 +114,8 @@ export interface Fragment {
   sign?: string;
   /** قصاصة تستحقّ احتفالاً صغيراً عند ظهورها */
   celebrate?: boolean;
+  /** صورة تحت النصّ — المسار نسبيّ إلى `public/` */
+  photo?: { src: string; alt: string };
 }
 
 export const FRAGMENTS: readonly Fragment[] = [
@@ -159,6 +161,7 @@ export const FRAGMENTS: readonly Fragment[] = [
     kind: 'note',
     tag: 'سؤال وجودي',
     lines: ['وأحلى موسم ملوخية ده ولا إيه 🤣'],
+    photo: { src: 'photos/molokhia.jpg', alt: 'صحن ملوخية مع رزّ' },
   },
   {
     id: 'song',
