@@ -36,6 +36,14 @@ export const FIRST_TALK: string | null = '2026-03-21';
  */
 export const BIRTHDAY: string | null = '2026-09-06';
 
+/**
+ * عدد الشمعات على الكعكة.
+ *
+ * ضعه عمرها الحقيقي إن شئت. `null` يعني كعكة بخمس شمعات — عددٌ يُنفخ في نفَس
+ * أو نفَسين ولا يُحرج أحداً، ولا يُصرّح بعمر لم يُسأل عنه أحد.
+ */
+export const CANDLES: number | null = null;
+
 /** موعد رسالة اللطافة اليومية — بتوقيت دمشق. */
 export const SWEET_HOUR = 11;
 export const SWEET_MINUTE = 0;

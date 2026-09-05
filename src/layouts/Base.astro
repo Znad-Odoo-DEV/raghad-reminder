@@ -164,6 +164,32 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
     pointer-events: none;
   }
 
+  /* ---- سماء الليل والاسم ------------------------------------------------- */
+  /* هذه الطبقة فوق كل شيء لأنها تحلّ محلّ الصفحة لحظتين ثم تنقشع. النار
+     تحتاج ظلاماً تُرى فيه: الدمج الجمعي يبيّض على اللافندر الفاتح. */
+  .sky-night {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 80% at 50% 8%, #2a1b5e 0%, #150d34 55%, #0a0620 100%);
+    opacity: 0;
+    transition: opacity .7s ease;
+  }
+  .sky-night.on { opacity: 1; }
+
+  .sky-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 71;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sky-night { transition: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .blob { animation: none !important; }
   }

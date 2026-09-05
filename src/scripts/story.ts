@@ -20,6 +20,7 @@ export const SCENES = [
   'letter3',    // الظرف الأخير
   'reveal',     // التاريخ
   'countdown',  // كم باقي
+  'cake',       // الشمعات — تُطفأ بالنفخ أو باللمس
   'birthday',   // الاحتفال والرسالة
 ] as const;
 

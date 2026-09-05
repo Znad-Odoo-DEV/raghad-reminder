@@ -1,10 +1,11 @@
 ---
 import {
   INTRO, LETTER_ONE, LETTER_TWO, LETTER_THREE, TURN,
-  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, BIRTHDAY_COPY,
+  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, CAKE, BIRTHDAY_COPY,
 } from '../scripts/copy';
 import { COINCIDENCE_AT, FIRST_TALK_AT, wallOf } from '../scripts/schedule';
 import EnvelopeGlyph from './EnvelopeGlyph.astro';
+import Cake from './Cake.astro';
 
 /**
  * Stage — كل مشاهد القصة في مكان واحد.
@@ -220,7 +221,22 @@ const two = stampOf(FIRST_TALK_AT);
     <p class="scene__hint">{COUNTDOWN.waitingHint}</p>
   </section>
 
-  <!-- ═══════════════ 11 · عيد الميلاد ═══════════════ -->
+  <!-- ═══════════════ 11 · الشمعات ═══════════════ -->
+  <section class="scene scene--cake" data-scene="cake" hidden>
+    <p class="stamp-label scene__in" style="--d: 0ms">{CAKE.label}</p>
+    <p class="scene__lead scene__lead--big scene__in" style="--d: 260ms">{CAKE.line}</p>
+
+    <div class="scene__in" style="--d: 700ms"><Cake /></div>
+
+    <!-- يبقى مكان السطر محجوزاً: تبدّل النصّ يقفز بالكعكة تحته -->
+    <p class="cake__say" data-cake-say aria-live="polite">&nbsp;</p>
+
+    <button class="btn btn--primary scene__in" style="--d: 1500ms" type="button" data-blow>
+      {CAKE.cta}
+    </button>
+  </section>
+
+  <!-- ═══════════════ 12 · عيد الميلاد ═══════════════ -->
   <section class="scene scene--birthday" data-scene="birthday" hidden>
     <h1 class="greeting scene__in" style="--d: 300ms">{BIRTHDAY_COPY.greeting}</h1>
     <div class="lines">
@@ -437,6 +453,17 @@ const two = stampOf(FIRST_TALK_AT);
   .frag--chat   { --rot:  .6deg; }
   .frag--calm   { --rot:  .4deg; }
   .frag { transform: rotate(var(--rot, 0deg)); }
+
+  /* ==================== الشمعات ==================== */
+  .scene--cake { gap: .4rem; }
+  .cake__say {
+    min-block-size: 1.6em;
+    font-size: var(--t-body);
+    font-weight: 600;
+    color: var(--c-lav-deep);
+    text-align: center;
+    transition: opacity .25s ease;
+  }
 
   .frag__tag {
     font-size: .68rem;

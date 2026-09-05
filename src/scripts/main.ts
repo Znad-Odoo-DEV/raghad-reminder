@@ -9,7 +9,7 @@
  * لأن العنصر يخرج من `display:none`.
  */
 
-import { STORY } from '../site.config';
+import { STORY, HER } from '../site.config';
 
 import {
   untilBirthday,
@@ -26,11 +26,13 @@ import * as story from './story';
 import type { Scene } from './story';
 
 import {
-  FRAGMENTS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, BIRTHDAY_COPY,
+  FRAGMENTS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, CAKE, BIRTHDAY_COPY,
   AWAY_TITLES, MISC, dayUnitAr, pick,
 } from './copy';
 
 import { finale, burst, bloom, leaves, preloadLeaves } from './celebrate';
+import { nameInTheSky } from './sky';
+import { blowSupported, listenForBlow, type BlowHandle } from './blow';
 import { initAudio, type MusicHandle } from './music';
 import { dropRetiredKeys, resetAll } from './store';
 import { logVisit } from './visit';
@@ -96,6 +98,7 @@ function onEnter(name: Scene): void {
     case 'gather':    runGather(); break;
     case 'reveal':    fillBirthdayDate(); break;
     case 'countdown': startCountdown(); break;
+    case 'cake':      runCake(); break;
     case 'birthday':  runBirthday(); break;
   }
 }
@@ -302,7 +305,7 @@ function paintCountdown(): void {
   // وصل اليوم — ننتقل لوحدنا
   if (b.isToday) {
     window.clearInterval(tickTimer);
-    show(story.go('birthday').scene);
+    show(story.go('cake').scene);
     return;
   }
 
@@ -356,19 +359,129 @@ function paintCountdown(): void {
 }
 
 /* =========================================================================
+   الشمعات
+   ========================================================================= */
+
+let blow: BlowHandle | null = null;
+let cakeWired = false;
+/** هل أسكتنا الأغنية للاستماع؟ نعيدها بعد أن تنطفئ الشمعات. */
+let musicHushed = false;
+
+const candles = () => $$<HTMLElement>('[data-candle]');
+const litCandles = () => candles().filter((c) => !c.classList.contains('out'));
+
+function cakeSay(text: string): void {
+  const el = $('[data-cake-say]');
+  // مسافة غير قابلة للكسر لا نصّ فارغ: السطر الفارغ ينهار فتقفز الكعكة تحته
+  if (el) el.textContent = text || ' ';
+}
+
+function stopBlow(): void {
+  blow?.stop();
+  blow = null;
+}
+
+/** يطفئ عدداً من الشمعات، ويتولّى نهاية المشهد حين تنطفئ آخر واحدة. */
+function extinguish(n: number): void {
+  const lit = litCandles();
+  if (lit.length === 0) return;
+
+  // عشوائياً لا بالترتيب: النفخة لا تصيب الشمعات من اليسار إلى اليمين
+  for (let i = 0; i < Math.min(n, lit.length); i++) {
+    lit.splice(Math.floor(Math.random() * lit.length), 1)[0]?.classList.add('out');
+  }
+
+  if (litCandles().length > 0) {
+    cakeSay(CAKE.keepGoing);
+    return;
+  }
+
+  stopBlow();
+  cakeSay(CAKE.done);
+  announce(CAKE.done);
+
+  const toBirthday = () => show(story.go('birthday').scene);
+  if (reduced()) {
+    window.setTimeout(toBirthday, 1200);
+    return;
+  }
+
+  // الاسم يُكتب في السماء **قبل** التهنئة لا خلفها: كتابته تحت الكلام تضعه
+  // في مكان الكلام نفسه فيتشابك الحرفان ولا يُقرأ أيّهما.
+  window.setTimeout(() => nameInTheSky(HER, toBirthday), 900);
+}
+
+function runCake(): void {
+  announce(CAKE.line);
+
+  // إعادة الإشعال عند كل دخول: لو أعادت الحكاية من أوّلها لوجدت كعكةً مطفأة
+  for (const c of candles()) c.classList.remove('out');
+  cakeSay('');
+
+  // المايك يسمع مكبّر الصوت، فالأغنية نفسها كانت تطفئ الشمعات. `echoCancellation`
+  // يخفّف ولا يكفي — الإسكات هو الحلّ الوحيد الذي لا يعتمد على جودة المعالج.
+  if (music?.playing()) {
+    musicHushed = true;
+    void music.toggle();
+  }
+
+  if (cakeWired) return;
+  cakeWired = true;
+
+  for (const c of candles()) {
+    c.addEventListener('click', () => {
+      if (!c.classList.contains('out')) extinguish(1);
+    });
+  }
+
+  const btn = $<HTMLButtonElement>('[data-blow]');
+  if (!btn) return;
+
+  if (!blowSupported()) {
+    btn.hidden = true;
+    cakeSay(CAKE.tap);
+    return;
+  }
+
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    // الطلب يبدأ داخل هذه اللمسة بالذات: الجوّال يرفض فتح المايك خارج إيماءة
+    void listenForBlow({
+      onReady: () => cakeSay(CAKE.listening),
+      // النفخة القوية تطفئ أكثر من شمعة، كما في الحقيقة
+      onBlow: (strength) => extinguish(1 + Math.floor(strength * 2.5)),
+    }).then((res) => {
+      btn.hidden = true;
+      if (typeof res === 'string') {
+        cakeSay(res === 'denied' ? CAKE.denied : CAKE.tap);
+        return;
+      }
+      blow = res;
+    });
+  });
+}
+
+/* =========================================================================
    عيد الميلاد
    ========================================================================= */
 
 function runBirthday(): void {
   announce(BIRTHDAY_COPY.greeting);
-  void startMusic();
+  stopBlow();
+
+  if (musicHushed) {
+    musicHushed = false;
+    if (music && !music.playing()) void music.toggle();
+  } else {
+    void startMusic();
+  }
 
   if (story.current().celebrated) return;
   story.markCelebrated();
 
   if (reduced()) return;
-  window.setTimeout(() => finale(), 700);
-  window.setTimeout(() => burst(null), 2600);
+  window.setTimeout(() => finale(), 400);
+  window.setTimeout(() => burst(null), 2400);
 }
 
 /* =========================================================================
@@ -616,11 +729,15 @@ function boot(): void {
 
   document.addEventListener('copy', () => announce(MISC.copyEgg), { passive: true });
 
-  // لو وصل يوم العيد وقد بلغت القصة مرحلة الكشف، نفتح على الاحتفال مباشرة
+  // يوم عيدها يفتح الموقع على الشمعات مباشرة.
+  //
+  // الشرط القديم كان يطلب أن تكون القصة قد بلغت مشهد الكشف — وهذا لا يتحقّق
+  // أبداً: `STORY.resume` مطفأ، فالمشهد المحفوظ 'intro' في كل زيارة. النتيجة
+  // أنها كانت ستمشي في أحد عشر مشهداً في صباح عيدها لتصل إلى التهنئة.
   const b = untilBirthday();
   const saved = story.current().scene;
-  const reached = story.SCENES.indexOf(saved) >= story.SCENES.indexOf('reveal');
-  show(b?.isToday && reached ? story.go('birthday').scene : saved);
+  const past = story.SCENES.indexOf(saved) >= story.SCENES.indexOf('cake');
+  show(b?.isToday ? story.go(past ? saved : 'cake').scene : saved);
 }
 
 if (document.readyState === 'loading') {

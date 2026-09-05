@@ -1,0 +1,159 @@
+---
+import { CANDLES } from '../site.config';
+
+/**
+ * Cake — الكعكة وشمعاتها.
+ *
+ * الشمعات ليست صوراً بل عناصر SVG لكل واحدة `data-candle`، لأن `main.ts` تطفئ
+ * واحدةً واحدة حسب قوّة النفخة. الإطفاء تبديل صنف `.out` لا حذف عنصر: اللهب
+ * يتلاشى، والفتيل يبقى، ويصعد منه دخان. حذف اللهب كان يجعلها تختفي فجأةً
+ * كأن أحداً أطفأ الضوء.
+ *
+ * لا سكربت هنا. المكوّن يشحن العلامات والأنماط، والسلوك في `main.ts` عبر
+ * `data-candle` و`data-cake`.
+ */
+
+const count = Math.min(12, Math.max(1, CANDLES ?? 5));
+const candles = Array.from({ length: count }, (_, i) => i);
+
+// توزيع الشمعات على عرض الكعكة: الأطراف تُترك فارغة قليلاً فلا تبدو ملتصقة
+// بالحافّة، والمسافات متساوية بينها.
+const X0 = 38;
+const X1 = 162;
+const x = (i: number) => (count === 1 ? (X0 + X1) / 2 : X0 + (i * (X1 - X0)) / (count - 1));
+---
+
+<div class="cake" data-cake>
+  <svg viewBox="0 0 200 200" role="img" aria-label={`كعكة عليها ${count} شمعات`}>
+    <defs>
+      <linearGradient id="cake-body" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f6ecff" />
+        <stop offset="100%" stop-color="#e2d2fb" />
+      </linearGradient>
+      <linearGradient id="cake-icing" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fffdf8" />
+        <stop offset="100%" stop-color="#f3e6ff" />
+      </linearGradient>
+      <radialGradient id="flame-glow">
+        <stop offset="0%" stop-color="#ffd88a" stop-opacity=".85" />
+        <stop offset="100%" stop-color="#ffb347" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+
+    <!-- الطبق -->
+    <ellipse cx="100" cy="181" rx="82" ry="7" fill="rgb(109 74 202 / .12)" />
+
+    <!-- جسم الكعكة -->
+    <rect x="18" y="118" width="164" height="58" rx="12" fill="url(#cake-body)" />
+    <!-- الكريما: ثماني تمويجات عرض كلٍّ 20.5 فمجموعها 164 بالضبط — عرض الكعكة.
+         أي فرق يترك المسار مفتوحاً فيغلقه SVG بخطّ مائل يقطع الكعكة. -->
+    <path
+      fill="url(#cake-icing)"
+      d="M18 130
+        c0-7 5-12 12-12
+        h140
+        c7 0 12 5 12 12
+        v6
+        q-10.25 11 -20.5 0
+        q-10.25 11 -20.5 0
+        q-10.25 11 -20.5 0
+        q-10.25 11 -20.5 0
+        q-10.25 11 -20.5 0
+        q-10.25 11 -20.5 0
+        q-10.25 11 -20.5 0
+        q-10.25 11 -20.5 0
+        z"
+    />
+
+    <!-- رشّات -->
+    <g fill="#c7a9ff" opacity=".7">
+      <rect x="44" y="150" width="7" height="3" rx="1.5" transform="rotate(-18 47 151)" />
+      <rect x="86" y="160" width="7" height="3" rx="1.5" transform="rotate(12 89 161)" />
+      <rect x="128" y="148" width="7" height="3" rx="1.5" transform="rotate(-8 131 149)" />
+      <rect x="150" y="163" width="7" height="3" rx="1.5" transform="rotate(22 153 164)" />
+      <rect x="66" y="168" width="7" height="3" rx="1.5" transform="rotate(-26 69 169)" />
+    </g>
+
+    {candles.map((i) => (
+      <g class="candle" data-candle={i} style={`--i: ${i}`} transform={`translate(${x(i)} 0)`}>
+        <!-- الدخان: يُرسم دائماً ولا يُرى إلا بعد الإطفاء -->
+        <g class="smoke" aria-hidden="true">
+          <path d="M0 90c-4-7 4-10 0-17s3-11 0-17" fill="none" stroke="#b9b0cc" stroke-width="2.4" stroke-linecap="round" />
+        </g>
+
+        <!-- الشمعة -->
+        <rect x="-4" y="96" width="8" height="26" rx="3" fill="#fff6fb" stroke="#e3d4f5" stroke-width="1" />
+        <rect x="-4" y="103" width="8" height="4" fill="#dcc6f7" opacity=".8" />
+        <!-- الفتيل -->
+        <path d="M0 96v-5" stroke="#6b6070" stroke-width="1.8" stroke-linecap="round" />
+
+        <!-- اللهب -->
+        <g class="flame">
+          <circle cy="84" r="13" fill="url(#flame-glow)" />
+          <path class="flame__body" d="M0 76c6 4 6 10 0 14-6-4-6-10 0-14z" fill="#ffb347" />
+          <path class="flame__core" d="M0 82c3 2 3 5 0 7-3-2-3-5 0-7z" fill="#fff2c4" />
+        </g>
+
+        <!-- مساحة اللمس: أوسع بكثير من اللهب، فالإصبع ليس مؤشّراً -->
+        <rect class="hit" x="-17" y="66" width="34" height="60" fill="transparent" />
+      </g>
+    ))}
+  </svg>
+</div>
+
+<style>
+  .cake {
+    inline-size: min(19rem, 78vw);
+    margin-inline: auto;
+  }
+  .cake svg { display: block; inline-size: 100%; block-size: auto; overflow: visible; }
+
+  /* ---- اللهب ---- */
+  .flame { transform-origin: 0 90px; }
+  .flame__body { animation: flicker 1.1s ease-in-out infinite alternate; transform-origin: 0 90px; }
+  .flame__core { animation: flicker 0.7s ease-in-out infinite alternate-reverse; transform-origin: 0 89px; }
+
+  /* كل شمعة ترقص بإيقاعها: التزامن التام يفضح أنها رسم لا نار */
+  .candle .flame__body { animation-delay: calc(var(--i) * -0.23s); }
+  .candle .flame__core { animation-delay: calc(var(--i) * -0.17s); }
+
+  @keyframes flicker {
+    from { transform: scale(.92, .96) translateX(-.6px); opacity: .92; }
+    to   { transform: scale(1.06, 1.08) translateX(.6px); opacity: 1; }
+  }
+
+  /* ---- الإطفاء ---- */
+  /* اللهب يُسحب إلى أعلى وهو يصغر: الشعلة المنطفئة تُشفط لا تختفي مكانها */
+  .candle .flame {
+    transition: opacity .3s ease, transform .34s cubic-bezier(.4, 0, .9, .5);
+  }
+  .candle.out .flame {
+    opacity: 0;
+    transform: translateY(-9px) scale(.35);
+  }
+  .candle.out .flame__body,
+  .candle.out .flame__core { animation: none; }
+
+  /* ---- الدخان ---- */
+  .smoke { opacity: 0; }
+  .candle.out .smoke {
+    animation: smoke 2.1s ease-out .18s forwards;
+    transform-origin: 0 96px;
+  }
+  @keyframes smoke {
+    0%   { opacity: 0;   transform: translateY(6px) scale(.4, .3); }
+    22%  { opacity: .55; }
+    100% { opacity: 0;   transform: translateY(-38px) scale(1.5, 1.9); }
+  }
+
+  /* مساحة اللمس تختفي بعد الإطفاء فلا تلتقط ضغطة بلا أثر */
+  .hit { cursor: pointer; }
+  .candle.out .hit { pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flame__body, .flame__core { animation: none; }
+    .candle .flame { transition: opacity .2s linear; }
+    .candle.out .flame { transform: none; }
+    .candle.out .smoke { animation: none; }
+  }
+</style>
