@@ -359,6 +359,10 @@ function paintCountdown(): void {
   const phrase =
     eve && mins > 360 ? { text: CD.tomorrow, sub: CD.tomorrowSub }
     : b.sleeps === 2 ? { text: CD.two, sub: CD.twoSub }
+    : eve && mins > 60 && b.hours === 1 ? { text: CD.hourOne, sub: CD.hours }
+    : eve && mins > 60 && b.hours === 2 ? { text: CD.hourTwo, sub: CD.hours }
+    : eve && mins === 1 ? { text: CD.minOne, sub: CD.close }
+    : eve && mins === 2 ? { text: CD.minTwo, sub: CD.close }
     : null;
 
   if (phrase) {
@@ -745,12 +749,44 @@ function initPanel(): void {
   for (const btn of $$<HTMLButtonElement>('[data-sim]')) {
     btn.addEventListener('click', () => {
       const real = Date.now();
+
+      /**
+       * قفزة إلى محطّة من ليلة العيد.
+       *
+       * الإزاحة تُقاس من منتصف ليل عيدها لا من تاريخ مكتوب، فتصحّ كل سنة.
+       * والقياس من `Date.now()` لا من `nowMs()`، وإلا تراكمت الإزاحة على
+       * نفسها مع كل ضغطة فابتعدت المحطّة عن اسمها.
+       *
+       * ولا إعادة تحميل: نقفز إلى المشهد هنا مباشرةً. تغيير الساعة وحده
+       * يبدّل الأرقام ويترك المشهد مكانه.
+       */
+      const bd = nextBirthdayInstant(real);
+      const jump = (deltaMs: number, scene: Scene): void => {
+        if (bd === null) return;
+        setOffset(bd + deltaMs - real);
+        // التصفير يمحو علامة «احتفلنا» فتعمل الرشقة من جديد في كل معاينة
+        story.reset();
+        panel.hidden = true;
+        show(story.go(scene).scene);
+      };
+
       switch (btn.dataset.sim) {
         case 'before': setOffset(damascusTodayAt(SWEET_HOUR - 1, 15, real) - real); break;
         case 'due':    setOffset(damascusTodayAt(SWEET_HOUR, 0, real) - real); break;
         case 'after':  setOffset(damascusTodayAt(SWEET_HOUR + 2, 40, real) - real); break;
         case 'rain':   finale(); break;
-        case 'real':   setOffset(0); break;
+
+        case 'cd-far':    jump(-3 * 3_600_000, 'countdown'); return;
+        case 'cd-warm':   jump(-45 * 60_000, 'countdown'); return;
+        case 'cd-last':   jump(-25_000, 'countdown'); return;
+        case 'bd-candle': jump(5_000, 'candle'); return;
+        case 'bd-reveal': jump(5_000, 'reveal'); return;
+
+        case 'real':
+          setOffset(0);
+          story.reset();
+          show('open');
+          break;
         case 'reset':
           resetAll();
           story.reset();

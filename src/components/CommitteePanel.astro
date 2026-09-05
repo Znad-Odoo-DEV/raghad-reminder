@@ -15,6 +15,22 @@ const shortcuts = [
   { key: 'after',  label: 'بعد الرسالة', hint: '1:40 ظهراً' },
   { key: 'rain',   label: 'مطر لطافة',   hint: 'قلوب وفراشات' },
 ];
+
+/**
+ * محطّات ليلة العيد.
+ *
+ * الإزاحة تُقاس من منتصف ليل عيدها لا من تاريخ مكتوب، فتصحّ هذه الأزرار في
+ * كل سنة بلا لمسها. وكلٌّ منها يقفز إلى مشهده مباشرةً بلا إعادة تحميل:
+ * تغيير الساعة وحده يبدّل الأرقام ويترك المشهد مكانه، فيبقى من يريد أن يرى
+ * منتصف الليل ماشياً في ثمانية مشاهد ليصل إليه.
+ */
+const eveStops = [
+  { key: 'cd-far',    label: 'قبل 3 ساعات', hint: 'العدّاد بالساعات' },
+  { key: 'cd-warm',   label: 'قبل 45 دقيقة', hint: 'العالم يدفأ' },
+  { key: 'cd-last',   label: 'آخر دقيقة',    hint: 'العدّ التنازلي' },
+  { key: 'bd-candle', label: 'منتصف الليل',  hint: 'الشمعة' },
+  { key: 'bd-reveal', label: 'الكشف',        hint: 'التهنئة والاحتفال' },
+];
 ---
 
 <div class="committee" data-committee hidden>
@@ -45,6 +61,17 @@ const shortcuts = [
 
     <div class="committee__grid">
       {shortcuts.map((s) => (
+        <button class="committee__btn" type="button" data-sim={s.key}>
+          <span class="committee__btn-label">{s.label}</span>
+          <span class="committee__btn-hint">{s.hint}</span>
+        </button>
+      ))}
+    </div>
+
+    <p class="committee__note committee__note--sep">ليلة العيد — كل زرّ بيقفز عالمشهد مباشرة.</p>
+
+    <div class="committee__grid committee__grid--eve">
+      {eveStops.map((s) => (
         <button class="committee__btn" type="button" data-sim={s.key}>
           <span class="committee__btn-label">{s.label}</span>
           <span class="committee__btn-hint">{s.hint}</span>
@@ -93,7 +120,8 @@ const shortcuts = [
     padding: clamp(1.25rem, 1rem + 1.5vw, 1.9rem);
     border-radius: var(--r-lg);
     background: var(--c-surface);
-    box-shadow: 0 40px 90px -30px rgba(23, 18, 56, .6);
+    border: 1px solid var(--c-hairline);
+    box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .8);
     animation: pop-in .42s var(--e-back);
   }
 
@@ -128,10 +156,10 @@ const shortcuts = [
     font-size: 1.4rem;
     line-height: 1;
     color: var(--c-ink-faint);
-    background: rgba(23, 18, 56, .05);
+    background: var(--c-glass);
     transition: background var(--d-fast) var(--e-soft), color var(--d-fast) var(--e-soft);
   }
-  .committee__x:hover { background: rgba(23, 18, 56, .1); color: var(--c-ink); }
+  .committee__x:hover { background: var(--c-glass-hi); color: var(--c-ink); }
 
   .committee__note {
     font-size: var(--t-sm);
@@ -154,7 +182,7 @@ const shortcuts = [
     border-radius: var(--r-sm);
     text-align: start;
     background: var(--c-surface-soft);
-    border: 1px solid rgba(23, 18, 56, .08);
+    border: 1px solid var(--c-hairline);
     transition: transform var(--d-fast) var(--e-back), border-color var(--d-fast) var(--e-soft);
   }
   .committee__btn:hover {
@@ -163,6 +191,15 @@ const shortcuts = [
   }
   .committee__btn-label { font-weight: 700; font-size: var(--t-sm); }
   .committee__btn-hint { font-size: var(--t-xs); color: var(--c-ink-faint); }
+
+  .committee__note--sep {
+    margin-block: var(--s-4) var(--s-2);
+    padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--c-hairline);
+    font-weight: 700;
+    color: var(--c-lav-deep);
+  }
+  .committee__grid--eve { grid-template-columns: repeat(3, 1fr); }
 
   .committee__row { display: flex; flex-wrap: wrap; gap: .5rem; }
 
@@ -173,10 +210,10 @@ const shortcuts = [
     font-size: var(--t-xs);
     font-weight: 600;
     color: var(--c-ink-soft);
-    background: rgba(23, 18, 56, .04);
+    background: var(--c-glass);
     transition: background var(--d-fast) var(--e-soft);
   }
-  .committee__ghost:hover { background: rgba(23, 18, 56, .09); }
+  .committee__ghost:hover { background: var(--c-glass-hi); }
   .committee__ghost--warn { color: var(--c-alert-deep); background: var(--c-alert-wash); }
   .committee__ghost--warn:hover { background: #ffd4dc; }
 
@@ -191,5 +228,6 @@ const shortcuts = [
 
   @media (max-width: 380px) {
     .committee__grid { grid-template-columns: 1fr; }
+    .committee__grid--eve { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
