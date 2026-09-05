@@ -52,7 +52,7 @@ export const FILE = {
     {
       of: 'firstTalk',
       note: 'أوّل مرّة نحكي.',
-      after: 'وما كنت بعرف شو رح تصير.',
+      after: 'وما كنت بعرف شو رح يصير.',
     },
   ] as readonly { of: 'coincidence' | 'firstTalk'; note: string; after: string }[],
 
@@ -272,7 +272,7 @@ export const VOW =
   'وإن شاء الله ما نستخدم هالموقع إلا لكل شي حلو — ولا مرة لشي تاني، لا سمح الله 🤍';
 
 export const MISC = {
-  musicOn: 'مروان خوري — مش عم تروحي من بالي 🎶',
+  musicOn: 'أحمد علوي — جيتني صدفة 🎶',
   copyEgg: 'نسختي النص؟ خديه، هو إلك أصلاً.',
   replayDone: 'رجعنا من الأول 🤍',
 } as const;
