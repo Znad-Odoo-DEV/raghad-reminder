@@ -59,7 +59,7 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
   .foot {
     padding-block: clamp(2.5rem, 1.5rem + 3vw, 4.5rem) clamp(2rem, 1.4rem + 2vw, 3rem);
     border-block-start: 1px solid rgba(23, 18, 56, .08);
-    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, .5));
+    background: linear-gradient(to bottom, transparent, var(--c-glass));
   }
 
   .foot__inner {
@@ -95,7 +95,7 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     padding: var(--s-3) var(--s-5);
     border-radius: var(--r-md);
     border: 1px dashed rgba(167, 139, 250, .38);
-    background: rgba(255, 255, 255, .5);
+    background: var(--c-glass);
     font-size: var(--t-sm);
     line-height: 1.85;
     color: var(--c-ink-soft);
@@ -107,7 +107,7 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     gap: .55rem;
     padding: .5rem 1.1rem;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, .7);
+    background: var(--c-glass-hi);
     border: 1px solid rgba(23, 18, 56, .07);
     box-shadow: var(--sh-sm);
     font-size: var(--t-sm);
@@ -131,7 +131,7 @@ const hitsPage = ANALYTICS.hitsKey ? `https://hits.sh/${ANALYTICS.hitsKey}/` : n
     gap: .45rem;
     padding: .35rem .75rem .35rem .35rem;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, .7);
+    background: var(--c-glass-hi);
     border: 1px solid rgba(23, 18, 56, .07);
     box-shadow: var(--sh-sm);
     font-size: var(--t-xs);

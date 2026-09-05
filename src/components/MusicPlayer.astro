@@ -102,7 +102,8 @@ const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
     gap: .5rem;
     padding: .6rem 1rem;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, .82);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
     border: 1px solid rgba(23, 18, 56, .1);
     box-shadow: var(--sh-md);
     backdrop-filter: blur(16px);
@@ -159,7 +160,7 @@ const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
   .music.is-playing .music__note { display: none; }
   .music.is-playing .music__eq { display: flex; }
   .music.is-playing .music__pill {
-    background: linear-gradient(135deg, rgba(167, 139, 250, .16), rgba(109, 74, 255, .14)), rgba(255,255,255,.86);
+    background: linear-gradient(135deg, rgba(167, 139, 250, .18), rgba(109, 74, 255, .14)), var(--c-glass);
     border-color: rgba(167, 139, 250, .3);
   }
 
@@ -177,7 +178,7 @@ const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
     width: min(78vw, 236px);
     padding: .7rem;
     border-radius: var(--r-md);
-    background: rgba(255, 255, 255, .9);
+    background: var(--c-glass-hi);
     border: 1px solid rgba(23, 18, 56, .1);
     box-shadow: var(--sh-lg);
     backdrop-filter: blur(20px);
@@ -211,10 +212,10 @@ const mode = localSrc ? 'local' : SONG.videoId ? 'youtube' : 'none';
     border-radius: 50%;
     font-size: .8rem;
     color: var(--c-ink-faint);
-    background: rgba(23, 18, 56, .06);
+    background: var(--c-glass);
     transition: background var(--d-fast) var(--e-soft);
   }
-  .music__close:hover { background: rgba(23, 18, 56, .12); color: var(--c-ink); }
+  .music__close:hover { background: var(--c-glass-hi); color: var(--c-ink); }
 
   .music__frame {
     position: relative;

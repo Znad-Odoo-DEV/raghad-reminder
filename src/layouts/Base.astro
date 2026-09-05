@@ -105,29 +105,32 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
   .blob {
     position: absolute;
     border-radius: 50%;
-    filter: blur(64px);
-    opacity: .5;
+    filter: blur(90px);
+    /* على الليل يصير الوهج نفسه بقعةً بيضاء تسرق العين من النصّ. الشدّة
+       التي تصلح على أرضية فاتحة تعمي على أرضية غامقة. */
+    opacity: .16;
     will-change: transform;
     transition: background 1.2s var(--e-soft), opacity 1.2s var(--e-soft);
   }
 
   .blob--1 {
     width: 46vmax; height: 46vmax;
-    inset-block-start: -16vmax; inset-inline-end: -12vmax;
-    background: radial-gradient(circle, rgba(167, 139, 250, .5), transparent 68%);
+    inset-block-start: -22vmax; inset-inline-end: -14vmax;
+    background: radial-gradient(circle, rgba(139, 107, 255, .40), transparent 68%);
     animation: drift-a 26s var(--e-soft) infinite alternate;
   }
   .blob--2 {
     width: 40vmax; height: 40vmax;
     inset-block-end: -14vmax; inset-inline-start: -10vmax;
-    background: radial-gradient(circle, rgba(109, 74, 255, .44), transparent 68%);
+    background: radial-gradient(circle, rgba(76, 44, 168, .46), transparent 68%);
     animation: drift-b 32s var(--e-soft) infinite alternate;
   }
   .blob--3 {
     width: 30vmax; height: 30vmax;
     inset-block-start: 44%; inset-inline-start: 52%;
-    background: radial-gradient(circle, rgba(18, 185, 129, .26), transparent 70%);
-    opacity: .34;
+    /* الوردي لا يظهر في الليل ويشتعل عند الدفء: هو ضوء الفجر الأول */
+    background: radial-gradient(circle, rgba(247, 168, 196, .30), transparent 70%);
+    opacity: .1;
     animation: drift-c 38s var(--e-soft) infinite alternate;
   }
 
@@ -153,6 +156,12 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
     to { transform: translate3d(-7vmax, -4vmax, 0) scale(1.2); }
   }
 
+  /* الأضواء تتنفّس مع الطور */
+  :global(html[data-phase='warm']) .blob--3 { opacity: .34; }
+  :global(html[data-phase='dawn']) .blob--1 { opacity: .5; }
+  :global(html[data-phase='dawn']) .blob--2 { opacity: .44; }
+  :global(html[data-phase='dawn']) .blob--3 { opacity: .5; }
+
   /* ---- canvas الاحتفال --------------------------------------------------- */
   /* الاحتفال خلف النص لا فوقه.
      فوقه كان يحجب الرسالة التي جاء الاحتفال من أجلها؛ خلفه يصير خلفية حيّة
@@ -163,6 +172,27 @@ const ogImage = new URL(asset('og.svg'), Astro.site ?? Astro.url).href;
     z-index: 0;
     pointer-events: none;
   }
+
+  /* كانفاس الاسم فوق شرر الاحتفال لأنه أُلحق بعده، وكلاهما خلف النص:
+     أمام النص كان يحجب الكلام الذي جاء من أجله. */
+  .dust-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ستارة العتمة — لحظة الكشف وحدها. فوق كل شيء لأنها تحلّ محلّ الصفحة. */
+  .blackout {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    pointer-events: none;
+    background: #05030f;
+    opacity: 0;
+    transition: opacity .8s var(--e-soft);
+  }
+  .blackout.on { opacity: 1; }
 
   @media (prefers-reduced-motion: reduce) {
     .blob { animation: none !important; }

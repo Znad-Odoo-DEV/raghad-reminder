@@ -1,239 +1,184 @@
 ---
 import {
-  INTRO, LETTER_ONE, LETTER_TWO, LETTER_THREE, TURN,
-  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, BIRTHDAY_COPY,
+  OPEN, FILE, CLUES, JOKE, BUTTON, LOADING, NAME_SCENE, CD, CANDLE, REVEAL,
 } from '../scripts/copy';
 import { COINCIDENCE_AT, FIRST_TALK_AT, wallOf } from '../scripts/schedule';
-import EnvelopeGlyph from './EnvelopeGlyph.astro';
+import Candle from './Candle.astro';
 
 /**
- * Stage — كل مشاهد القصة في مكان واحد.
+ * Stage — كل مشاهد التجربة في مكان واحد.
  *
  * كلها موجودة في الـHTML و`main.ts` تُظهر واحداً فقط. هذا يجعل الانتقال
- * تلاشياً بين طبقتين لا إعادة بناء للـDOM، فيبقى ناعماً على الهاتف.
+ * تلاشياً بين طبقتين لا إعادة بناء للـDOM، فيبقى ناعماً على الهاتف —
+ * وأنيميشن الدخول تعمل من جديد تلقائياً لأن العنصر يخرج من `display:none`.
  *
- * استثناء واحد: تاريخ عيد الميلاد **ليس هنا**. مشهد الكشف يخرج بخانات فارغة
- * تملؤها JS عند الوصول إليه، فلا يظهر التاريخ في مصدر الصفحة قبل وقته.
+ * لا سكربت هنا. المكوّن يشحن العلامات والأنماط، والسلوك كلّه في `main.ts`
+ * عبر `data-*`.
  */
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-/** تاريخ للعرض كخَتم: يوم · شهر · سنة */
-function stampOf(instant: number | null) {
-  if (instant === null) return null;
-  const w = wallOf(instant);
-  return { d: pad2(w.day), m: pad2(w.month), y: String(w.year) };
+/** تاريخ الملفّ السرّي — من الإعدادات لا مكتوباً هنا. */
+function stamp(at: number | null): string {
+  if (at === null) return '—';
+  const w = wallOf(at);
+  return `${pad2(w.day)}.${pad2(w.month)}.${w.year}`;
 }
 
-const one = stampOf(COINCIDENCE_AT);
-const two = stampOf(FIRST_TALK_AT);
-
+const fileRows = FILE.rows.map((r) => ({
+  k: r.k,
+  v:
+    r.of === 'coincidence' ? stamp(COINCIDENCE_AT)
+    : r.of === 'firstTalk' ? stamp(FIRST_TALK_AT)
+    : (r.v ?? '—'),
+}));
 ---
 
-<div class="stage" data-stage>
-  <!-- خيط القصة — يمتلئ مع التقدّم -->
-  <div class="thread" aria-hidden="true"><span class="thread__fill" data-thread></span></div>
+<div class="stage">
+  <span class="thread" aria-hidden="true"><i class="thread__fill" data-thread></i></span>
 
   <!-- ═══════════════ 1 · العتبة ═══════════════ -->
-  <section class="scene" data-scene="intro" hidden>
-    <p class="eyebrow scene__in" style="--d: 0ms">{INTRO.eyebrow}</p>
-    <p class="scene__lead scene__in" style="--d: 140ms">{INTRO.line}</p>
-
-    <button class="env-btn scene__in" style="--d: 300ms" type="button" data-open aria-label={INTRO.cta}>
-      <EnvelopeGlyph id="env-one" />
+  <section class="scene scene--hush" data-scene="open" hidden>
+    <span class="pulse" aria-hidden="true"></span>
+    <p class="kicker scene__in" style="--d: 900ms">{OPEN.kicker}</p>
+    <p class="huge scene__in" style="--d: 1500ms">{OPEN.line}</p>
+    <button class="btn btn--ghost scene__in" style="--d: 2600ms" type="button" data-next>
+      {OPEN.cta}
     </button>
-
-    <button class="btn btn--primary scene__in" style="--d: 460ms" type="button" data-open>
-      {INTRO.cta}
-    </button>
-    <p class="scene__hint scene__in" style="--d: 560ms">{INTRO.hint}</p>
   </section>
 
-  <!-- ═══════════════ 2 · الظرف الأول مفتوح ═══════════════ -->
-  <section class="scene" data-scene="read1" hidden>
-    <p class="stamp-label scene__in" style="--d: 0ms">{LETTER_ONE.stamp}</p>
+  <!-- ═══════════════ 2 · الملفّ ═══════════════ -->
+  <section class="scene" data-scene="file" hidden>
+    <div class="dossier scene__in" style="--d: 100ms">
+      <span class="dossier__scan" aria-hidden="true"></span>
+      <p class="dossier__title">{FILE.title}</p>
+      <dl class="dossier__rows">
+        {fileRows.map((r, i) => (
+          <div class="dossier__row scene__in" style={`--d: ${420 + i * 260}ms`}>
+            <dt>{r.k}</dt>
+            <dd class="tnum">{r.v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+    <p class="scene__lead scene__in" style={`--d: ${420 + fileRows.length * 260 + 420}ms`}>
+      {FILE.line}
+    </p>
+    <button
+      class="btn btn--ghost scene__in"
+      style={`--d: ${420 + fileRows.length * 260 + 900}ms`}
+      type="button"
+      data-next
+    >{FILE.cta}</button>
+  </section>
 
-    {one && (
-      <p class="datestamp scene__in" style="--d: 160ms">
-        <span class="tnum">{one.d}</span><i>·</i><span class="tnum">{one.m}</span><i>·</i><span class="tnum">{one.y}</span>
+  <!-- ═══════════════ 3 · الطرَف ═══════════════ -->
+  <!-- الكلمات تُحقن واحدةً واحدة: وجودها كلّها في الـDOM يجعلها قائمة -->
+  <section class="scene scene--hush" data-scene="clues" hidden>
+    <p class="clue" data-clue aria-live="polite"></p>
+    <p class="scene__lead clues__tail" data-clues-tail hidden>{CLUES.line}</p>
+    <button class="btn btn--ghost" type="button" data-next data-clues-next hidden>
+      {CLUES.cta}
+    </button>
+  </section>
+
+  <!-- ═══════════════ 4 · النهاية المزيّفة ═══════════════ -->
+  <section class="scene scene--hush" data-scene="joke" hidden>
+    <p class="huge" data-joke-end>{JOKE.end}</p>
+    <p class="huge huge--twist" data-joke-twist hidden>{JOKE.twist}</p>
+    <button class="btn btn--ghost" type="button" data-next data-joke-next hidden>
+      {JOKE.cta}
+    </button>
+  </section>
+
+  <!-- ═══════════════ 5 · الزرّ ═══════════════ -->
+  <section class="scene scene--hush" data-scene="button" hidden>
+    <p class="scene__lead scene__in" style="--d: 200ms">{BUTTON.line}</p>
+    <p class="kicker scene__in" style="--d: 700ms">{BUTTON.warn}</p>
+
+    <button class="tempt scene__in" style="--d: 1200ms" type="button" data-tempt>
+      {BUTTON.label}
+    </button>
+
+    <p class="huge huge--twist" data-tempt-after hidden>{BUTTON.after}</p>
+    <button class="btn btn--ghost" type="button" data-next data-tempt-next hidden>
+      {BUTTON.cta}
+    </button>
+  </section>
+
+  <!-- ═══════════════ 6 · التحضير ═══════════════ -->
+  <section class="scene" data-scene="loading" hidden>
+    <p class="load__step" data-load-step aria-live="polite">&nbsp;</p>
+    <div class="load__track" aria-hidden="true"><span data-load-fill></span></div>
+    <p class="load__pct tnum" data-load-pct aria-hidden="true">0%</p>
+
+    <p class="huge load__done" data-load-done hidden>{LOADING.done}</p>
+    <button class="btn btn--primary" type="button" data-next data-load-next hidden>
+      {LOADING.cta}
+    </button>
+  </section>
+
+  <!-- ═══════════════ 7 · الاسم ═══════════════ -->
+  <!-- الاسم يُرسم على الكانفاس لا هنا: النصّ يظهر جاهزاً، والغبار يتشكّل -->
+  <section class="scene scene--hush" data-scene="name" hidden>
+    <p class="scene__lead name__tail" data-name-tail hidden>{NAME_SCENE.line}</p>
+    <button class="btn btn--ghost" type="button" data-next data-name-next hidden>
+      {NAME_SCENE.cta}
+    </button>
+  </section>
+
+  <!-- ═══════════════ 8 · العدّ ═══════════════ -->
+  <section class="scene scene--cd" data-scene="countdown" hidden>
+    <!-- آخر دقيقة: الشاشة رقم واحد ولا شيء غيره -->
+    <div class="last" data-cd-last hidden>
+      <p class="last__say" data-cd-say>&nbsp;</p>
+      <p class="last__n tnum" data-cd-tick>60</p>
+    </div>
+
+    <div class="cd" data-cd-body>
+      <p class="kicker" data-cd-label>{CD.far}</p>
+      <p class="cd__big" data-cd-big><b class="tnum" data-cd-n>—</b><span data-cd-u></span></p>
+      <p class="huge" data-cd-one hidden></p>
+      <div class="cd__track" aria-hidden="true"><span data-cd-fill></span></div>
+      <p class="cd__clock tnum" data-cd-clock>00:00:00</p>
+      <p class="scene__hint">{CD.hint}</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 9 · الشمعة ═══════════════ -->
+  <section class="scene scene--hush" data-scene="candle" hidden>
+    <p class="scene__lead scene__in" style="--d: 200ms">{CANDLE.line}</p>
+    <p class="kicker scene__in" style="--d: 800ms">{CANDLE.hint}</p>
+
+    <div class="scene__in" style="--d: 500ms"><Candle /></div>
+
+    <button class="btn btn--primary scene__in" style="--d: 1600ms" type="button" data-blow>
+      {CANDLE.cta}
+    </button>
+    <p class="huge" data-candle-out hidden>{CANDLE.out}</p>
+  </section>
+
+  <!-- ═══════════════ 10 · الكشف ═══════════════ -->
+  <section class="scene scene--reveal" data-scene="reveal" hidden>
+    <p class="reveal__name" data-rev-name hidden>{REVEAL.name}</p>
+
+    <div class="reveal__body" data-rev-body hidden>
+      <h1 class="reveal__greet">{REVEAL.greeting}</h1>
+      <div class="reveal__lines">
+        {REVEAL.lines.map((l, i) => (
+          <p class="reveal__l" style={`--d: ${700 + i * 480}ms`}>{l}</p>
+        ))}
+      </div>
+      <p class="scene__hint" style={`--d: ${700 + REVEAL.lines.length * 480 + 300}ms`}>
+        {REVEAL.foot}
       </p>
-    )}
-
-    <div class="lines">
-      {LETTER_ONE.lines.map((l, i) => (
-        <p class="lines__l scene__in" style={`--d: ${380 + i * 260}ms`}>{l}</p>
-      ))}
+      <button
+        class="btn btn--ghost btn--quiet"
+        style={`--d: ${700 + REVEAL.lines.length * 480 + 700}ms`}
+        type="button"
+        data-replay
+      >{REVEAL.replay}</button>
     </div>
-
-    <button class="btn btn--ghost scene__in" style={`--d: ${380 + LETTER_ONE.lines.length * 260 + 200}ms`} type="button" data-next>
-      {LETTER_ONE.next}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 3 · الظرف الثاني مختوم ═══════════════ -->
-  <section class="scene" data-scene="letter2" hidden>
-    <p class="scene__lead scene__in" style="--d: 0ms">{LETTER_TWO.prompt}</p>
-
-    <button class="env-btn env-btn--found scene__in" style="--d: 260ms" type="button" data-open aria-label={LETTER_TWO.cta}>
-      <EnvelopeGlyph id="env-two" />
-    </button>
-
-    <button class="btn btn--primary scene__in" style="--d: 420ms" type="button" data-open>
-      {LETTER_TWO.cta}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 4 · الظرف الثاني مفتوح ═══════════════ -->
-  <section class="scene" data-scene="read2" hidden>
-    <p class="stamp-label scene__in" style="--d: 0ms">{LETTER_TWO.stamp}</p>
-
-    {two && (
-      <p class="datestamp scene__in" style="--d: 160ms">
-        <span class="tnum">{two.d}</span><i>·</i><span class="tnum">{two.m}</span><i>·</i><span class="tnum">{two.y}</span>
-      </p>
-    )}
-
-    <div class="lines">
-      {LETTER_TWO.lines.map((l, i) => (
-        <p class="lines__l scene__in" style={`--d: ${380 + i * 300}ms`}>{l}</p>
-      ))}
-    </div>
-
-    <button class="btn btn--ghost scene__in" style={`--d: ${380 + LETTER_TWO.lines.length * 300 + 200}ms`} type="button" data-next>
-      {LETTER_TWO.next}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 5 · الالتفاتة ═══════════════ -->
-  <section class="scene scene--quiet" data-scene="turn" hidden>
-    <p class="beat scene__in" style="--d: 0ms">{TURN.beat}</p>
-    <p class="scene__lead scene__lead--big scene__in" style="--d: 1100ms">{TURN.line}</p>
-    <button class="btn btn--ghost scene__in" style="--d: 1900ms" type="button" data-next>{TURN.cta}</button>
-  </section>
-
-  <!-- ═══════════════ 6 · القصاصات ═══════════════ -->
-  <section class="scene scene--frags" data-scene="fragments" hidden>
-    <div class="frags" data-frags>
-      {FRAGMENTS.map((f, i) => (
-        <article class={`frag frag--${f.kind}`} data-frag={i} hidden>
-          <p class="frag__tag">{f.tag}</p>
-
-          {f.kind === 'chain' && (
-            <>
-              <p class="frag__l">{f.lines[0]}</p>
-              <div class="chain" data-chain></div>
-            </>
-          )}
-
-          {f.kind === 'timer' && (
-            <>
-              {f.lines.map((l) => <p class="frag__l">{l}</p>)}
-              <p class="timer tnum" data-dishes>10:00</p>
-            </>
-          )}
-
-          {f.kind === 'thread' && (
-            <>
-              <p class="frag__l">{f.lines[0]}</p>
-              <span class="thread-line" aria-hidden="true"></span>
-              <p class="frag__l frag__l--soft">{f.lines[1]}</p>
-            </>
-          )}
-
-          {f.kind === 'chat' && (
-            <>
-              <p class="frag__l">{f.lines[0]}</p>
-              <p class="bubble">{CHAT_WINNER}</p>
-            </>
-          )}
-
-          {f.kind === 'card' && f.lines.map((l, n) => (
-            <p class={n === 0 ? 'frag__head' : 'frag__l'}>{l}</p>
-          ))}
-
-          {(f.kind === 'note' || f.kind === 'calm') && f.lines.map((l) => <p class="frag__l">{l}</p>)}
-
-          {f.photo && (
-            <img
-              class="frag__photo"
-              src={`${import.meta.env.BASE_URL}${f.photo.src}`}
-              alt={f.photo.alt}
-              width="447"
-              height="447"
-              loading="lazy"
-              decoding="async"
-            />
-          )}
-
-          {f.foot && <p class="frag__foot">{f.foot}</p>}
-          {f.sign && <p class="frag__sign">— {f.sign}</p>}
-        </article>
-      ))}
-    </div>
-
-    <button class="btn btn--ghost frags__next" type="button" data-frag-next>كمّلي</button>
-    <p class="frags__dots" data-frag-dots aria-hidden="true"></p>
-  </section>
-
-  <!-- ═══════════════ 7 · التجمّع ═══════════════ -->
-  <section class="scene scene--quiet" data-scene="gather" hidden>
-    <div class="gather" data-gather aria-hidden="true"></div>
-    <p class="scene__lead scene__in" style="--d: 200ms">{GATHER.line}</p>
-    <p class="beat beat--after scene__in" style="--d: 1500ms">{GATHER.beat}</p>
-  </section>
-
-  <!-- ═══════════════ 8 · الظرف الأخير ═══════════════ -->
-  <section class="scene scene--final" data-scene="letter3" hidden>
-    <p class="scene__lead scene__lead--big scene__in" style="--d: 0ms">{LETTER_THREE.prompt}</p>
-    <p class="scene__hint scene__in" style="--d: 900ms">{LETTER_THREE.sub}</p>
-
-    <button class="env-btn env-btn--final scene__in" style="--d: 1300ms" type="button" data-open aria-label={LETTER_THREE.cta}>
-      <EnvelopeGlyph id="env-three" variant="final" />
-    </button>
-
-    <button class="btn btn--primary scene__in" style="--d: 1600ms" type="button" data-open>
-      {LETTER_THREE.cta}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 9 · الكشف ═══════════════ -->
-  <!-- التاريخ ليس هنا: تملؤه JS عند الوصول -->
-  <section class="scene scene--final" data-scene="reveal" hidden>
-    <p class="stamp-label scene__in" style="--d: 0ms">{REVEAL.label}</p>
-    <p class="bigdate scene__in" style="--d: 260ms">
-      <span class="tnum" data-bd-day>—</span><i>/</i><span class="tnum" data-bd-month>—</span>
-    </p>
-    <p class="scene__lead scene__in" style="--d: 900ms">{REVEAL.line}</p>
-    <button class="btn btn--primary scene__in" style="--d: 1300ms" type="button" data-next>{REVEAL.cta}</button>
-  </section>
-
-  <!-- ═══════════════ 10 · العدّاد ═══════════════ -->
-  <section class="scene" data-scene="countdown" hidden>
-    <p class="stamp-label" data-cd-label>{COUNTDOWN.label}</p>
-    <p class="sleeps" data-cd-big><b class="sleeps__n tnum" data-cd-n>—</b><span class="sleeps__u" data-cd-u></span></p>
-    <p class="sleeps__one" data-cd-one hidden></p>
-    <div class="cd-line" aria-hidden="true"><span data-cd-fill></span></div>
-    <p class="cd-exact">
-      <span>{COUNTDOWN.exact}</span>
-      <b class="tnum" data-cd-clock>00:00:00</b>
-    </p>
-    <p class="scene__hint">{COUNTDOWN.waitingHint}</p>
-  </section>
-
-  <!-- ═══════════════ 11 · عيد الميلاد ═══════════════ -->
-  <section class="scene scene--birthday" data-scene="birthday" hidden>
-    <h1 class="greeting scene__in" style="--d: 300ms">{BIRTHDAY_COPY.greeting}</h1>
-    <div class="lines">
-      {BIRTHDAY_COPY.lines.map((l, i) => (
-        <p class="lines__l scene__in" style={`--d: ${900 + i * 420}ms`}>{l}</p>
-      ))}
-    </div>
-    <p class="scene__hint scene__in" style={`--d: ${900 + BIRTHDAY_COPY.lines.length * 420 + 300}ms`}>
-      {BIRTHDAY_COPY.foot}
-    </p>
-    <button class="btn btn--ghost btn--quiet scene__in" style={`--d: ${900 + BIRTHDAY_COPY.lines.length * 420 + 600}ms`} type="button" data-replay>
-      {BIRTHDAY_COPY.replay}
-    </button>
   </section>
 </div>
 
@@ -247,400 +192,350 @@ const two = stampOf(FIRST_TALK_AT);
     padding: clamp(4rem, 3rem + 6vw, 7rem) var(--pad-x) clamp(5rem, 4rem + 5vw, 7rem);
   }
 
-  /* خيط القصة */
+  /* خيط التقدّم */
   .thread {
     position: fixed;
     inset-block-start: 0;
     inset-inline: 0;
     height: 2px;
-    background: rgba(109, 74, 202, .1);
+    background: rgb(196 181 253 / .1);
     z-index: 60;
   }
   .thread__fill {
     display: block;
     height: 100%;
     width: 0;
-    background: linear-gradient(to left, var(--c-lav-deep), var(--c-lav));
+    background: linear-gradient(to left, var(--c-lav-soft), var(--c-rose));
+    box-shadow: var(--glow-sm);
     transition: width 1s var(--e-out);
   }
 
   /* ==================== المشهد ==================== */
   .scene {
-    grid-area: 1 / 1;
     position: relative;
-    z-index: 1;   /* فوق طبقة الاحتفال */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: clamp(.9rem, .6rem + 1.2vw, 1.4rem);
-    width: 100%;
+    z-index: 1;
+    grid-area: 1 / 1;
+    display: grid;
+    justify-items: center;
+    gap: var(--s-4);
     max-width: 34rem;
+    text-align: center;
   }
   .scene[hidden] { display: none; }
 
-  /* دخول العناصر بترتيب مقصود */
+  /* المشاهد الهادئة تتنفّس أوسع: الفراغ حولها جزءٌ منها */
+  .scene--hush { gap: var(--s-5); }
+
+  /* دخول موحّد لكل عنصر: تلاشٍ مع صعود صغير وضبابة تنجلي */
   .scene__in {
-    opacity: 0;
-    transform: translateY(14px);
-    animation: rise .78s var(--e-out) var(--d, 0ms) forwards;
+    animation: rise .9s var(--e-out) backwards;
+    animation-delay: var(--d, 0ms);
   }
-  @keyframes rise { to { opacity: 1; transform: none; } }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+    to   { opacity: 1; transform: none; filter: none; }
+  }
+
+  /* ==================== نصوص مشتركة ==================== */
+  .kicker {
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: .22em;
+    color: var(--c-ink-faint);
+  }
+
+  .huge {
+    font-size: var(--t-h1);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -.02em;
+    color: var(--c-ink);
+    text-wrap: balance;
+    animation: rise .9s var(--e-out) backwards;
+    animation-delay: var(--d, 0ms);
+  }
+  .huge[hidden] { display: none; }
+  .huge--twist { color: transparent; background: var(--g-text); -webkit-background-clip: text; background-clip: text; }
 
   .scene__lead {
     font-size: var(--t-lead);
-    line-height: 1.75;
+    line-height: 1.7;
     color: var(--c-ink-soft);
-    max-width: 26ch;
     text-wrap: balance;
   }
-  .scene__lead--big {
-    font-size: clamp(1.3rem, 1rem + 1.6vw, 1.9rem);
-    font-weight: 600;
-    color: var(--c-ink);
-    letter-spacing: -.02em;
-  }
-
   .scene__hint {
     font-size: var(--t-xs);
     color: var(--c-ink-faint);
-    max-width: 30ch;
   }
 
-  /* ==================== الظرف ==================== */
-  /* الزر لا يحمل `animation` أبداً: `.scene__in` تستعمل الخاصية نفسها بنفس
-     الخصوصية، فأيّ أنيميشن هنا يُلغي أنيميشن الظهور ويترك العنصر شفافاً.
-     التنفّس ينتقل إلى الـSVG في الداخل. */
-  .env-btn {
-    width: clamp(160px, 46vw, 236px);
-    padding: 0;
-    border-radius: var(--r-md);
-    -webkit-tap-highlight-color: transparent;
-    transition: transform .4s var(--e-back);
-  }
-  .env-btn:active { transform: scale(.96); }
-
-  .env-btn :global(.env) { animation: breathe 5s var(--e-soft) infinite; }
-
-  @keyframes breathe {
-    0%, 100% { transform: translateY(0) rotate(0); }
-    50%      { transform: translateY(-6px) rotate(-.7deg); }
-  }
-
-  /* الظرف الثاني «ينوجد» — ينزلق من الجنب قبل أن يتنفّس */
-  .env-btn--found :global(.env) {
-    animation: found 1s var(--e-out) backwards, breathe 5s var(--e-soft) 1s infinite;
-  }
-  @keyframes found {
-    from { opacity: 0; transform: translateX(-28px) rotate(-6deg); }
-    to   { opacity: 1; transform: none; }
-  }
-
-  .env-btn--final { width: clamp(190px, 54vw, 280px); }
-
-  /* ==================== الخَتم والتاريخ ==================== */
-  .stamp-label {
-    max-width: 24ch;
-    font-size: var(--t-xs);
-    font-weight: 700;
-    letter-spacing: .1em;
-    line-height: 1.7;
-    color: var(--c-lav-deep);
-    text-wrap: balance;
-  }
-
-  .datestamp {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    padding: .55rem 1.2rem;
-    border: 1.5px solid color-mix(in srgb, var(--c-lav) 45%, transparent);
-    border-radius: var(--r-sm);
-    font-size: clamp(1.35rem, 1rem + 2.2vw, 2.1rem);
-    font-weight: 700;
-    letter-spacing: .04em;
-    color: var(--c-ink);
-    background: rgba(255, 255, 255, .5);
-  }
-  .datestamp i { font-style: normal; color: var(--c-lav); font-weight: 400; }
-
-  .bigdate {
-    display: inline-flex;
-    align-items: center;
-    gap: .3rem;
-    font-size: clamp(3.6rem, 1.6rem + 13vw, 8rem);
-    font-weight: 700;
-    line-height: .95;
-    letter-spacing: -.05em;
-    color: var(--c-ink);
-  }
-  .bigdate i {
-    font-style: normal;
-    font-weight: 300;
-    color: var(--c-lav);
-    font-size: .55em;
-    translate: 0 -.08em;
-  }
-
-  /* ==================== الأسطر ==================== */
-  .lines { display: flex; flex-direction: column; gap: .7rem; }
-  .lines__l {
-    font-size: var(--t-body);
-    line-height: 1.8;
-    color: var(--c-ink-soft);
-    max-width: 30ch;
-    margin-inline: auto;
-    text-wrap: balance;
-  }
-  .lines__l:last-child { color: var(--c-ink); font-weight: 600; }
-
-  .beat {
-    font-size: clamp(1.15rem, .95rem + 1vw, 1.5rem);
-    font-weight: 600;
-    color: var(--c-ink-faint);
-    letter-spacing: -.01em;
-  }
-  .beat--after { color: var(--c-ink); }
-
-  .scene--quiet { gap: clamp(1.6rem, 1rem + 3vw, 2.6rem); }
-
-  /* ==================== القصاصات ==================== */
-  .scene--frags { gap: clamp(1.2rem, 1rem + 1.5vw, 1.8rem); }
-
-  .frags { display: grid; width: 100%; }
-
-  .frag {
-    grid-area: 1 / 1;
-    display: flex;
-    flex-direction: column;
-    gap: .7rem;
-    padding: clamp(1.4rem, 1rem + 2vw, 2.1rem);
-    border-radius: var(--r-md);
-    background: #fffdfa;
-    border: 1px solid rgba(23, 18, 56, .07);
-    box-shadow: 0 2px 6px rgba(33, 26, 69, .05), 0 18px 40px -22px rgba(77, 47, 214, .3);
-    animation: frag-in .7s var(--e-out) backwards;
-  }
-  .frag[hidden] { display: none; }
-
-  @keyframes frag-in {
-    from { opacity: 0; transform: translateY(20px) rotate(var(--rot, 0deg)) scale(.97); }
-    to   { opacity: 1; transform: rotate(var(--rot, 0deg)); }
-  }
-
-  /* ميل خفيف — موضوعة باليد لا مرصوفة */
-  .frag--card   { --rot: -.6deg; }
-  .frag--chain  { --rot:  .5deg; }
-  .frag--note   { --rot: -.7deg; }
-  .frag--timer  { --rot:  .6deg; }
-  .frag--thread { --rot: -.4deg; }
-  .frag--chat   { --rot:  .6deg; }
-  .frag--calm   { --rot:  .4deg; }
-  .frag { transform: rotate(var(--rot, 0deg)); }
-
-  .frag__tag {
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .14em;
-    color: var(--c-lav-deep);
-    opacity: .8;
-  }
-  .frag__l {
-    font-size: var(--t-body);
-    line-height: 1.8;
-    color: var(--c-ink-soft);
-    text-wrap: balance;
-  }
-  .frag__l--soft { color: var(--c-ink-faint); }
-  .frag--note .frag__l:last-of-type { color: var(--c-ink); font-weight: 700; }
-  /* صورة داخل قصاصة: زوايا ناعمة لا دائرة — الدائرة تقصّ حافّة الصحن */
-  .frag__photo {
-    inline-size: min(12rem, 70%);
-    block-size: auto;
-    aspect-ratio: 1;
-    object-fit: cover;
-    border-radius: var(--r-md);
-    margin-block-start: .55rem;
-    align-self: center;
-    box-shadow: 0 .5rem 1.4rem rgb(60 40 110 / .16);
-  }
-
-  .frag__foot {
-    margin-block-start: .2rem;
-    font-size: var(--t-xs);
-    color: var(--c-ink-faint);
-  }
-
-  /* عنوان بطاقة التهنئة */
-  .frag__head {
-    font-size: clamp(1.35rem, 1.1rem + 1.6vw, 1.9rem);
-    font-weight: 700;
-    letter-spacing: -.02em;
-    color: var(--c-ink);
-    text-wrap: balance;
-  }
-
-  /* التوقيع — يُقرأ رسمياً فوق بطاقة غير رسمية، وهنا النكتة */
-  .frag__sign {
-    margin-block-start: .5rem;
-    padding-block-start: .6rem;
-    border-block-start: 1px dashed rgba(23, 18, 56, .14);
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--c-lav-deep);
-    line-height: 1.7;
-  }
-
-  /* عدّاد الجلي */
-  .timer {
-    font-size: clamp(2.6rem, 1.4rem + 6vw, 4.2rem);
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -.04em;
-    color: var(--c-lav-deep);
-    margin-block: .4rem;
-  }
-
-  /* سلسلة صباح الخير — تنكشف قطعة قطعة */
-  .chain { display: flex; flex-direction: column; gap: .3rem; margin-block: .3rem; }
-  .chain :global(span) {
-    font-size: clamp(1rem, .9rem + .6vw, 1.25rem);
-    font-weight: 700;
-    color: var(--c-ink);
-    opacity: 0;
-    transform: translateY(8px);
-    animation: chain-in .5s var(--e-out) forwards;
-  }
-  @keyframes chain-in { to { opacity: 1; transform: none; } }
-
-  /* فقاعة الشات */
-  .bubble {
-    align-self: flex-start;
-    padding: .7rem 1.15rem;
-    border-radius: 18px 18px 18px 5px;
-    background: linear-gradient(135deg, var(--c-lav-deep), var(--c-violet-deep));
-    color: #fff;
-    font-size: clamp(1.15rem, .95rem + 1vw, 1.5rem);
-    font-weight: 700;
-    box-shadow: 0 10px 24px -12px rgba(77, 47, 214, .7);
-    animation: pop .5s var(--e-back);
-  }
-
-  /* خيط الأحاديث */
-  .thread-line {
-    display: block;
-    height: 26px;
-    width: 1.5px;
-    margin-inline-start: .4rem;
-    background: linear-gradient(to bottom, var(--c-lav), transparent);
-  }
-
-  .frags__next { margin-block-start: .3rem; }
-
-  .frags__dots {
-    display: flex;
-    gap: .4rem;
-    justify-content: center;
-  }
-  .frags__dots :global(span) {
-    width: 5px; height: 5px;
+  /* ==================== 1 · نبضة العتبة ==================== */
+  .pulse {
+    width: 10px; height: 10px;
     border-radius: 50%;
-    background: rgba(109, 74, 202, .2);
-    transition: background var(--d-base) var(--e-soft), transform var(--d-base) var(--e-back);
+    background: var(--c-ink);
+    box-shadow: 0 0 30px 8px rgb(196 181 253 / .55);
+    animation: breathe 3.4s var(--e-soft) infinite;
   }
-  .frags__dots :global(span.on) { background: var(--c-lav-deep); transform: scale(1.4); }
+  @keyframes breathe {
+    0%, 100% { opacity: .35; transform: scale(.7); }
+    50%      { opacity: 1;   transform: scale(1.15); }
+  }
 
-  /* ==================== التجمّع ==================== */
-  .gather {
+  /* ==================== 2 · الملفّ ==================== */
+  .dossier {
     position: relative;
-    width: min(100%, 20rem);
-    height: clamp(9rem, 26vw, 13rem);
-  }
-  .gather :global(i) {
-    position: absolute;
-    display: block;
-    width: 44px;
-    height: 30px;
-    border-radius: 4px;
-    background: #fffdfa;
-    border: 1px solid rgba(23, 18, 56, .09);
-    box-shadow: 0 6px 16px -8px rgba(77, 47, 214, .4);
-    transition: transform 1.15s var(--e-out), opacity .5s linear;
+    overflow: hidden;
+    inline-size: min(100%, 25rem);
+    padding: var(--s-5) var(--s-5) var(--s-4);
+    border: 1px solid rgb(196 181 253 / .22);
+    border-radius: var(--r-md);
+    background: rgb(23 16 60 / .5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    text-align: start;
   }
 
-  /* ==================== العدّاد ==================== */
-  .sleeps[hidden] { display: none; }
-  .sleeps {
+  /* مسحة ضوء تمرّ مرّة كل بضع ثوانٍ — الملفّ «قيد القراءة» لا صورة ساكنة */
+  .dossier__scan {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -40%;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgb(196 181 253 / .12), transparent);
+    animation: scan 5.5s var(--e-soft) infinite;
+  }
+  @keyframes scan {
+    0%, 55% { transform: translateX(0); }
+    100%    { transform: translateX(350%); }
+  }
+
+  .dossier__title {
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: .3em;
+    color: var(--c-lav-soft);
+    padding-block-end: var(--s-3);
+    margin-block-end: var(--s-3);
+    border-block-end: 1px solid rgb(196 181 253 / .16);
+  }
+
+  .dossier__rows { display: grid; gap: .55rem; }
+  .dossier__row {
     display: flex;
     align-items: baseline;
-    justify-content: center;
-    gap: .6rem;
-    flex-wrap: wrap;
-  }
-  .sleeps__n {
-    font-size: clamp(4.4rem, 2rem + 15vw, 9rem);
-    font-weight: 700;
-    line-height: .9;
-    letter-spacing: -.06em;
-    color: var(--c-ink);
-  }
-  .sleeps__u {
-    font-size: clamp(1.1rem, .9rem + .9vw, 1.6rem);
-    font-weight: 700;
-    color: var(--c-lav-deep);
-  }
-  .sleeps__one {
-    font-size: clamp(2.6rem, 1.4rem + 6vw, 4.4rem);
-    font-weight: 700;
-    letter-spacing: -.04em;
-    color: var(--c-ink);
-  }
-  .sleeps__one[hidden] { display: none; }
-
-  .cd-line {
-    width: min(100%, 22rem);
-    height: 3px;
-    border-radius: 2px;
-    background: rgba(109, 74, 202, .12);
-    overflow: hidden;
-  }
-  .cd-line :global(span) {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: linear-gradient(to left, var(--c-lav-deep), var(--c-lav));
-    transition: width 1s var(--e-out);
-  }
-
-  .cd-exact {
-    display: inline-flex;
-    align-items: baseline;
-    gap: .5rem;
+    gap: var(--s-3);
     font-size: var(--t-xs);
-    color: var(--c-ink-faint);
+    letter-spacing: .1em;
   }
-  .cd-exact b { font-size: 1.15em; color: var(--c-ink-soft); font-weight: 600; letter-spacing: .04em; }
+  .dossier__row dt { color: var(--c-ink-faint); flex: 1; }
+  .dossier__row dd { color: var(--c-ink); font-weight: 700; }
 
-  /* ==================== عيد الميلاد ==================== */
-  .greeting {
-    font-size: clamp(1.9rem, 1.2rem + 4vw, 3.4rem);
+  /* ==================== 3 · الطرَف ==================== */
+  .clue {
+    min-block-size: 1.3em;
+    font-size: var(--t-display);
     font-weight: 700;
-    letter-spacing: -.035em;
-    line-height: 1.2;
+    letter-spacing: -.03em;
+    color: transparent;
     background: var(--g-text);
     -webkit-background-clip: text;
     background-clip: text;
+  }
+  /* الكلمة تدخل من الضبابة وتخرج إليها: الظهور الحادّ يُقرأ نصّاً، والذوبان
+     يُقرأ لمحة */
+  .clue.in { animation: clue-in 2s var(--e-soft) forwards; }
+  @keyframes clue-in {
+    0%   { opacity: 0; filter: blur(18px); transform: scale(1.14); }
+    28%  { opacity: 1; filter: blur(0);    transform: scale(1); }
+    72%  { opacity: 1; filter: blur(0);    transform: scale(1); }
+    100% { opacity: 0; filter: blur(14px); transform: scale(.94); }
+  }
+  .clues__tail[hidden], [data-clues-next][hidden] { display: none; }
+  .clues__tail { animation: rise .8s var(--e-out) backwards; }
+
+  /* ==================== 5 · الزرّ ==================== */
+  /* صغير عمداً: الزرّ الممنوع الذي يملأ الشاشة ليس ممنوعاً بل دعوة */
+  .tempt {
+    padding: .5rem 1rem;
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--c-ink-faint);
+    border: 1px dashed rgb(196 181 253 / .35);
+    border-radius: var(--r-pill);
+    background: transparent;
+    transition: transform var(--d-base) var(--e-back), color var(--d-base) var(--e-soft),
+                border-color var(--d-base) var(--e-soft), opacity var(--d-base) var(--e-soft);
+  }
+  .tempt:hover { color: var(--c-ink); border-color: var(--c-lav-soft); transform: scale(1.04); }
+  .tempt.gone { opacity: 0; transform: scale(.5) rotate(-8deg); pointer-events: none; }
+  [data-tempt-after][hidden], [data-tempt-next][hidden] { display: none; }
+
+  /* ==================== 6 · التحضير ==================== */
+  .load__step {
+    min-block-size: 1.6em;
+    font-size: var(--t-lead);
+    font-weight: 600;
+    color: var(--c-ink-soft);
+  }
+  .load__track {
+    inline-size: min(100%, 18rem);
+    height: 3px;
+    border-radius: var(--r-pill);
+    background: rgb(196 181 253 / .14);
+    overflow: hidden;
+  }
+  .load__track :global(span) {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: linear-gradient(to left, var(--c-lav-soft), var(--c-rose));
+    box-shadow: var(--glow-sm);
+    transition: width .5s var(--e-soft);
+  }
+  .load__pct {
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--c-ink-faint);
+  }
+  .load__done[hidden], [data-load-next][hidden] { display: none; }
+
+  /* ==================== 7 · الاسم ==================== */
+  .name__tail[hidden], [data-name-next][hidden] { display: none; }
+  .name__tail {
+    margin-block-start: 34svh;
+    animation: rise .9s var(--e-out) backwards;
+  }
+
+  /* ==================== 8 · العدّ ==================== */
+  .cd { display: grid; justify-items: center; gap: var(--s-4); }
+  .cd[hidden] { display: none; }
+
+  .cd__big {
+    display: flex;
+    align-items: baseline;
+    gap: .5rem;
+    animation: rise .9s var(--e-out) backwards;
+  }
+  .cd__big[hidden] { display: none; }
+  .cd__big b {
+    font-size: var(--t-display);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.04em;
     color: transparent;
+    background: var(--g-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .cd__big span { font-size: var(--t-h3); font-weight: 600; color: var(--c-ink-soft); }
+
+  .cd__track {
+    inline-size: min(100%, 16rem);
+    height: 2px;
+    border-radius: var(--r-pill);
+    background: rgb(196 181 253 / .14);
+    overflow: hidden;
+  }
+  .cd__track :global(span) {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(to left, var(--c-lav-soft), var(--c-rose));
+    box-shadow: var(--glow-sm);
+    transition: width 1s var(--e-out);
+  }
+  .cd__clock {
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: .2em;
+    color: var(--c-ink-faint);
+  }
+
+  /* آخر دقيقة */
+  .last { display: grid; justify-items: center; gap: var(--s-3); }
+  .last[hidden] { display: none; }
+  .last__say {
+    min-block-size: 1.5em;
+    font-size: var(--t-lead);
+    font-weight: 600;
+    letter-spacing: .1em;
+    color: var(--c-ink-soft);
+  }
+  .last__n {
+    font-size: clamp(7rem, 4rem + 24vw, 15rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.05em;
+    color: var(--c-ink);
+    text-shadow: 0 0 60px rgb(196 181 253 / .45);
+  }
+  /* نبضة كنبضة القلب: انقباض حادّ ثم استرخاء، لا ذبذبة متساوية */
+  .last__n.beat { animation: beat 1s var(--e-out); }
+  @keyframes beat {
+    0%   { transform: scale(1.22); opacity: .45; filter: blur(10px); }
+    22%  { transform: scale(1);    opacity: 1;   filter: blur(0); }
+    100% { transform: scale(1);    opacity: 1;   filter: blur(0); }
+  }
+
+  /* ==================== 10 · الكشف ==================== */
+  .scene--reveal { gap: var(--s-5); }
+
+  .reveal__name {
+    font-size: var(--t-display);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    color: var(--c-ink);
+    animation: spark 2.4s var(--e-out) backwards;
+  }
+  .reveal__name[hidden] { display: none; }
+  /* تولد نقطةً ثم تتّسع: الاسم يخرج من الضوء لا من الفراغ */
+  @keyframes spark {
+    0%   { opacity: 0; transform: scale(.2); filter: blur(24px); letter-spacing: .6em; }
+    45%  { opacity: 1; transform: scale(1);  filter: blur(0);    letter-spacing: -.03em; }
+    100% { opacity: 1; }
+  }
+
+  .reveal__body[hidden] { display: none; }
+  .reveal__body { display: grid; justify-items: center; gap: var(--s-4); }
+
+  .reveal__greet {
+    font-size: var(--t-h1);
+    font-weight: 700;
+    letter-spacing: -.025em;
+    color: transparent;
+    background: var(--g-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: rise 1s var(--e-out) backwards;
+  }
+  .reveal__lines { display: grid; gap: var(--s-3); }
+  .reveal__l {
+    font-size: var(--t-lead);
+    line-height: 1.75;
+    color: var(--c-ink-soft);
     text-wrap: balance;
+    animation: rise .9s var(--e-out) backwards;
+    animation-delay: var(--d, 0ms);
+  }
+  .reveal__l:last-child { color: var(--c-ink); font-weight: 700; }
+  .scene--reveal .scene__hint,
+  .scene--reveal .btn {
+    animation: rise .9s var(--e-out) backwards;
+    animation-delay: var(--d, 0ms);
   }
 
   /* ==================== حركة مخفّضة ==================== */
   @media (prefers-reduced-motion: reduce) {
-    .scene__in { opacity: 1; transform: none; animation: none; }
-    .env-btn, .env-btn--found { animation: none; }
-    .frag { animation: none; }
-    .chain :global(span) { opacity: 1; transform: none; animation: none; }
-    .bubble { animation: none; }
-    .thread__fill, .cd-line :global(span), .gather :global(i) { transition: none; }
+    .scene__in, .huge, .clue.in, .cd__big, .last__n.beat,
+    .reveal__name, .reveal__greet, .reveal__l, .clues__tail, .name__tail,
+    .scene--reveal .scene__hint, .scene--reveal .btn {
+      animation: none !important;
+    }
+    .pulse, .dossier__scan { animation: none; }
+    .thread__fill, .cd__track :global(span), .load__track :global(span) { transition: none; }
+    .clue { opacity: 1; }
   }
 </style>

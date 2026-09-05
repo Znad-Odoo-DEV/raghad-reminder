@@ -1,0 +1,126 @@
+---
+/**
+ * Candle — شمعة واحدة، تُطفأ بضغطة.
+ *
+ * لا ميكروفون: النفخ الحقيقي يشترط إذناً، والإذن يفتح نافذة رمادية في لحظة
+ * يُفترض أن تكون سحراً خالصاً. الضغطة تصل إلى النتيجة نفسها بلا شرط.
+ *
+ * والإطفاء ليس إخفاءً: اللهب ينحني أولاً كأن هواءً ضربه، ثم يُسحب إلى أعلى
+ * وهو يصغر، ثم يصعد الدخان من الفتيل. الاختفاء الفوري يُقرأ عطلاً في الرسم،
+ * والانحناء قبله هو ما يجعله نفخة.
+ *
+ * لا سكربت هنا. `main.ts` تضيف الصنف `out` عبر `data-candle`.
+ */
+---
+
+<div class="candle" data-candle>
+  <svg viewBox="0 0 120 210" role="img" aria-label="شمعة مولّعة">
+    <defs>
+      <linearGradient id="wax" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#e9dcff" />
+        <stop offset="42%" stop-color="#fffdff" />
+        <stop offset="100%" stop-color="#cdb9f0" />
+      </linearGradient>
+      <radialGradient id="halo">
+        <stop offset="0%" stop-color="#ffd98a" stop-opacity=".55" />
+        <stop offset="100%" stop-color="#ff9d3d" stop-opacity="0" />
+      </radialGradient>
+      <linearGradient id="fire" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#ff8a3d" />
+        <stop offset="55%" stop-color="#ffc258" />
+        <stop offset="100%" stop-color="#fff3c4" />
+      </linearGradient>
+    </defs>
+
+    <!-- الوهج على الشمع: النار تُضيء ما حولها، وبدونه تبدو ملصقة فوقه -->
+    <ellipse class="cast" cx="60" cy="96" rx="46" ry="26" fill="url(#halo)" />
+
+    <!-- الجسم -->
+    <rect x="46" y="92" width="28" height="104" rx="10" fill="url(#wax)" />
+    <ellipse cx="60" cy="93" rx="14" ry="4.5" fill="#fffdff" opacity=".9" />
+    <!-- قطرة شمع سائل -->
+    <path d="M50 96c0 9-3 12-3 19s6 7 6 0-3-10-3-19z" fill="#fffdff" opacity=".55" />
+
+    <!-- الفتيل -->
+    <path class="wick" d="M60 92V80" stroke="#4a3f5c" stroke-width="2.6" stroke-linecap="round" />
+
+    <!-- الدخان — يُرسم دائماً ولا يُرى إلا بعد الإطفاء -->
+    <g class="smoke" aria-hidden="true">
+      <path d="M60 76c-6-10 6-15 0-25s5-16 0-24" fill="none"
+            stroke="#b9b0cc" stroke-width="3" stroke-linecap="round" />
+    </g>
+
+    <!-- اللهب -->
+    <g class="flame">
+      <circle class="flame__halo" cx="60" cy="58" r="34" fill="url(#halo)" />
+      <path class="flame__body" d="M60 34c16 14 14 30 0 40-14-10-16-26 0-40z" fill="url(#fire)" />
+      <path class="flame__core" d="M60 52c6 5 5 11 0 15-5-4-6-10 0-15z" fill="#fff8dd" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .candle {
+    inline-size: min(9rem, 40vw);
+    margin-inline: auto;
+  }
+  .candle svg { display: block; inline-size: 100%; block-size: auto; overflow: visible; }
+
+  /* ---- الاشتعال ---- */
+  .flame { transform-origin: 60px 74px; }
+  .flame__body {
+    transform-origin: 60px 74px;
+    animation: flicker 1.3s var(--e-soft) infinite alternate;
+  }
+  .flame__core {
+    transform-origin: 60px 70px;
+    animation: flicker .8s var(--e-soft) infinite alternate-reverse;
+  }
+  .flame__halo { animation: glow 2.1s var(--e-soft) infinite alternate; }
+  .cast { animation: glow 2.7s var(--e-soft) infinite alternate-reverse; }
+
+  @keyframes flicker {
+    from { transform: scale(.93, .97) translateX(-1px) rotate(-1.5deg); }
+    to   { transform: scale(1.05, 1.06) translateX(1px) rotate(1.5deg); }
+  }
+  @keyframes glow {
+    from { opacity: .6; transform: scale(.92); transform-origin: 60px 58px; }
+    to   { opacity: 1;  transform: scale(1.08); transform-origin: 60px 58px; }
+  }
+
+  /* ---- الإطفاء ---- */
+  /* ثلاث مراحل في منحنى واحد: تنحني، تُسحب، تختفي */
+  .candle.out .flame {
+    animation: blow .62s var(--e-soft) forwards;
+  }
+  .candle.out .flame__body,
+  .candle.out .flame__core,
+  .candle.out .flame__halo,
+  .candle.out .cast { animation: none; }
+  .candle.out .cast { opacity: 0; transition: opacity .5s var(--e-soft); }
+
+  @keyframes blow {
+    0%   { transform: none; opacity: 1; }
+    22%  { transform: skewX(26deg) translateX(9px) scale(.9, .82); opacity: 1; }
+    52%  { transform: skewX(-14deg) translateX(-5px) scale(.55, .6); opacity: .8; }
+    100% { transform: translateY(-16px) scale(.12, .2); opacity: 0; }
+  }
+
+  /* ---- الدخان ---- */
+  .smoke { opacity: 0; }
+  .candle.out .smoke {
+    transform-origin: 60px 92px;
+    animation: smoke 2.6s var(--e-soft) .42s forwards;
+  }
+  @keyframes smoke {
+    0%   { opacity: 0;   transform: translateY(8px) scale(.35, .3); }
+    24%  { opacity: .5; }
+    100% { opacity: 0;   transform: translateY(-46px) scale(1.6, 2); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flame__body, .flame__core, .flame__halo, .cast { animation: none; }
+    .candle.out .flame { animation: none; opacity: 0; transition: opacity .35s linear; }
+    .candle.out .smoke { animation: none; }
+  }
+</style>

@@ -4,27 +4,37 @@
 
 :root {
   /* ---- Palette ---------------------------------------------------------- */
-  --c-bg:            #f6f3ff;
-  --c-bg-deep:       #ebe4ff;
-  --c-surface:       #ffffff;
-  --c-surface-soft:  #faf8ff;
+  /*
+   * التجربة تبدأ في العتمة وتنتهي في الضوء، فالأساس ليلٌ لا نهار.
+   *
+   * التباين على ‎#0b0722‎: الحبر ‎#f4f0ff‎ يعطي ‎17.4:1‎، والناعم ‎#cbc0f2‎
+   * يعطي ‎10.6:1‎، والباهت ‎#9287c6‎ يعطي ‎5.5:1‎ — وهو أصغر النصوص
+   * (‎.8rem‎) فيلزمه ‎4.5‎ فقط.
+   */
+  --c-bg:            #0b0722;
+  --c-bg-deep:       #05030f;
+  --c-surface:       #17103c;
+  --c-surface-soft:  #120c31;
 
-  --c-ink:           #211a45;
-  --c-ink-soft:      #4a4179;
-  /* ‎4.70:1‎ على خلفية الصفحة — النص الثانوي صغير (‎.8rem‎) فيلزمه ‎4.5‎.
-     القيمة السابقة كانت ‎3.9‎ وترسب الفحص. */
-  --c-ink-faint:     #6f6796;
+  --c-ink:           #f4f0ff;
+  --c-ink-soft:      #cbc0f2;
+  --c-ink-faint:     #9287c6;
 
-  --c-violet:        #6d4aff;
-  --c-violet-deep:   #4b2fd6;
-  --c-violet-wash:   #ece6ff;
+  --c-violet:        #8b6bff;
+  --c-violet-deep:   #b9a4ff;
+  --c-violet-wash:   #221846;
 
-  /* اللافندر — لون الموقع. الفاتح للزينة فقط، والغامق وحده يصلح للنص:
-     ‎#a78bfa‎ على أبيض تباينه ‎2.7‎، و‎#6d4aca‎ تباينه ‎6.0‎. */
+  /* اللافندر — لون الموقع. على الليل تنقلب القاعدة: الفاتح هو المقروء
+     والغامق صار زينة. ‎#c4b5fd‎ على ‎#0b0722‎ يعطي ‎9.6:1‎. */
   --c-lav:           #a78bfa;
   --c-lav-soft:      #c4b5fd;
-  --c-lav-deep:      #6d4aca;
-  --c-lav-wash:      #ede9fe;
+  --c-lav-deep:      #c4b5fd;
+  --c-lav-wash:      #221846;
+
+  /* الوردي الدافئ والذهبي: لا يظهران إلا حين يقترب الوقت، فهما لون الفجر
+     لا لون الليل. */
+  --c-rose:          #f7a8c4;
+  --c-warm:          #ffd8ae;
 
   --c-mint:          #12b981;
   --c-mint-deep:     #067d57;
@@ -47,12 +57,21 @@
   --g-brand: linear-gradient(135deg, var(--c-violet) 0%, var(--c-lav-soft) 100%);
   /* RTL: القراءة تبدأ من اليمين، فيبدأ التدرّج بالغامق هناك.
      الطرف الفاتح لا ينزل تحت ‎#9b7ae8‎ حتى يبقى العنوان مقروءاً. */
-  --g-text:  linear-gradient(to left, #4b2fd6 0%, #6d4aca 45%, #9b7ae8 100%);
+  --g-text:  linear-gradient(to left, #ffffff 0%, #e3d8ff 42%, #c4b5fd 100%);
 
   /* ---- Elevation -------------------------------------------------------- */
-  --sh-sm: 0 1px 2px rgba(23, 18, 56, .06), 0 2px 8px rgba(23, 18, 56, .04);
-  --sh-md: 0 2px 6px rgba(23, 18, 56, .05), 0 12px 28px -8px rgba(23, 18, 56, .12);
-  --sh-lg: 0 4px 12px rgba(23, 18, 56, .06), 0 32px 64px -20px rgba(77, 47, 214, .28);
+  /* على الليل لا يُرى الظلّ. البروز يأتي من الوهج لا من العتمة تحت العنصر. */
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, .3);
+  --sh-md: 0 12px 30px -10px rgba(0, 0, 0, .6);
+  --sh-lg: 0 30px 70px -24px rgba(0, 0, 0, .75), 0 0 60px -20px rgba(167, 139, 250, .4);
+  --glow-sm: 0 0 18px rgba(196, 181, 253, .3);
+
+  /* الزجاج — كل سطح عائم في الصفحة. رمزٌ واحد يقلب نفسه مع الطور، فلا
+     يُطارَد الأبيض المكتوب يدوياً في كل مكوّن على حدة. */
+  --c-glass:     rgb(255 255 255 / .07);
+  --c-glass-hi:  rgb(255 255 255 / .13);
+  --c-hairline:  rgb(196 181 253 / .2);
+  --glow-md: 0 0 44px rgba(196, 181, 253, .34);
 
   /* ---- Radii ------------------------------------------------------------ */
   --r-xs: 10px;
@@ -91,7 +110,53 @@
   --w-page: 1120px;
   --pad-x: clamp(1.15rem, .6rem + 2.6vw, 2.75rem);
 
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   أطوار التجربة
+   ========================================================================== */
+
+/*
+ * `data-phase` على ‎<html>‎ — يمشي في اتجاه واحد: ليل ← دفء ← فجر.
+ *
+ * ثلاث محطّات لا تدرّج مستمرّ. المستمرّ أجمل نظرياً وأخطر عملياً: الألوان
+ * الوسطى بين الفاتح والغامق تقتل التباين للحبر الفاتح والغامق معاً، وما من
+ * قيمة واحدة تُفحص لأنها لا نهائية. والانتقال بينها بطيء، فترى العين ضوءاً
+ * يطلع لا قفزة.
+ */
+html,
+body { transition: background-color 2.4s var(--e-soft), color 2.4s var(--e-soft); }
+
+/* ١ · دفء — يبدأ حين تقلّ الساعة الأخيرة. أرضٌ ما زالت ليلاً لكنها تسخن. */
+html[data-phase='warm'] {
+  --c-bg:      #170c33;
+  --c-bg-deep: #0c0620;
+}
+
+/* ٢ · فجر — عند الكشف. الحبر ينقلب غامقاً على أرض دافئة:
+      ‎#2a1550‎ على ‎#fdf4f8‎ يعطي ‎14.8:1‎. */
+html[data-phase='dawn'] {
+  --c-bg:           #fdf4f8;
+  --c-bg-deep:      #f6e9f6;
+  --c-surface:      #ffffff;
+  --c-surface-soft: #fdf7ff;
+  --c-ink:          #2a1550;
+  --c-ink-soft:     #4d3878;
+  --c-ink-faint:    #6f6396;
+  --c-lav-deep:     #6d4aca;
+  --c-violet-deep:  #4b2fd6;
+  --c-lav-wash:     #f3ecff;
+  --c-violet-wash:  #f3ecff;
+  --g-text: linear-gradient(to left, #4b2fd6 0%, #7c53d8 45%, #c07ab0 100%);
+  --c-glass:     rgb(255 255 255 / .8);
+  --c-glass-hi:  rgb(255 255 255 / .95);
+  --c-hairline:  rgb(42 21 80 / .1);
   color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html, body { transition: none; }
 }
 
 /* ==========================================================================
@@ -240,26 +305,41 @@ a { color: var(--c-violet-deep); text-underline-offset: .25em; }
   -webkit-tap-highlight-color: transparent;
 }
 
-/* التدرّج يبدأ من اللافندر الغامق لا الفاتح: أبيض على ‎#a78bfa‎ تباينه ‎2.7‎
-   ولا يُقرأ، وعلى ‎#6d4aca‎ يصير ‎6.0‎. اللافندر الفاتح يبقى للزينة وحدها. */
+/*
+ * الزرّ الأساسي ينقلب مع الطور، ولا يرث ‎--c-lav-deep‎.
+ *
+ * ذاك الرمز يصير فاتحاً في الليل ليصلح للنصّ، فأبيضٌ فوقه يعطي ‎1.7:1‎ ولا
+ * يُقرأ. في الليل يكون الزرّ ضوءاً بحبر غامق (‎#2a1550‎ على ‎#cbbcff‎ = ‎8.6:1‎)،
+ * وفي الفجر يعود غامقاً بحبر أبيض (‎#fff‎ على ‎#6d4aca‎ = ‎6.0:1‎).
+ */
 .btn--primary {
-  color: #fff;
-  background: linear-gradient(135deg, var(--c-lav-deep) 0%, var(--c-violet-deep) 100%);
-  box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--c-lav-deep) 75%, transparent);
+  color: #2a1550;
+  background: linear-gradient(135deg, #e9dcff 0%, #cbbcff 100%);
+  box-shadow: 0 0 34px -6px rgb(196 181 253 / .55);
 }
 .btn--primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -10px color-mix(in srgb, var(--c-lav-deep) 85%, transparent);
+  box-shadow: 0 0 48px -6px rgb(196 181 253 / .75);
+}
+
+html[data-phase='dawn'] .btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, #6d4aca 0%, #4b2fd6 100%);
+  box-shadow: 0 8px 22px -8px rgb(109 74 202 / .75);
+}
+html[data-phase='dawn'] .btn--primary:hover {
+  box-shadow: 0 14px 30px -10px rgb(109 74 202 / .85);
 }
 .btn--primary:active { transform: translateY(0) scale(.97); }
 
 /* بريق يمرّ على الزر الأساسي — دعوة خفيفة للضغط */
 .btn--primary::after {
   content: '';
+  mix-blend-mode: overlay;
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(110deg, transparent 32%, rgba(255,255,255,.42) 50%, transparent 68%);
+  background: linear-gradient(110deg, transparent 32%, rgb(255 255 255 / .5) 50%, transparent 68%);
   background-size: 220% 100%;
   animation: sheen 3.4s var(--e-soft) infinite;
   pointer-events: none;
@@ -269,17 +349,30 @@ a { color: var(--c-violet-deep); text-underline-offset: .25em; }
   100%    { background-position: -60% 0; }
 }
 
+/* على الليل لا يصلح الأبيض الصلب: يصير لطخةً في العتمة. زجاجٌ رقيق يذوب
+   فيها ويبقى مقروءاً — والحدّ هو ما يجعله زرّاً لا نصّاً. */
 .btn--ghost {
-  color: var(--c-ink-soft);
-  background: rgba(255, 255, 255, .78);
-  border: 1px solid rgba(23, 18, 56, .1);
-  box-shadow: var(--sh-sm);
+  color: var(--c-ink);
+  background: rgb(255 255 255 / .07);
+  border: 1px solid rgb(196 181 253 / .28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: none;
 }
 .btn--ghost:hover {
   transform: translateY(-2px);
-  background: #fff;
-  box-shadow: var(--sh-md);
+  background: rgb(255 255 255 / .13);
+  border-color: rgb(196 181 253 / .5);
+  box-shadow: var(--glow-sm);
 }
+
+html[data-phase='dawn'] .btn--ghost {
+  color: var(--c-ink-soft);
+  background: rgb(255 255 255 / .8);
+  border-color: rgb(42 21 80 / .1);
+  box-shadow: var(--sh-sm);
+}
+html[data-phase='dawn'] .btn--ghost:hover { background: #fff; }
 .btn--ghost:active { transform: translateY(0) scale(.97); }
 
 .btn--quiet {
@@ -292,7 +385,10 @@ a { color: var(--c-violet-deep); text-underline-offset: .25em; }
   border-color: transparent;
   color: var(--c-ink-faint);
 }
-.btn--quiet:hover { background: rgba(255,255,255,.7); box-shadow: var(--sh-sm); }
+.btn--quiet { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.btn--quiet:hover { background: rgb(255 255 255 / .09); box-shadow: none; }
+html[data-phase='dawn'] .btn--quiet { background: transparent; border-color: transparent; }
+html[data-phase='dawn'] .btn--quiet:hover { background: rgb(255 255 255 / .7); box-shadow: var(--sh-sm); }
 
 .btn--wide { flex-basis: 100%; }
 
