@@ -34,12 +34,29 @@ export const OPEN = {
  */
 export const FILE = {
   title: 'ملفّ · رغد',
-  rows: [
-    { k: 'فُتح الملفّ', v: null, of: 'coincidence' },
-    { k: 'أوّل حديث', v: null, of: 'firstTalk' },
-    { k: 'الحالة', v: 'سرّي للغاية', of: null },
-    { k: 'الكشف', v: '00:00', of: null },
-  ] as readonly { k: string; v: string | null; of: 'coincidence' | 'firstTalk' | null }[],
+
+  /**
+   * قيدان مؤرّخان. التاريخ وحده رقمٌ، وما تحته هو ما يجعله قيداً.
+   *
+   * التواريخ تُملأ من `site.config` لا تُكتب هنا — لأنها حقائق لا نصوص.
+   */
+  entries: [
+    {
+      of: 'coincidence',
+      // العزل الاتجاهي (U+2068 … U+2069) حول العبارة اللاتينية.
+      // بدونه تتسرّب النقطة إلى طرف العبارة الإنجليزية بدل أن تقف في
+      // آخر الجملة العربية، ويلتصق «الـ» بأول حرف لاتيني بلا فاصل.
+      note: 'اقترحتك عليّ خوارزمية Meta بالـ⁨followers suggestions⁩',
+      after: 'وطلعتي مو أي حدا.',
+    },
+    {
+      of: 'firstTalk',
+      note: 'أوّل مرّة نحكي.',
+      after: 'وما كنت بعرف شو رح تصير.',
+    },
+  ] as readonly { of: 'coincidence' | 'firstTalk'; note: string; after: string }[],
+
+  status: { k: 'الحالة', v: 'سرّي للغاية' },
   line: 'ممنوع الاستعجال 👀',
   cta: 'طيّب طيّب',
 } as const;

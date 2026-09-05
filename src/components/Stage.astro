@@ -25,12 +25,10 @@ function stamp(at: number | null): string {
   return `${pad2(w.day)}.${pad2(w.month)}.${w.year}`;
 }
 
-const fileRows = FILE.rows.map((r) => ({
-  k: r.k,
-  v:
-    r.of === 'coincidence' ? stamp(COINCIDENCE_AT)
-    : r.of === 'firstTalk' ? stamp(FIRST_TALK_AT)
-    : (r.v ?? '—'),
+const fileEntries = FILE.entries.map((e) => ({
+  date: stamp(e.of === 'coincidence' ? COINCIDENCE_AT : FIRST_TALK_AT),
+  note: e.note,
+  after: e.after,
 }));
 ---
 
@@ -53,20 +51,28 @@ const fileRows = FILE.rows.map((r) => ({
       <span class="dossier__scan" aria-hidden="true"></span>
       <p class="dossier__title">{FILE.title}</p>
       <dl class="dossier__rows">
-        {fileRows.map((r, i) => (
-          <div class="dossier__row scene__in" style={`--d: ${420 + i * 260}ms`}>
-            <dt>{r.k}</dt>
-            <dd class="tnum">{r.v}</dd>
+        {fileEntries.map((e, i) => (
+          <div class="dossier__entry scene__in" style={`--d: ${420 + i * 420}ms`}>
+            <dt class="dossier__date tnum">{e.date}</dt>
+            <dd class="dossier__note">
+              {e.note}
+              <span class="dossier__after">{e.after}</span>
+            </dd>
           </div>
         ))}
+
+        <div class="dossier__row scene__in" style={`--d: ${420 + fileEntries.length * 420}ms`}>
+          <dt>{FILE.status.k}</dt>
+          <dd>{FILE.status.v}</dd>
+        </div>
       </dl>
     </div>
-    <p class="scene__lead scene__in" style={`--d: ${420 + fileRows.length * 260 + 420}ms`}>
+    <p class="scene__lead scene__in" style={`--d: ${420 + fileEntries.length * 420 + 500}ms`}>
       {FILE.line}
     </p>
     <button
       class="btn btn--ghost scene__in"
-      style={`--d: ${420 + fileRows.length * 260 + 900}ms`}
+      style={`--d: ${420 + fileEntries.length * 420 + 900}ms`}
       type="button"
       data-next
     >{FILE.cta}</button>
@@ -324,7 +330,31 @@ const fileRows = FILE.rows.map((r) => ({
     border-block-end: 1px solid rgb(196 181 253 / .16);
   }
 
-  .dossier__rows { display: grid; gap: .55rem; }
+  .dossier__rows { display: grid; gap: var(--s-4); }
+
+  /*
+   * القيد المؤرّخ: التاريخ سطرٌ فوق، وما يعنيه تحته.
+   *
+   * وضعُهما في صفٍّ واحد كان يحشر جملةً كاملة في نصف عرض بطاقةٍ ضيّقة،
+   * فتنكسر إلى ثلاثة أسطر بعرض أربع كلمات ويضيع أنه سجلّ.
+   */
+  .dossier__entry { display: grid; gap: .15rem; }
+  .dossier__date {
+    font-size: var(--t-sm);
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--c-lav-soft);
+  }
+  .dossier__note {
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    color: var(--c-ink);
+  }
+  /* السطر الثاني يخفت: هو تعليقٌ على القيد لا جزءٌ منه */
+  .dossier__after {
+    display: block;
+    color: var(--c-ink-faint);
+  }
   .dossier__row {
     display: flex;
     align-items: baseline;
