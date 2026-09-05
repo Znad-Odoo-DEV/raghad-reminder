@@ -91,7 +91,9 @@ const fileEntries = FILE.entries.map((e) => ({
   <!-- ═══════════════ 4 · النهاية المزيّفة ═══════════════ -->
   <section class="scene scene--hush" data-scene="joke" hidden>
     <p class="huge" data-joke-end>{JOKE.end}</p>
-    <p class="huge huge--twist" data-joke-twist hidden>{JOKE.twist}</p>
+    <p class="huge huge--twist" data-joke-twist hidden>
+      <span class="grad">{JOKE.twist}</span> <span class="emo">{JOKE.twistEmoji}</span>
+    </p>
     <button class="btn btn--ghost" type="button" data-next data-joke-next hidden>
       {JOKE.cta}
     </button>
@@ -106,7 +108,9 @@ const fileEntries = FILE.entries.map((e) => ({
       {BUTTON.label}
     </button>
 
-    <p class="huge huge--twist" data-tempt-after hidden>{BUTTON.after}</p>
+    <p class="huge huge--twist" data-tempt-after hidden>
+      <span class="grad">{BUTTON.after}</span> <span class="emo">{BUTTON.afterEmoji}</span>
+    </p>
     <button class="btn btn--ghost" type="button" data-next data-tempt-next hidden>
       {BUTTON.cta}
     </button>
@@ -169,7 +173,9 @@ const fileEntries = FILE.entries.map((e) => ({
     <p class="reveal__name" data-rev-name hidden>{REVEAL.name}</p>
 
     <div class="reveal__body" data-rev-body hidden>
-      <h1 class="reveal__greet">{REVEAL.greeting}</h1>
+      <h1 class="reveal__greet">
+        <span class="grad">{REVEAL.greeting}</span> <span class="emo">{REVEAL.greetingEmoji}</span>
+      </h1>
       <div class="reveal__lines">
         {REVEAL.lines.map((l, i) => (
           <p class="reveal__l" style={`--d: ${700 + i * 480}ms`}>{l}</p>
@@ -266,7 +272,22 @@ const fileEntries = FILE.entries.map((e) => ({
     animation-delay: var(--d, 0ms);
   }
   .huge[hidden] { display: none; }
-  .huge--twist { color: transparent; background: var(--g-text); -webkit-background-clip: text; background-clip: text; }
+  /*
+   * التدرّج على `.grad` وحده لا على الفقرة.
+   *
+   * وضعُه على الفقرة يقصّ الإيموجي معها فيفقد ألوانه. وفصله يجعل الإيموجي
+   * عنصراً أخاً يرث لون النصّ العادي.
+   */
+  .grad {
+    color: transparent;
+    background: var(--g-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  /* التحديد على نصٍّ مقصوصٍ بالتدرّج يُظهر مربّعاً أزرق تحت حروفٍ شفّافة.
+     إعادة لون الحرف عند التحديد وحدها تجعله مقروءاً. */
+  .grad::selection { -webkit-text-fill-color: #fff; color: #fff; background: rgb(109 74 202 / .6); }
+  .emo { -webkit-text-fill-color: initial; color: initial; }
 
   .scene__lead {
     font-size: var(--t-lead);
@@ -563,10 +584,7 @@ const fileEntries = FILE.entries.map((e) => ({
     font-size: var(--t-h1);
     font-weight: 700;
     letter-spacing: -.025em;
-    color: transparent;
-    background: var(--g-text);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: var(--c-ink);
     animation: rise 1s var(--e-out) backwards;
   }
   .reveal__lines { display: grid; gap: var(--s-3); }
