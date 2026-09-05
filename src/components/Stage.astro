@@ -1,11 +1,10 @@
 ---
 import {
   INTRO, LETTER_ONE, LETTER_TWO, LETTER_THREE, TURN,
-  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, EVE, CAKE, BIRTHDAY_COPY,
+  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, BIRTHDAY_COPY,
 } from '../scripts/copy';
 import { COINCIDENCE_AT, FIRST_TALK_AT, wallOf } from '../scripts/schedule';
 import EnvelopeGlyph from './EnvelopeGlyph.astro';
-import Cake from './Cake.astro';
 
 /**
  * Stage — كل مشاهد القصة في مكان واحد.
@@ -209,44 +208,19 @@ const two = stampOf(FIRST_TALK_AT);
   </section>
 
   <!-- ═══════════════ 10 · العدّاد ═══════════════ -->
-  <section class="scene scene--cd" data-scene="countdown" hidden>
-    <!-- آخر دقيقة: الشاشة رقم واحد ولا شيء غيره -->
-    <p class="cd-final tnum" data-cd-final hidden>60</p>
-
-    <div class="cd-body" data-cd-body>
-      <p class="stamp-label" data-cd-label>{COUNTDOWN.label}</p>
-      <p class="sleeps" data-cd-big><b class="sleeps__n tnum" data-cd-n>—</b><span class="sleeps__u" data-cd-u></span></p>
-      <p class="sleeps__one" data-cd-one hidden></p>
-      <div class="cd-line" aria-hidden="true"><span data-cd-fill></span></div>
-      <p class="cd-exact">
-        <span data-cd-exact-label>{COUNTDOWN.exact}</span>
-        <b class="tnum" data-cd-clock>00:00:00</b>
-      </p>
-      <p class="scene__hint" data-cd-hint>{COUNTDOWN.waitingHint}</p>
-
-      <!-- الحكاية ليست مقفلة: ليلة العيد تفتح على العدّاد، ومن أرادها وجدها -->
-      <button class="btn btn--ghost btn--quiet cd-replay" type="button" data-replay hidden data-cd-replay>
-        {EVE.replay}
-      </button>
-    </div>
+  <section class="scene" data-scene="countdown" hidden>
+    <p class="stamp-label" data-cd-label>{COUNTDOWN.label}</p>
+    <p class="sleeps" data-cd-big><b class="sleeps__n tnum" data-cd-n>—</b><span class="sleeps__u" data-cd-u></span></p>
+    <p class="sleeps__one" data-cd-one hidden></p>
+    <div class="cd-line" aria-hidden="true"><span data-cd-fill></span></div>
+    <p class="cd-exact">
+      <span>{COUNTDOWN.exact}</span>
+      <b class="tnum" data-cd-clock>00:00:00</b>
+    </p>
+    <p class="scene__hint">{COUNTDOWN.waitingHint}</p>
   </section>
 
-  <!-- ═══════════════ 11 · الشمعات ═══════════════ -->
-  <section class="scene scene--cake" data-scene="cake" hidden>
-    <p class="stamp-label scene__in" style="--d: 0ms">{CAKE.label}</p>
-    <p class="scene__lead scene__lead--big scene__in" style="--d: 260ms">{CAKE.line}</p>
-
-    <div class="scene__in" style="--d: 700ms"><Cake /></div>
-
-    <!-- يبقى مكان السطر محجوزاً: تبدّل النصّ يقفز بالكعكة تحته -->
-    <p class="cake__say" data-cake-say aria-live="polite">&nbsp;</p>
-
-    <button class="btn btn--primary scene__in" style="--d: 1500ms" type="button" data-blow>
-      {CAKE.cta}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 12 · عيد الميلاد ═══════════════ -->
+  <!-- ═══════════════ 11 · عيد الميلاد ═══════════════ -->
   <section class="scene scene--birthday" data-scene="birthday" hidden>
     <h1 class="greeting scene__in" style="--d: 300ms">{BIRTHDAY_COPY.greeting}</h1>
     <div class="lines">
@@ -464,17 +438,6 @@ const two = stampOf(FIRST_TALK_AT);
   .frag--calm   { --rot:  .4deg; }
   .frag { transform: rotate(var(--rot, 0deg)); }
 
-  /* ==================== الشمعات ==================== */
-  .scene--cake { gap: .4rem; }
-  .cake__say {
-    min-block-size: 1.6em;
-    font-size: var(--t-body);
-    font-weight: 600;
-    color: var(--c-lav-deep);
-    text-align: center;
-    transition: opacity .25s ease;
-  }
-
   .frag__tag {
     font-size: .68rem;
     font-weight: 700;
@@ -633,31 +596,6 @@ const two = stampOf(FIRST_TALK_AT);
     color: var(--c-ink);
   }
   .sleeps__one[hidden] { display: none; }
-
-  /* آخر دقيقة */
-  .cd-final {
-    font-size: clamp(7rem, 4rem + 24vw, 15rem);
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -.04em;
-    color: var(--c-ink);
-    text-align: center;
-    animation: beat 1s ease-out infinite;
-  }
-  .cd-final[hidden] { display: none; }
-  .cd-body[hidden] { display: none; }
-  @keyframes beat {
-    0%   { transform: scale(1.14); opacity: .55; }
-    28%  { transform: scale(1);    opacity: 1; }
-    100% { transform: scale(1);    opacity: 1; }
-  }
-  .cd-body { display: grid; justify-items: center; gap: inherit; }
-  .cd-replay { margin-block-start: var(--s-4); }
-  .cd-replay[hidden] { display: none; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .cd-final { animation: none; }
-  }
 
   .cd-line {
     width: min(100%, 22rem);
