@@ -712,12 +712,31 @@ function initPanel(): void {
   for (const btn of $$<HTMLButtonElement>('[data-sim]')) {
     btn.addEventListener('click', () => {
       const real = Date.now();
+
+      // محطّات ليلة العيد تُقاس من منتصف ليلها لا من تاريخ مكتوب، فتصحّ كل سنة.
+      // والقياس من `Date.now()` لا من `nowMs()` وإلا تراكمت الإزاحة على نفسها
+      // مع كل ضغطة. وكلّها تعيد التحميل: مشهد الافتتاح يُقرَّر عند الإقلاع.
+      const bd = nextBirthdayInstant(real);
+      const jump = (deltaMs: number): void => {
+        if (bd === null) return;
+        setOffset(bd + deltaMs - real);
+        location.reload();
+      };
+
       switch (btn.dataset.sim) {
         case 'before': setOffset(damascusTodayAt(SWEET_HOUR - 1, 15, real) - real); break;
         case 'due':    setOffset(damascusTodayAt(SWEET_HOUR, 0, real) - real); break;
         case 'after':  setOffset(damascusTodayAt(SWEET_HOUR + 2, 40, real) - real); break;
         case 'rain':   finale(); break;
-        case 'real':   setOffset(0); break;
+
+        case 'dusk':     jump(-5 * 3_600_000); return;
+        case 'evening':  jump(-60 * 60_000); return;
+        case 'night':    jump(-12 * 60_000); return;
+        case 'final':    jump(-40_000); return;
+        case 'midnight': jump(5_000); return;
+        case 'morning':  jump(9 * 3_600_000); return;
+
+        case 'real':   setOffset(0); location.reload(); return;
         case 'reset':
           resetAll();
           story.reset();

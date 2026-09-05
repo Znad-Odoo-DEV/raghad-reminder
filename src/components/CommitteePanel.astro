@@ -15,6 +15,22 @@ const shortcuts = [
   { key: 'after',  label: 'بعد الرسالة', hint: '1:40 ظهراً' },
   { key: 'rain',   label: 'مطر لطافة',   hint: 'قلوب وفراشات' },
 ];
+
+/**
+ * محطّات ليلة العيد.
+ *
+ * الإزاحة تُحسب من منتصف ليل عيدها لا من تاريخ مكتوب، فتصحّ هذه الأزرار في
+ * كل سنة بلا تعديل. وكلّها تعيد التحميل: مشهد الافتتاح يُقرّر عند الإقلاع،
+ * فتغيير الساعة وحده لا ينقل المشهد.
+ */
+const eveStops = [
+  { key: 'dusk',     label: 'الغسق',      hint: 'قبل 5 ساعات' },
+  { key: 'evening',  label: 'المغيب',     hint: 'قبل ساعة' },
+  { key: 'night',    label: 'الليل',      hint: 'قبل 12 دقيقة' },
+  { key: 'final',    label: 'آخر دقيقة',  hint: 'العدّ التنازلي' },
+  { key: 'midnight', label: 'منتصف الليل', hint: 'الشمعات' },
+  { key: 'morning',  label: 'صباح العيد',  hint: 'الساعة 9' },
+];
 ---
 
 <div class="committee" data-committee hidden>
@@ -45,6 +61,17 @@ const shortcuts = [
 
     <div class="committee__grid">
       {shortcuts.map((s) => (
+        <button class="committee__btn" type="button" data-sim={s.key}>
+          <span class="committee__btn-label">{s.label}</span>
+          <span class="committee__btn-hint">{s.hint}</span>
+        </button>
+      ))}
+    </div>
+
+    <p class="committee__note committee__note--sep">ليلة العيد — كل زرّ بيعيد تحميل الصفحة.</p>
+
+    <div class="committee__grid committee__grid--eve">
+      {eveStops.map((s) => (
         <button class="committee__btn" type="button" data-sim={s.key}>
           <span class="committee__btn-label">{s.label}</span>
           <span class="committee__btn-hint">{s.hint}</span>
@@ -164,6 +191,15 @@ const shortcuts = [
   .committee__btn-label { font-weight: 700; font-size: var(--t-sm); }
   .committee__btn-hint { font-size: var(--t-xs); color: var(--c-ink-faint); }
 
+  .committee__note--sep {
+    margin-block: var(--s-4) var(--s-2);
+    padding-block-start: var(--s-4);
+    border-block-start: 1px solid rgba(23, 18, 56, .08);
+    font-weight: 700;
+    color: var(--c-lav-deep);
+  }
+  .committee__grid--eve { grid-template-columns: repeat(3, 1fr); }
+
   .committee__row { display: flex; flex-wrap: wrap; gap: .5rem; }
 
   .committee__ghost {
@@ -191,5 +227,6 @@ const shortcuts = [
 
   @media (max-width: 380px) {
     .committee__grid { grid-template-columns: 1fr; }
+    .committee__grid--eve { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
