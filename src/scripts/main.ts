@@ -26,8 +26,8 @@ import * as story from './story';
 import type { Scene } from './story';
 
 import {
-  FRAGMENTS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, CAKE, BIRTHDAY_COPY,
-  AWAY_TITLES, MISC, dayUnitAr, pick,
+  FRAGMENTS, MORNING_CHAIN, DISHES_TIMER, COUNTDOWN, EVE, CAKE, BIRTHDAY_COPY,
+  AWAY_TITLES, MISC, dayUnitAr, hourUnitAr, minuteUnitAr, pick,
 } from './copy';
 
 import { finale, burst, bloom, leaves, preloadLeaves } from './celebrate';
@@ -92,6 +92,8 @@ function show(name: Scene): void {
 /** ما يحتاج تشغيلاً عند دخول مشهد بعينه. */
 function onEnter(name: Scene): void {
   window.clearInterval(tickTimer);
+  // الشمعات تبقى في الليل والتهنئة تُطلع الفجر، فالدرجة تتبع المشهد لا الوقت وحده
+  paintNight();
 
   switch (name) {
     case 'fragments': paintFragment(story.current().fragment); break;
@@ -266,6 +268,40 @@ function runGather(): void {
 }
 
 /* =========================================================================
+   هبوط الليل
+   ========================================================================= */
+
+/**
+ * درجة الليل: ٠ نهار · ١ غسق · ٢ مغيب · ٣ ليل.
+ *
+ * ليلة عيدها وحدها. اليوم العادي لا يغمق، ولو غمق كل ليلة لما عنى غموقه شيئاً
+ * ليلتها. ويبقى الليل قائماً في مشهد الشمعات — شمعةٌ في وضح النهار ليست شمعة —
+ * ثم ينقشع مع التهنئة، فيكون الفجر جزءاً من الهدية.
+ */
+function nightLevel(): 0 | 1 | 2 | 3 {
+  const b = untilBirthday();
+  if (!b) return 0;
+  if (b.isToday) return story.current().scene === 'cake' ? 3 : 0;
+  if (b.sleeps !== 1) return 0;
+
+  const mins = b.hours * 60 + b.minutes;
+  if (mins <= 15) return 3;
+  if (mins <= 90) return 2;
+  if (mins <= 360) return 1;
+  return 0;
+}
+
+function paintNight(): void {
+  const level = nightLevel();
+  const root = document.documentElement;
+  const now = root.getAttribute('data-night');
+  const next = level === 0 ? null : String(level);
+  if (now === next) return;
+  if (next === null) root.removeAttribute('data-night');
+  else root.setAttribute('data-night', next);
+}
+
+/* =========================================================================
    الكشف والعدّاد
    ========================================================================= */
 
@@ -316,11 +352,34 @@ function paintCountdown(): void {
   const label = $('[data-cd-label]');
   const clock = $('[data-cd-clock]');
   const fill = $('[data-cd-fill]');
+  const body = $('[data-cd-body]');
+  const final = $('[data-cd-final]');
+  const replay = $('[data-cd-replay]');
+  const hint = $('[data-cd-hint]');
+
+  const mins = b.hours * 60 + b.minutes;
+  const eve = b.sleeps === 1;
+
+  if (replay) replay.hidden = !eve;
+  if (hint && eve) hint.textContent = EVE.hint;
+
+  // ── آخر دقيقة: الشاشة رقم واحد ولا شيء غيره ──
+  // «باقي ٥٩ ثانية» مكتوبةً في جملة لا تُحدث ما تُحدثه ٥٩ وحدها تملأ الشاشة.
+  const lastMinute = eve && b.hours === 0 && b.minutes === 0;
+  if (body) body.hidden = lastMinute;
+  if (final) {
+    final.hidden = !lastMinute;
+    if (lastMinute) final.textContent = String(b.seconds);
+  }
+  if (lastMinute) return;
 
   // الواحد والاثنان لهما صيغتان بلا رقم: «بكرا» و«يومين». والرقم مع «2» خطأ
   // نحوي في العربية، فنعرض الكلمة وحدها بدله.
+  //
+  // و«بكرا» تصحّ صباحاً وتصير كذبةً باردة في الحادية عشرة والنصف، فليلة العيد
+  // تضيق لغتها مع الوقت بدل أن تجمد على كلمة واحدة أربعاً وعشرين ساعة.
   const phrase =
-    b.sleeps === 1 ? { text: COUNTDOWN.tomorrow, sub: COUNTDOWN.tomorrowSub }
+    eve && mins > 360 ? { text: COUNTDOWN.tomorrow, sub: COUNTDOWN.tomorrowSub }
     : b.sleeps === 2 ? { text: COUNTDOWN.two, sub: COUNTDOWN.twoSub }
     : null;
 
@@ -334,9 +393,16 @@ function paintCountdown(): void {
   } else {
     if (bigWrap) bigWrap.hidden = false;
     if (one) one.hidden = true;
-    if (big) big.textContent = String(b.sleeps);
-    if (unit) unit.textContent = dayUnitAr(b.sleeps);
-    if (label) label.textContent = COUNTDOWN.label;
+
+    const shown =
+      !eve ? { n: b.sleeps, u: dayUnitAr(b.sleeps), l: COUNTDOWN.label }
+      : mins > 60 ? { n: b.hours, u: hourUnitAr(b.hours), l: EVE.hoursLabel }
+      : mins > 15 ? { n: mins, u: minuteUnitAr(mins), l: EVE.minutesLabel }
+      : { n: mins, u: minuteUnitAr(mins), l: EVE.closeLabel };
+
+    if (big) big.textContent = String(shown.n);
+    if (unit) unit.textContent = shown.u;
+    if (label) label.textContent = shown.l;
   }
 
   if (clock) clock.textContent = `${pad2(b.hours)}:${pad2(b.minutes)}:${pad2(b.seconds)}`;
@@ -706,11 +772,13 @@ function boot(): void {
   for (const b of $$('[data-next]')) b.addEventListener('click', advance);
   fragNext?.addEventListener('click', nextFragment);
 
-  $('[data-replay]')?.addEventListener('click', () => {
-    story.reset();
-    show('intro');
-    announce(MISC.replayDone);
-  });
+  for (const b of $$('[data-replay]')) {
+    b.addEventListener('click', () => {
+      story.reset();
+      show('intro');
+      announce(MISC.replayDone);
+    });
+  }
 
   initMusic();
   initNotify();
@@ -737,7 +805,23 @@ function boot(): void {
   const b = untilBirthday();
   const saved = story.current().scene;
   const past = story.SCENES.indexOf(saved) >= story.SCENES.indexOf('cake');
-  show(b?.isToday ? story.go(past ? saved : 'cake').scene : saved);
+
+  // ليلة العيد تفتح على العدّاد لا على أوّل الحكاية.
+  //
+  // بدون هذا لا يرى الفتحُ الليلةَ أصلاً: عشرة مشاهد تفصل العتبة عن العدّاد،
+  // فالتشويق الذي بُني كلّه لا يظهر لمن فتح ومشى مشهدين ثم أغلق. والحكاية
+  // تبقى على بُعد زرّ.
+  show(
+    b?.isToday ? story.go(past ? saved : 'cake').scene
+    : b?.sleeps === 1 ? story.go('countdown').scene
+    : saved,
+  );
+
+  // الليل يهبط على كل المشاهد لا على العدّاد وحده، فلا يكفي مؤقّت المشهد
+  paintNight();
+  // الدرجة الأولى تُرسم بلا انتقال — الليل نزل قبل أن تفتح لا وهي تنظر
+  requestAnimationFrame(() => document.documentElement.classList.add('night-fade'));
+  window.setInterval(paintNight, 1000);
 }
 
 if (document.readyState === 'loading') {

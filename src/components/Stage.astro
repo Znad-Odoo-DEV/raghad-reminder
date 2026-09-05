@@ -1,7 +1,7 @@
 ---
 import {
   INTRO, LETTER_ONE, LETTER_TWO, LETTER_THREE, TURN,
-  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, CAKE, BIRTHDAY_COPY,
+  FRAGMENTS, CHAT_WINNER, GATHER, REVEAL, COUNTDOWN, EVE, CAKE, BIRTHDAY_COPY,
 } from '../scripts/copy';
 import { COINCIDENCE_AT, FIRST_TALK_AT, wallOf } from '../scripts/schedule';
 import EnvelopeGlyph from './EnvelopeGlyph.astro';
@@ -209,16 +209,26 @@ const two = stampOf(FIRST_TALK_AT);
   </section>
 
   <!-- ═══════════════ 10 · العدّاد ═══════════════ -->
-  <section class="scene" data-scene="countdown" hidden>
-    <p class="stamp-label" data-cd-label>{COUNTDOWN.label}</p>
-    <p class="sleeps" data-cd-big><b class="sleeps__n tnum" data-cd-n>—</b><span class="sleeps__u" data-cd-u></span></p>
-    <p class="sleeps__one" data-cd-one hidden></p>
-    <div class="cd-line" aria-hidden="true"><span data-cd-fill></span></div>
-    <p class="cd-exact">
-      <span>{COUNTDOWN.exact}</span>
-      <b class="tnum" data-cd-clock>00:00:00</b>
-    </p>
-    <p class="scene__hint">{COUNTDOWN.waitingHint}</p>
+  <section class="scene scene--cd" data-scene="countdown" hidden>
+    <!-- آخر دقيقة: الشاشة رقم واحد ولا شيء غيره -->
+    <p class="cd-final tnum" data-cd-final hidden>60</p>
+
+    <div class="cd-body" data-cd-body>
+      <p class="stamp-label" data-cd-label>{COUNTDOWN.label}</p>
+      <p class="sleeps" data-cd-big><b class="sleeps__n tnum" data-cd-n>—</b><span class="sleeps__u" data-cd-u></span></p>
+      <p class="sleeps__one" data-cd-one hidden></p>
+      <div class="cd-line" aria-hidden="true"><span data-cd-fill></span></div>
+      <p class="cd-exact">
+        <span data-cd-exact-label>{COUNTDOWN.exact}</span>
+        <b class="tnum" data-cd-clock>00:00:00</b>
+      </p>
+      <p class="scene__hint" data-cd-hint>{COUNTDOWN.waitingHint}</p>
+
+      <!-- الحكاية ليست مقفلة: ليلة العيد تفتح على العدّاد، ومن أرادها وجدها -->
+      <button class="btn btn--ghost btn--quiet cd-replay" type="button" data-replay hidden data-cd-replay>
+        {EVE.replay}
+      </button>
+    </div>
   </section>
 
   <!-- ═══════════════ 11 · الشمعات ═══════════════ -->
@@ -623,6 +633,31 @@ const two = stampOf(FIRST_TALK_AT);
     color: var(--c-ink);
   }
   .sleeps__one[hidden] { display: none; }
+
+  /* آخر دقيقة */
+  .cd-final {
+    font-size: clamp(7rem, 4rem + 24vw, 15rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.04em;
+    color: var(--c-ink);
+    text-align: center;
+    animation: beat 1s ease-out infinite;
+  }
+  .cd-final[hidden] { display: none; }
+  .cd-body[hidden] { display: none; }
+  @keyframes beat {
+    0%   { transform: scale(1.14); opacity: .55; }
+    28%  { transform: scale(1);    opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+  }
+  .cd-body { display: grid; justify-items: center; gap: inherit; }
+  .cd-replay { margin-block-start: var(--s-4); }
+  .cd-replay[hidden] { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cd-final { animation: none; }
+  }
 
   .cd-line {
     width: min(100%, 22rem);
