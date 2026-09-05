@@ -25,17 +25,20 @@ export const OPEN = {
 /**
  * الملفّ السرّي.
  *
- * الأسطر اللاتينية مقصودة: التباين بين لغة النظام الباردة وبين التعليق
- * الشامي تحتها هو النكتة كلّها. والتواريخ تُملأ من `site.config` لا تُكتب
- * هنا — لأنها حقائق لا نصوص.
+ * عربيٌّ كلّه. «CLASSIFIED» علامةُ الحيلة في الأفلام الأجنبية، وهي هنا تجعل
+ * المشهد يبدو قالباً مستورداً؛ و«سرّي للغاية» بالعربية تفعل الشيء نفسه
+ * وتبقى له. أمّا الأرقام فتبقى لاتينية: الأرقام العربية الشرقية داخل جدولٍ
+ * مصفوف بـ`tabular-nums` تختلّ أعمدته.
+ *
+ * والتواريخ تُملأ من `site.config` لا تُكتب هنا — لأنها حقائق لا نصوص.
  */
 export const FILE = {
-  title: 'PROJECT · RAGHD',
+  title: 'ملفّ · رغد',
   rows: [
-    { k: 'FILE OPENED', v: null, of: 'coincidence' },
-    { k: 'FIRST CONTACT', v: null, of: 'firstTalk' },
-    { k: 'STATUS', v: 'CLASSIFIED', of: null },
-    { k: 'REVEAL', v: '00:00', of: null },
+    { k: 'فُتح الملفّ', v: null, of: 'coincidence' },
+    { k: 'أوّل حديث', v: null, of: 'firstTalk' },
+    { k: 'الحالة', v: 'سرّي للغاية', of: null },
+    { k: 'الكشف', v: '00:00', of: null },
   ] as readonly { k: string; v: string | null; of: 'coincidence' | 'firstTalk' | null }[],
   line: 'ممنوع الاستعجال 👀',
   cta: 'طيّب طيّب',
@@ -88,7 +91,6 @@ export const LOADING = {
     'عم نحضّر المفاجأة',
     'عم نجمّع الجوّ',
     'عم نفحص الفرح',
-    'عم ندفّي القمر',
   ] as readonly string[],
   done: 'جاهزة؟',
   cta: 'جاهزة',

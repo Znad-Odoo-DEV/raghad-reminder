@@ -237,10 +237,15 @@ const fileRows = FILE.rows.map((r) => ({
   }
 
   /* ==================== نصوص مشتركة ==================== */
+  /*
+   * التباعد الحرفي على العربية ليس زينة بل ضرر: الخطّ متّصل، وتوسيع ما بين
+   * الحروف يباعد وصلاتها فتبدو الكلمة مفكوكة. القيم الواسعة هنا كانت مأخوذة
+   * من عرف لاتيني لا يصحّ على هذا الخطّ.
+   */
   .kicker {
     font-size: var(--t-xs);
-    font-weight: 600;
-    letter-spacing: .22em;
+    font-weight: 700;
+    letter-spacing: 0;
     color: var(--c-ink-faint);
   }
 
@@ -310,9 +315,9 @@ const fileRows = FILE.rows.map((r) => ({
   }
 
   .dossier__title {
-    font-size: var(--t-xs);
+    font-size: var(--t-sm);
     font-weight: 700;
-    letter-spacing: .3em;
+    letter-spacing: 0;
     color: var(--c-lav-soft);
     padding-block-end: var(--s-3);
     margin-block-end: var(--s-3);
@@ -324,10 +329,31 @@ const fileRows = FILE.rows.map((r) => ({
     display: flex;
     align-items: baseline;
     gap: var(--s-3);
-    font-size: var(--t-xs);
-    letter-spacing: .1em;
+    font-size: var(--t-sm);
   }
-  .dossier__row dt { color: var(--c-ink-faint); flex: 1; }
+  /* الوصلة المنقّطة تربط الاسم بقيمته عبر الفراغ — هي ما يجعل الصفّ سجلّاً
+     لا سطرين متجاورين */
+  /*
+   * الوصلة عنصرٌ مرن لا عنصرٌ مطلق.
+   *
+   * المطلق يبدأ من `inset-inline-start`، وهي في RTL الحافّةُ اليمنى، فيمشي
+   * الخطّ عكس اتجاه الكلمة ويمرّ فوقها. أمّا `flex: 1` فيملأ ما تبقّى من
+   * الفراغ أياً كان اتجاه الكتابة، ولا يعرف يميناً من يسار أصلاً.
+   */
+  .dossier__row dt {
+    color: var(--c-ink-faint);
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: .6em;
+    overflow: hidden;
+  }
+  .dossier__row dt::after {
+    content: '';
+    flex: 1;
+    border-block-end: 1px dotted rgb(196 181 253 / .22);
+    transform: translateY(-.28em);
+  }
   .dossier__row dd { color: var(--c-ink); font-weight: 700; }
 
   /* ==================== 3 · الطرَف ==================== */
@@ -359,7 +385,6 @@ const fileRows = FILE.rows.map((r) => ({
     padding: .5rem 1rem;
     font-size: var(--t-xs);
     font-weight: 700;
-    letter-spacing: .04em;
     color: var(--c-ink-faint);
     border: 1px dashed rgb(196 181 253 / .35);
     border-radius: var(--r-pill);
@@ -394,6 +419,7 @@ const fileRows = FILE.rows.map((r) => ({
     box-shadow: var(--glow-sm);
     transition: width .5s var(--e-soft);
   }
+  /* لاتينية بحتة، فالتباعد هنا يصحّ */
   .load__pct {
     font-size: var(--t-xs);
     font-weight: 700;
@@ -447,6 +473,7 @@ const fileRows = FILE.rows.map((r) => ({
     box-shadow: var(--glow-sm);
     transition: width 1s var(--e-out);
   }
+  /* الساعة أرقام لاتينية، فالتباعد يصحّ عليها ويجعلها تُقرأ عدّاداً */
   .cd__clock {
     font-size: var(--t-xs);
     font-weight: 700;
@@ -460,8 +487,7 @@ const fileRows = FILE.rows.map((r) => ({
   .last__say {
     min-block-size: 1.5em;
     font-size: var(--t-lead);
-    font-weight: 600;
-    letter-spacing: .1em;
+    font-weight: 700;
     color: var(--c-ink-soft);
   }
   .last__n {
@@ -492,9 +518,11 @@ const fileRows = FILE.rows.map((r) => ({
   }
   .reveal__name[hidden] { display: none; }
   /* تولد نقطةً ثم تتّسع: الاسم يخرج من الضوء لا من الفراغ */
+  /* بلا تباعد حرفي: «رغد» كلمةٌ موصولة، وتوسيعها يفكّها بدل أن يوسّعها.
+     الاتّساع يأتي من `scale` وحده. */
   @keyframes spark {
-    0%   { opacity: 0; transform: scale(.2); filter: blur(24px); letter-spacing: .6em; }
-    45%  { opacity: 1; transform: scale(1);  filter: blur(0);    letter-spacing: -.03em; }
+    0%   { opacity: 0; transform: scale(.15); filter: blur(26px); }
+    45%  { opacity: 1; transform: scale(1);   filter: blur(0); }
     100% { opacity: 1; }
   }
 
