@@ -70,6 +70,19 @@ export async function getNotes(kind: PublicKind): Promise<Note[] | null> {
   }
 }
 
+/**
+ * يحذف قيداً عامّاً بنوعه ولحظة حفظه. العامّ يُحذف من الموقع كما يُكتب منه —
+ * الدعم ليس منها، فهو رسالةٌ إليه ولا يُحذف إلا بالتوكن من خارج الموقع.
+ */
+export async function deleteNote(kind: PublicKind, at: string): Promise<boolean> {
+  const res = await request('/note', {
+    method: 'DELETE',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ kind, at }),
+  });
+  return !!res && res.ok;
+}
+
 /** تاريخٌ قصير بتقويم دمشق لعرضه بجانب القيد. */
 export function stampOf(iso: string): string {
   const d = new Date(iso);

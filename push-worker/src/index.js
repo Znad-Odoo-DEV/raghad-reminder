@@ -198,13 +198,15 @@ export default {
       return json(out, 200, { ...cors, 'cache-control': 'no-store' });
     }
 
-    /* ---- حذف قيد (إداري) ----
-       الوزارة تحتاج إشرافاً: قيدٌ خاطئ أو مزعج يجب أن يُحذف، والحذف بالتوكن
-       وحده. الاستهداف بالنوع ولحظة الحفظ معاً — وهي بادئة المفتاح — فلا
-       يحتاج المشرف إلى اللاحقة العشوائية. */
-    if (url.pathname === '/note' && request.method === 'DELETE') {
-      if (!authorised(request, env)) return json({ error: 'unauthorised' }, 401, cors);
+    /* ---- حذف قيد ----
+       القيود العامّة تُحذف من الموقع نفسه بلا توكن — كما تُكتب بلا توكن: من
+       يستطيع إصدار مرسومٍ يستطيع مسحه، والحماية هنا هي أصل الطلب (CORS) لا
+       أكثر، وهذا يكافئ حماية الكتابة. أمّا ضغطات الدعم فرسالةٌ إليه، ولا
+       تُحذف إلا بالتوكن.
 
+       الاستهداف بالنوع ولحظة الحفظ معاً — وهي بادئة المفتاح — فلا يحتاج
+       الطالب إلى اللاحقة العشوائية. */
+    if (url.pathname === '/note' && request.method === 'DELETE') {
       let body;
       try {
         body = await request.json();
@@ -214,6 +216,9 @@ export default {
       const kind = typeof body?.kind === 'string' ? body.kind : '';
       const at = typeof body?.at === 'string' ? body.at : '';
       if (!NOTE_KINDS.has(kind) || at.length < 20) return json({ error: 'bad target' }, 400, cors);
+      if (!PUBLIC_KINDS.has(kind) && !authorised(request, env)) {
+        return json({ error: 'unauthorised' }, 401, cors);
+      }
 
       const page = await env.SUBS.list({ prefix: `note:${kind}:${at}` });
       for (const k of page.keys) await env.SUBS.delete(k.name);

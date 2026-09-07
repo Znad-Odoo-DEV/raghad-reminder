@@ -30,7 +30,7 @@ import {
 
 import { finale, burst, bloom, heartRain, butterflies } from './celebrate';
 import { moonAt, moonPath } from './moon';
-import { postNote, getNotes, stampOf, type Note, type PublicKind } from './ministry';
+import { postNote, getNotes, deleteNote, stampOf, type Note, type PublicKind } from './ministry';
 import { applyTint, loadTint } from './tint';
 import { startHunt, preloadHunt, type HuntHandle } from './hunt';
 import { initAudio, type MusicHandle } from './music';
@@ -144,6 +144,9 @@ function recordNode(kind: 'decree' | 'court', n: Note, index: number): HTMLLIEle
 
   const when = document.createElement('span');
   when.className = 'record__when tnum';
+  // التاريخ رقمٌ لاتيني بشرطة داخل فقرةٍ يمينية: بلا اتجاهٍ صريح تنتقل
+  // الشرطة إلى طرفه فيُقرأ «/0709» بدل «07/09»
+  when.dir = 'ltr';
   when.textContent = stampOf(n.at);
 
   const t = document.createElement('p');
@@ -154,7 +157,22 @@ function recordNode(kind: 'decree' | 'court', n: Note, index: number): HTMLLIEle
   stamp.className = 'record__stamp';
   stamp.textContent = kind === 'decree' ? DECREES.stamp : 'موثّقة';
 
-  li.append(num, when, t, stamp);
+  // المسح من الموقع نفسه: القيد الذي كُتب هنا يُمحى هنا، بلا توكن ولا سكربت.
+  // يُحذف من الشاشة فوراً ثم من الأرشيف؛ ولو لم يردّ الأرشيف بقي محذوفاً أمام
+  // عينها وعاد في الفتحة التالية — أهون من زرٍّ لا يستجيب.
+  const x = document.createElement('button');
+  x.type = 'button';
+  x.className = 'record__x';
+  x.textContent = MISC.remove;
+  x.setAttribute('aria-label', `${MISC.remove}: ${t.textContent}`);
+  x.addEventListener('click', () => {
+    cache[kind] = (cache[kind] ?? []).filter((m) => m.at !== n.at);
+    paintRecords(kind, cache[kind]!);
+    announce(MISC.removed);
+    void deleteNote(kind, n.at);
+  });
+
+  li.append(num, when, t, stamp, x);
   return li;
 }
 
@@ -186,6 +204,11 @@ async function addRecord(kind: 'decree' | 'court', text: string): Promise<boolea
   cache[kind] = [...(cache[kind] ?? []), local];
   paintRecords(kind, cache[kind]!);
   const saved = await postNote(kind, text);
+  if (saved) {
+    // لحظة الخادم لا لحظتنا: هي مفتاح الحذف لاحقاً
+    cache[kind] = (cache[kind] ?? []).map((m) => (m === local ? saved : m));
+    paintRecords(kind, cache[kind]!);
+  }
   return saved !== null;
 }
 
@@ -272,10 +295,26 @@ function initNet(): void {
 
 let rhymeLoaded = false;
 
-function rhymeNode(text: string, fresh = false): HTMLLIElement {
+function rhymeNode(text: string, fresh = false, at = ''): HTMLLIElement {
   const li = document.createElement('li');
   li.className = `poem__l${fresh ? ' poem__l--new' : ''}`;
-  li.textContent = text;
+  li.dataset.at = at;
+
+  const span = document.createElement('span');
+  span.textContent = text;
+  li.append(span);
+
+  const x = document.createElement('button');
+  x.type = 'button';
+  x.className = 'poem__x';
+  x.textContent = '×';
+  x.setAttribute('aria-label', `${MISC.remove}: ${text}`);
+  x.addEventListener('click', () => {
+    li.remove();
+    announce(MISC.removed);
+    if (li.dataset.at) void deleteNote('rhyme', li.dataset.at);
+  });
+  li.append(x);
   return li;
 }
 
@@ -291,7 +330,7 @@ async function loadRhyme(): Promise<void> {
   const notes = await getNotes('rhyme');
   if (!notes) return;
   rhymeLoaded = true;
-  for (const n of notes) if (n.text) list.append(rhymeNode(n.text));
+  for (const n of notes) if (n.text) list.append(rhymeNode(n.text, false, n.at));
 }
 
 function initRhyme(): void {
@@ -311,12 +350,14 @@ function initRhyme(): void {
       return;
     }
     text.value = '';
-    list.append(rhymeNode(v, true));
+    const li = rhymeNode(v, true);
+    list.append(li);
     if (say) say.textContent = RHYME.added;
     announce(RHYME.added);
     butterflies(6);
     const saved = await postNote('rhyme', v);
-    if (!saved && say) say.textContent = RHYME.failed;
+    if (saved) li.dataset.at = saved.at;
+    else if (say) say.textContent = RHYME.failed;
   });
 }
 

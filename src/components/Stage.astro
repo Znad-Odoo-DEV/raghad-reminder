@@ -459,6 +459,20 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
     font-size: .7rem;
     color: var(--c-ink-faint);
   }
+  /* زرّ المسح صغيرٌ وباهت في زاوية القيد: موجودٌ لمن يريده، ولا يزاحم النصّ */
+  .records :global(.record__x) {
+    float: inline-start;
+    margin-block-start: .1rem;
+    padding: .15rem .55rem;
+    border-radius: var(--r-pill);
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--c-ink-faint);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    transition: color var(--d-fast) var(--e-soft), background var(--d-fast) var(--e-soft);
+  }
+  .records :global(.record__x:hover) { color: #ff8fab; background: var(--c-glass-hi); }
 
   /* ==================== حالة النت ==================== */
   .board {
@@ -516,8 +530,27 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
     color: var(--c-ink);
   }
   .poem__l--seed { color: var(--c-ink-soft); }
-  .poem :global(.poem__l) { animation: rise .6s var(--e-out) backwards; }
+  .poem :global(.poem__l) {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: .5rem;
+    animation: rise .6s var(--e-out) backwards;
+  }
   .poem :global(.poem__l--new) { color: var(--c-ink); font-weight: 700; }
+  /* البذرة لا تُمحى: ما لم يُكتب هنا لا يُمسح هنا */
+  .poem__l--seed :global(.poem__x) { display: none; }
+  .poem :global(.poem__x) {
+    inline-size: 1.4rem; block-size: 1.4rem;
+    border-radius: 50%;
+    font-size: .9rem;
+    line-height: 1;
+    color: var(--c-ink-faint);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    transition: color var(--d-fast) var(--e-soft);
+  }
+  .poem :global(.poem__x:hover) { color: #ff8fab; }
 
   /* ==================== الدعم ==================== */
   .support {
