@@ -5,9 +5,10 @@ import DailyNote from '../components/DailyNote.astro';
 import Footer from '../components/Footer.astro';
 import CommitteePanel from '../components/CommitteePanel.astro';
 import MusicPlayer from '../components/MusicPlayer.astro';
+import { DAILY_NOTIFY } from '../site.config';
 
-const title = 'رغد 🤍';
-const description = 'في كم شغلة صغيرة لازم تتذكّريها.';
+const title = 'وزارة الاتصالات — الوزيرة رغد 🤍';
+const description = 'بوّابة رسمية. اللطافة إجبارية.';
 ---
 
 <Base title={title} description={description}>
@@ -15,9 +16,9 @@ const description = 'في كم شغلة صغيرة لازم تتذكّريها.'
     <Stage />
   </main>
 
-  {/* لا يظهر إلا بعد أن تنتهي الحكاية — أثناءها يكسر الإحساس */}
+  {/* التذييل على البوّابة وحدها؛ ورسالة اليوم خلف مفتاحها المؤقّت */}
   <div id="after" hidden>
-    <DailyNote />
+    {DAILY_NOTIFY && <DailyNote />}
     <Footer />
   </div>
 

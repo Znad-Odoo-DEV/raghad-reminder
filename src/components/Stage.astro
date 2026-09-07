@@ -1,196 +1,248 @@
 ---
 import {
-  OPEN, FILE, CLUES, JOKE, BUTTON, LOADING, NAME_SCENE, CD, CANDLE, REVEAL,
+  HUB, DEPTS, DECREES, NET, RHYME, SUPPORT, MOON, NAILS, COURT, DISHES, HUNT,
 } from '../scripts/copy';
-import { COINCIDENCE_AT, FIRST_TALK_AT, wallOf } from '../scripts/schedule';
-import Candle from './Candle.astro';
+import type { DeptKey } from '../scripts/copy';
 
 /**
- * Stage — كل مشاهد التجربة في مكان واحد.
+ * Stage — البوّابة وأقسام الوزارة في مكان واحد.
  *
  * كلها موجودة في الـHTML و`main.ts` تُظهر واحداً فقط. هذا يجعل الانتقال
  * تلاشياً بين طبقتين لا إعادة بناء للـDOM، فيبقى ناعماً على الهاتف —
  * وأنيميشن الدخول تعمل من جديد تلقائياً لأن العنصر يخرج من `display:none`.
  *
  * لا سكربت هنا. المكوّن يشحن العلامات والأنماط، والسلوك كلّه في `main.ts`
- * عبر `data-*`.
+ * عبر `data-*`. ما يُنشئه `main.ts` من عناصر (القيود، أسطر القصيدة) يُنمَّط
+ * بـ`:global()` تحت جذرٍ مُصرَّف، لأن نطاق Astro لا يصل إلى ما يُبنى لاحقاً.
  */
 
+const dept = (key: DeptKey) => DEPTS.find((d) => d.key === key)!;
 const pad2 = (n: number) => String(n).padStart(2, '0');
-
-/** تاريخ الملفّ السرّي — من الإعدادات لا مكتوباً هنا. */
-function stamp(at: number | null): string {
-  if (at === null) return '—';
-  const w = wallOf(at);
-  return `${pad2(w.day)}.${pad2(w.month)}.${w.year}`;
-}
-
-const fileEntries = FILE.entries.map((e) => ({
-  date: stamp(e.of === 'coincidence' ? COINCIDENCE_AT : FIRST_TALK_AT),
-  note: e.note,
-  after: e.after,
-}));
 ---
 
 <div class="stage">
-  <span class="thread" aria-hidden="true"><i class="thread__fill" data-thread></i></span>
+  <!-- ═══════════════ البوّابة ═══════════════ -->
+  <section class="scene scene--hub" data-scene="hub" hidden>
+    <header class="seal scene__in" style="--d: 0ms">
+      <svg class="seal__mark" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="56" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".55" />
+        <circle cx="60" cy="60" r="48" fill="none" stroke="currentColor" stroke-width=".8" stroke-dasharray="2 4" opacity=".5" />
+        <!-- برجٌ للاتصالات وثلاث موجات: شعار وزارةٍ تحترم نفسها -->
+        <path d="M60 86V52" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        <path d="M46 86h28" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        <path d="M60 52l-9 34M60 52l9 34" stroke="currentColor" stroke-width="1.6" opacity=".7" />
+        <path d="M44 44a22 22 0 0 1 32 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+        <path d="M37 35a32 32 0 0 1 46 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" opacity=".75" />
+        <path d="M51 51a12 12 0 0 1 18 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+      </svg>
+      <p class="kicker">{HUB.republic}</p>
+      <h1 class="seal__title">{HUB.ministry}</h1>
+      <p class="seal__minister">{HUB.minister}</p>
+      <p class="seal__slogan"><span class="grad">«{HUB.slogan}»</span></p>
+    </header>
 
-  <!-- ═══════════════ 1 · العتبة ═══════════════ -->
-  <section class="scene scene--hush" data-scene="open" hidden>
-    <span class="pulse" aria-hidden="true"></span>
-    <p class="kicker scene__in" style="--d: 900ms">{OPEN.kicker}</p>
-    <p class="huge scene__in" style="--d: 1500ms">{OPEN.line}</p>
-    <button class="btn btn--ghost scene__in" style="--d: 2600ms" type="button" data-next>
-      {OPEN.cta}
-    </button>
+    <p class="scene__hint scene__in" style="--d: 500ms">{HUB.intro}</p>
+
+    <nav class="depts" aria-label="أقسام الوزارة">
+      {DEPTS.map((d, i) => (
+        <button class="dept scene__in" style={`--d: ${650 + i * 60}ms`} type="button" data-go={d.key}>
+          <span class="dept__icon" aria-hidden="true">{d.icon}</span>
+          <span class="dept__title">{d.title}</span>
+          <span class="dept__hint">{d.hint}</span>
+        </button>
+      ))}
+    </nav>
   </section>
 
-  <!-- ═══════════════ 2 · الملفّ ═══════════════ -->
-  <section class="scene" data-scene="file" hidden>
-    <div class="dossier scene__in" style="--d: 100ms">
-      <span class="dossier__scan" aria-hidden="true"></span>
-      <p class="dossier__title">{FILE.title}</p>
-      <dl class="dossier__rows">
-        {fileEntries.map((e, i) => (
-          <div class="dossier__entry scene__in" style={`--d: ${420 + i * 420}ms`}>
-            <dt class="dossier__date tnum">{e.date}</dt>
-            <dd class="dossier__note">
-              {e.note}
-              <span class="dossier__after">{e.after}</span>
-            </dd>
-          </div>
-        ))}
+  <!-- ═══════════════ ١ · قسم المراسيم ═══════════════ -->
+  <section class="scene scene--dept" data-scene="decrees" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('decrees').icon}</span> {dept('decrees').title}</p>
+    </header>
+    <p class="scene__lead">{DECREES.lead}</p>
 
-        <div class="dossier__row scene__in" style={`--d: ${420 + fileEntries.length * 420}ms`}>
-          <dt>{FILE.status.k}</dt>
-          <dd>{FILE.status.v}</dd>
-        </div>
-      </dl>
+    <form class="form" data-decree-form>
+      <textarea class="field" data-decree-text rows="3" maxlength="280" placeholder={DECREES.placeholder} required></textarea>
+      <button class="btn btn--primary" type="submit">{DECREES.cta}</button>
+    </form>
+    <p class="form__say" data-decree-say aria-live="polite">&nbsp;</p>
+
+    <ol class="records" data-decree-list></ol>
+    <p class="scene__hint" data-decree-empty hidden>{DECREES.empty}</p>
+    <p class="kicker">{DECREES.officer}</p>
+  </section>
+
+  <!-- ═══════════════ ٢ · لوحة حالة النت ═══════════════ -->
+  <section class="scene scene--dept scene--hush" data-scene="net" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('net').icon}</span> {dept('net').title}</p>
+    </header>
+
+    <div class="board">
+      <p class="kicker">{NET.label}</p>
+      <p class="board__status"><i class="board__dot" aria-hidden="true"></i>{NET.up}</p>
     </div>
-    <p class="scene__lead scene__in" style={`--d: ${420 + fileEntries.length * 420 + 500}ms`}>
-      {FILE.line}
+
+    <button class="btn btn--primary" type="button" data-net-report>{NET.cta}</button>
+
+    <div class="ticket" data-net-ticket hidden>
+      <p class="kicker"><span>{NET.ticket}</span> <b class="tnum" data-net-n></b></p>
+      <p class="ticket__reply" data-net-reply></p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ٣ · مصلحة صباح النور ═══════════════ -->
+  <section class="scene scene--dept" data-scene="rhyme" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('rhyme').icon}</span> {dept('rhyme').title}</p>
+    </header>
+    <p class="scene__lead">{RHYME.lead}</p>
+
+    <ol class="poem" data-rhyme-list>
+      {RHYME.seed.map((l) => <li class="poem__l poem__l--seed">{l}</li>)}
+    </ol>
+
+    <form class="form form--row" data-rhyme-form>
+      <input class="field" data-rhyme-text type="text" maxlength="80" placeholder={RHYME.placeholder} autocomplete="off" required />
+      <button class="btn btn--primary" type="submit">{RHYME.cta}</button>
+    </form>
+    <p class="scene__hint">{RHYME.rule}</p>
+    <p class="form__say" data-rhyme-say aria-live="polite">&nbsp;</p>
+  </section>
+
+  <!-- ═══════════════ ٤ · إدارة الدعم ═══════════════ -->
+  <section class="scene scene--dept scene--hush" data-scene="support" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('support').icon}</span> {dept('support').title}</p>
+    </header>
+    <p class="scene__lead">{SUPPORT.lead}</p>
+
+    <button class="support" type="button" data-support>{SUPPORT.cta}</button>
+
+    <p class="huge support__line" data-support-line hidden></p>
+    <p class="scene__hint" data-support-sent hidden>{SUPPORT.sent}</p>
+  </section>
+
+  <!-- ═══════════════ ٥ · مرصد القمر ═══════════════ -->
+  <section class="scene scene--dept scene--hush" data-scene="moon" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('moon').icon}</span> {dept('moon').title}</p>
+    </header>
+
+    <p class="verse">{MOON.verse[0]}<br />{MOON.verse[1]}</p>
+
+    <svg class="moon" viewBox="0 0 192 192" role="img" aria-label="القمر الليلة">
+      <defs>
+        <radialGradient id="moon-lit" cx="40%" cy="38%">
+          <stop offset="0%" stop-color="#fffdf5" />
+          <stop offset="100%" stop-color="#e6ddff" />
+        </radialGradient>
+      </defs>
+      <circle cx="96" cy="96" r="96" class="moon__dark" />
+      <path class="moon__lit" data-moon-path d="" fill="url(#moon-lit)" />
+    </svg>
+
+    <p class="kicker">{MOON.tonight}</p>
+    <p class="huge" data-moon-name>—</p>
+    <p class="scene__lead"><b class="tnum" data-moon-pct>—</b>٪ {MOON.lit}</p>
+    <p class="scene__hint">{MOON.note}</p>
+  </section>
+
+  <!-- ═══════════════ ٦ · هيئة المناكير ═══════════════ -->
+  <section class="scene scene--dept" data-scene="nails" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('nails').icon}</span> {dept('nails').title}</p>
+    </header>
+    <p class="scene__lead">{NAILS.lead}</p>
+
+    <div class="swatches">
+      {NAILS.swatches.map((s) => (
+        <button class="swatch" type="button" data-swatch={s.hex} style={`--sw: ${s.hex}`}>
+          <i class="swatch__dot" aria-hidden="true"></i>
+          <span class="swatch__name">{s.name}</span>
+        </button>
+      ))}
+      <label class="swatch swatch--custom">
+        <input type="color" data-swatch-custom value="#c4b5fd" aria-label={NAILS.custom} />
+        <i class="swatch__dot swatch__dot--wheel" aria-hidden="true"></i>
+        <span class="swatch__name">{NAILS.custom}</span>
+      </label>
+    </div>
+
+    <button class="btn btn--quiet" type="button" data-swatch-reset>{NAILS.reset}</button>
+    <p class="form__say" data-nails-say aria-live="polite">&nbsp;</p>
+  </section>
+
+  <!-- ═══════════════ ٧ · المحكمة العليا للمجاملات ═══════════════ -->
+  <section class="scene scene--dept" data-scene="court" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('court').icon}</span> {dept('court').title}</p>
+    </header>
+    <p class="scene__lead">{COURT.lead}</p>
+
+    <form class="form form--row" data-court-form>
+      <input class="field" data-court-text type="text" maxlength="140" placeholder={COURT.placeholder} autocomplete="off" />
+      <button class="btn btn--primary" type="submit">{COURT.cta}</button>
+    </form>
+
+    <div class="verdict" data-court-verdict hidden>
+      <p class="kicker">{COURT.verdictLabel}</p>
+      <p class="verdict__text" data-court-out></p>
+    </div>
+
+    <p class="kicker">{COURT.recordTitle}</p>
+    <ol class="records" data-court-list></ol>
+    <p class="scene__hint" data-court-empty hidden>{COURT.empty}</p>
+  </section>
+
+  <!-- ═══════════════ ٨ · دائرة الجلي ═══════════════ -->
+  <section class="scene scene--dept scene--hush" data-scene="dishes" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('dishes').icon}</span> {dept('dishes').title}</p>
+    </header>
+    <p class="scene__lead">{DISHES.lead}</p>
+
+    <p class="timer tnum" data-dishes-time>{pad2(DISHES.minutes)}:00</p>
+    <div class="track" aria-hidden="true"><span data-dishes-fill></span></div>
+    <p class="form__say" data-dishes-say aria-live="polite">&nbsp;</p>
+
+    <div class="row">
+      <button class="btn btn--primary" type="button" data-dishes-toggle>{DISHES.start}</button>
+      <button class="btn btn--quiet" type="button" data-dishes-reset>{DISHES.reset}</button>
+    </div>
+
+    <div class="done" data-dishes-done hidden>
+      <p class="huge">{DISHES.done}</p>
+      <p class="scene__lead">{DISHES.doneSub}</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ٩ · صيد الملوخية ═══════════════ -->
+  <section class="scene scene--dept" data-scene="hunt" hidden>
+    <header class="dept-head">
+      <button class="back" type="button" data-go="hub">{HUB.back}</button>
+      <p class="dept-head__title"><span aria-hidden="true">{dept('hunt').icon}</span> {dept('hunt').title}</p>
+    </header>
+    <p class="scene__lead">{HUNT.lead}</p>
+
+    <p class="hud">
+      <span class="kicker">{HUNT.scoreLabel}</span> <b class="tnum" data-hunt-score>0</b>
+      <span class="hud__sep">·</span>
+      <b class="tnum" data-hunt-time>{HUNT.seconds}</b>
     </p>
-    <button
-      class="btn btn--ghost scene__in"
-      style={`--d: ${420 + fileEntries.length * 420 + 900}ms`}
-      type="button"
-      data-next
-    >{FILE.cta}</button>
-  </section>
 
-  <!-- ═══════════════ 3 · الطرَف ═══════════════ -->
-  <!-- الكلمات تُحقن واحدةً واحدة: وجودها كلّها في الـDOM يجعلها قائمة -->
-  <section class="scene scene--hush" data-scene="clues" hidden>
-    <p class="clue" data-clue aria-live="polite"></p>
-    <p class="scene__lead clues__tail" data-clues-tail hidden>{CLUES.line}</p>
-    <button class="btn btn--ghost" type="button" data-next data-clues-next hidden>
-      {CLUES.cta}
-    </button>
-  </section>
+    <canvas class="hunt" data-hunt-canvas aria-label="ورق ملوخية ينزل"></canvas>
 
-  <!-- ═══════════════ 4 · النهاية المزيّفة ═══════════════ -->
-  <section class="scene scene--hush" data-scene="joke" hidden>
-    <p class="huge" data-joke-end>{JOKE.end}</p>
-    <p class="huge huge--twist" data-joke-twist hidden>
-      <span class="grad">{JOKE.twist}</span> <span class="emo">{JOKE.twistEmoji}</span>
-    </p>
-    <button class="btn btn--ghost" type="button" data-next data-joke-next hidden>
-      {JOKE.cta}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 5 · الزرّ ═══════════════ -->
-  <section class="scene scene--hush" data-scene="button" hidden>
-    <p class="scene__lead scene__in" style="--d: 200ms">{BUTTON.line}</p>
-    <p class="kicker scene__in" style="--d: 700ms">{BUTTON.warn}</p>
-
-    <button class="tempt scene__in" style="--d: 1200ms" type="button" data-tempt>
-      {BUTTON.label}
-    </button>
-
-    <p class="huge huge--twist" data-tempt-after hidden>
-      <span class="grad">{BUTTON.after}</span> <span class="emo">{BUTTON.afterEmoji}</span>
-    </p>
-    <button class="btn btn--ghost" type="button" data-next data-tempt-next hidden>
-      {BUTTON.cta}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 6 · التحضير ═══════════════ -->
-  <section class="scene" data-scene="loading" hidden>
-    <p class="load__step" data-load-step aria-live="polite">&nbsp;</p>
-    <div class="load__track" aria-hidden="true"><span data-load-fill></span></div>
-    <p class="load__pct tnum" data-load-pct aria-hidden="true">0%</p>
-
-    <p class="huge load__done" data-load-done hidden>{LOADING.done}</p>
-    <button class="btn btn--primary" type="button" data-next data-load-next hidden>
-      {LOADING.cta}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 7 · الاسم ═══════════════ -->
-  <!-- الاسم يُرسم على الكانفاس لا هنا: النصّ يظهر جاهزاً، والغبار يتشكّل -->
-  <section class="scene scene--hush" data-scene="name" hidden>
-    <p class="scene__lead name__tail" data-name-tail hidden>{NAME_SCENE.line}</p>
-    <button class="btn btn--ghost" type="button" data-next data-name-next hidden>
-      {NAME_SCENE.cta}
-    </button>
-  </section>
-
-  <!-- ═══════════════ 8 · العدّ ═══════════════ -->
-  <section class="scene scene--cd" data-scene="countdown" hidden>
-    <!-- آخر دقيقة: الشاشة رقم واحد ولا شيء غيره -->
-    <div class="last" data-cd-last hidden>
-      <p class="last__say" data-cd-say>&nbsp;</p>
-      <p class="last__n tnum" data-cd-tick>60</p>
-    </div>
-
-    <div class="cd" data-cd-body>
-      <p class="kicker" data-cd-label>{CD.far}</p>
-      <p class="cd__big" data-cd-big><b class="tnum" data-cd-n>—</b><span data-cd-u></span></p>
-      <p class="huge" data-cd-one hidden></p>
-      <div class="cd__track" aria-hidden="true"><span data-cd-fill></span></div>
-      <p class="cd__clock tnum" data-cd-clock>00:00:00</p>
-      <p class="scene__hint">{CD.hint}</p>
-    </div>
-  </section>
-
-  <!-- ═══════════════ 9 · الشمعة ═══════════════ -->
-  <section class="scene scene--hush" data-scene="candle" hidden>
-    <p class="scene__lead scene__in" style="--d: 200ms">{CANDLE.line}</p>
-    <p class="kicker scene__in" style="--d: 800ms">{CANDLE.hint}</p>
-
-    <div class="scene__in" style="--d: 500ms"><Candle /></div>
-
-    <button class="btn btn--primary scene__in" style="--d: 1600ms" type="button" data-blow>
-      {CANDLE.cta}
-    </button>
-    <p class="huge" data-candle-out hidden>{CANDLE.out}</p>
-  </section>
-
-  <!-- ═══════════════ 10 · الكشف ═══════════════ -->
-  <section class="scene scene--reveal" data-scene="reveal" hidden>
-    <p class="reveal__name" data-rev-name hidden>{REVEAL.name}</p>
-
-    <div class="reveal__body" data-rev-body hidden>
-      <h1 class="reveal__greet">
-        <span class="grad">{REVEAL.greeting}</span> <span class="emo">{REVEAL.greetingEmoji}</span>
-      </h1>
-      <div class="reveal__lines">
-        {REVEAL.lines.map((l, i) => (
-          <p class="reveal__l" style={`--d: ${700 + i * 480}ms`}>{l}</p>
-        ))}
-      </div>
-      <p class="scene__hint" style={`--d: ${700 + REVEAL.lines.length * 480 + 300}ms`}>
-        {REVEAL.foot}
-      </p>
-      <button
-        class="btn btn--ghost btn--quiet"
-        style={`--d: ${700 + REVEAL.lines.length * 480 + 700}ms`}
-        type="button"
-        data-replay
-      >{REVEAL.replay}</button>
-    </div>
+    <button class="btn btn--primary" type="button" data-hunt-start>{HUNT.start}</button>
+    <p class="huge" data-hunt-result hidden></p>
   </section>
 </div>
 
@@ -200,418 +252,405 @@ const fileEntries = FILE.entries.map((e) => ({
     position: relative;
     min-height: 100svh;
     display: grid;
-    place-items: center;
-    padding: clamp(4rem, 3rem + 6vw, 7rem) var(--pad-x) clamp(5rem, 4rem + 5vw, 7rem);
+    place-items: start center;
+    padding: clamp(2.5rem, 2rem + 3vw, 4rem) var(--pad-x) clamp(7rem, 6rem + 3vw, 9rem);
   }
 
-  /* خيط التقدّم */
-  .thread {
-    position: fixed;
-    inset-block-start: 0;
-    inset-inline: 0;
-    height: 2px;
-    background: rgb(196 181 253 / .1);
-    z-index: 60;
-  }
-  .thread__fill {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: linear-gradient(to left, var(--c-lav-soft), var(--c-rose));
-    box-shadow: var(--glow-sm);
-    transition: width 1s var(--e-out);
-  }
-
-  /* ==================== المشهد ==================== */
   .scene {
     position: relative;
     z-index: 1;
     grid-area: 1 / 1;
+    inline-size: min(100%, 34rem);
     display: grid;
     justify-items: center;
     gap: var(--s-4);
-    max-width: 34rem;
     text-align: center;
   }
   .scene[hidden] { display: none; }
-
-  /* المشاهد الهادئة تتنفّس أوسع: الفراغ حولها جزءٌ منها */
   .scene--hush { gap: var(--s-5); }
 
-  /* دخول موحّد لكل عنصر: تلاشٍ مع صعود صغير وضبابة تنجلي */
   .scene__in {
-    animation: rise .9s var(--e-out) backwards;
+    animation: rise .8s var(--e-out) backwards;
     animation-delay: var(--d, 0ms);
   }
+  /* البوّابة تتدرّج مرّةً واحدة. بعدها كل رجوعٍ إليها فوريّ: الرجوع
+     انتقالٌ لا دخولٌ أوّل، وإعادة التدرّج تجعله انتظاراً. */
+  .scene--hub.is-warm .scene__in { animation: none; }
   @keyframes rise {
-    from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+    from { opacity: 0; transform: translateY(12px); filter: blur(5px); }
     to   { opacity: 1; transform: none; filter: none; }
   }
 
   /* ==================== نصوص مشتركة ==================== */
-  /*
-   * التباعد الحرفي على العربية ليس زينة بل ضرر: الخطّ متّصل، وتوسيع ما بين
-   * الحروف يباعد وصلاتها فتبدو الكلمة مفكوكة. القيم الواسعة هنا كانت مأخوذة
-   * من عرف لاتيني لا يصحّ على هذا الخطّ.
-   */
   .kicker {
     font-size: var(--t-xs);
     font-weight: 700;
-    letter-spacing: 0;
     color: var(--c-ink-faint);
   }
-
   .huge {
-    font-size: var(--t-h1);
+    font-size: var(--t-h2);
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1.3;
     letter-spacing: -.02em;
     color: var(--c-ink);
     text-wrap: balance;
-    animation: rise .9s var(--e-out) backwards;
-    animation-delay: var(--d, 0ms);
+    animation: rise .8s var(--e-out) backwards;
   }
   .huge[hidden] { display: none; }
-  /*
-   * التدرّج على `.grad` وحده لا على الفقرة.
-   *
-   * وضعُه على الفقرة يقصّ الإيموجي معها فيفقد ألوانه. وفصله يجعل الإيموجي
-   * عنصراً أخاً يرث لون النصّ العادي.
-   */
-  .grad {
-    color: transparent;
-    background: var(--g-text);
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
-  /* التحديد على نصٍّ مقصوصٍ بالتدرّج يُظهر مربّعاً أزرق تحت حروفٍ شفّافة.
-     إعادة لون الحرف عند التحديد وحدها تجعله مقروءاً. */
-  .grad::selection { -webkit-text-fill-color: #fff; color: #fff; background: rgb(109 74 202 / .6); }
-  .emo { -webkit-text-fill-color: initial; color: initial; }
-
   .scene__lead {
     font-size: var(--t-lead);
     line-height: 1.7;
     color: var(--c-ink-soft);
     text-wrap: balance;
   }
-  .scene__hint {
+  .scene__hint { font-size: var(--t-xs); color: var(--c-ink-faint); }
+  .scene__hint[hidden] { display: none; }
+
+  .grad {
+    color: transparent;
+    background: var(--g-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .grad::selection { -webkit-text-fill-color: #fff; color: #fff; background: rgb(109 74 202 / .6); }
+
+  /* ==================== البوّابة ==================== */
+  .seal { display: grid; justify-items: center; gap: .3rem; }
+  .seal__mark {
+    inline-size: 5.2rem;
+    color: var(--c-lav-soft);
+    filter: drop-shadow(0 0 22px color-mix(in srgb, var(--tint) 45%, transparent));
+    margin-block-end: .5rem;
+  }
+  .seal__title {
+    font-size: var(--t-h1);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--c-ink);
+  }
+  .seal__minister { font-size: var(--t-body); color: var(--c-ink-soft); font-weight: 600; }
+  .seal__slogan { font-size: var(--t-sm); font-weight: 700; margin-block-start: .2rem; }
+
+  .depts {
+    inline-size: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .6rem;
+    margin-block-start: var(--s-3);
+  }
+  .dept {
+    display: grid;
+    justify-items: center;
+    gap: .28rem;
+    padding: .95rem .5rem .8rem;
+    border-radius: var(--r-md);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    color: var(--c-ink);
+    text-align: center;
+    transition: transform var(--d-fast) var(--e-back), background var(--d-base) var(--e-soft),
+                border-color var(--d-base) var(--e-soft), box-shadow var(--d-base) var(--e-soft);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dept:hover, .dept:focus-visible {
+    transform: translateY(-3px);
+    background: var(--c-glass-hi);
+    border-color: color-mix(in srgb, var(--tint) 55%, transparent);
+    box-shadow: var(--glow-sm);
+    outline: none;
+  }
+  .dept:active { transform: translateY(0) scale(.97); }
+  .dept__icon { font-size: 1.55rem; line-height: 1; }
+  .dept__title { font-size: var(--t-xs); font-weight: 700; line-height: 1.35; }
+  .dept__hint { font-size: .7rem; color: var(--c-ink-faint); line-height: 1.35; }
+
+  @media (max-width: 400px) {
+    .depts { grid-template-columns: repeat(2, 1fr); }
+    /* تسعة على عمودين: الأخير وحده — فيأخذ الصفّ كلّه بدل أن يبقى يتيماً */
+    .dept:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+
+  /* ==================== رأس القسم ==================== */
+  .dept-head {
+    inline-size: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-3);
+    padding-block-end: var(--s-3);
+    border-block-end: 1px solid var(--c-hairline);
+  }
+  .dept-head__title { font-size: var(--t-sm); font-weight: 700; color: var(--c-ink); }
+  .back {
+    padding: .45rem .8rem;
+    border-radius: var(--r-pill);
     font-size: var(--t-xs);
+    font-weight: 700;
+    color: var(--c-ink-soft);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    transition: background var(--d-fast) var(--e-soft), color var(--d-fast) var(--e-soft);
+  }
+  .back:hover { background: var(--c-glass-hi); color: var(--c-ink); }
+
+  /* ==================== النماذج ==================== */
+  .form { inline-size: 100%; display: grid; gap: .6rem; }
+  .form--row { grid-template-columns: 1fr auto; align-items: stretch; }
+  .field {
+    inline-size: 100%;
+    padding: .8rem 1rem;
+    border-radius: var(--r-sm);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    color: var(--c-ink);
+    font: inherit;
+    font-size: var(--t-body);
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--d-fast) var(--e-soft), box-shadow var(--d-fast) var(--e-soft);
+  }
+  .field::placeholder { color: var(--c-ink-faint); }
+  .field:focus { outline: none; border-color: var(--c-lav-soft); box-shadow: var(--glow-sm); }
+  .form__say {
+    min-block-size: 1.5em;
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--c-lav-soft);
+  }
+  .row { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+
+  /* ==================== القيود (تُبنى بالـJS) ==================== */
+  .records { inline-size: 100%; display: grid; gap: .6rem; list-style: none; padding: 0; }
+  .records :global(.record) {
+    position: relative;
+    padding: .9rem 1rem .8rem;
+    border-radius: var(--r-md);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    text-align: start;
+    animation: rise .6s var(--e-out) backwards;
+  }
+  .records :global(.record__n) {
+    display: block;
+    font-size: var(--t-xs);
+    font-weight: 700;
+    color: var(--c-lav-soft);
+  }
+  .records :global(.record__t) {
+    margin-block: .25rem .4rem;
+    font-size: var(--t-body);
+    line-height: 1.65;
+    color: var(--c-ink);
+    word-break: break-word;
+  }
+  /* الختم: مائل قليلاً، كختمٍ حقيقي لا يقع مستقيماً أبداً */
+  .records :global(.record__stamp) {
+    display: inline-block;
+    padding: .15rem .55rem;
+    border: 1.5px solid color-mix(in srgb, var(--tint) 70%, transparent);
+    border-radius: 4px;
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--c-lav-soft);
+    transform: rotate(-2.5deg);
+  }
+  .records :global(.record__when) {
+    float: inline-end;
+    font-size: .7rem;
     color: var(--c-ink-faint);
   }
 
-  /* ==================== 1 · نبضة العتبة ==================== */
-  .pulse {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--c-ink);
-    box-shadow: 0 0 30px 8px rgb(196 181 253 / .55);
-    animation: breathe 3.4s var(--e-soft) infinite;
-  }
-  @keyframes breathe {
-    0%, 100% { opacity: .35; transform: scale(.7); }
-    50%      { opacity: 1;   transform: scale(1.15); }
-  }
-
-  /* ==================== 2 · الملفّ ==================== */
-  .dossier {
-    position: relative;
-    overflow: hidden;
-    inline-size: min(100%, 25rem);
-    padding: var(--s-5) var(--s-5) var(--s-4);
-    border: 1px solid rgb(196 181 253 / .22);
+  /* ==================== حالة النت ==================== */
+  .board {
+    inline-size: 100%;
+    padding: var(--s-4);
     border-radius: var(--r-md);
-    background: rgb(23 16 60 / .5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    text-align: start;
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    display: grid;
+    gap: .3rem;
   }
-
-  /* مسحة ضوء تمرّ مرّة كل بضع ثوانٍ — الملفّ «قيد القراءة» لا صورة ساكنة */
-  .dossier__scan {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: -40%;
-    width: 40%;
-    background: linear-gradient(90deg, transparent, rgb(196 181 253 / .12), transparent);
-    animation: scan 5.5s var(--e-soft) infinite;
-  }
-  @keyframes scan {
-    0%, 55% { transform: translateX(0); }
-    100%    { transform: translateX(350%); }
-  }
-
-  .dossier__title {
-    font-size: var(--t-sm);
+  .board__status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    font-size: var(--t-h3);
     font-weight: 700;
-    letter-spacing: 0;
-    color: var(--c-lav-soft);
-    padding-block-end: var(--s-3);
-    margin-block-end: var(--s-3);
-    border-block-end: 1px solid rgb(196 181 253 / .16);
+    color: var(--c-ink);
   }
-
-  .dossier__rows { display: grid; gap: var(--s-4); }
-
-  /*
-   * القيد المؤرّخ: التاريخ سطرٌ فوق، وما يعنيه تحته.
-   *
-   * وضعُهما في صفٍّ واحد كان يحشر جملةً كاملة في نصف عرض بطاقةٍ ضيّقة،
-   * فتنكسر إلى ثلاثة أسطر بعرض أربع كلمات ويضيع أنه سجلّ.
-   */
-  .dossier__entry { display: grid; gap: .15rem; }
-  .dossier__date {
-    font-size: var(--t-sm);
-    font-weight: 700;
-    letter-spacing: .08em;
-    color: var(--c-lav-soft);
+  .board__dot {
+    inline-size: .7rem; block-size: .7rem;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 14px #4ade80;
+    animation: blink 2.4s var(--e-soft) infinite;
   }
-  .dossier__note {
-    font-size: var(--t-sm);
+  @keyframes blink { 50% { opacity: .45; } }
+
+  .ticket {
+    inline-size: 100%;
+    padding: var(--s-4);
+    border-radius: var(--r-md);
+    border: 1.5px dashed color-mix(in srgb, var(--tint) 55%, transparent);
+    display: grid;
+    gap: .4rem;
+    animation: rise .6s var(--e-out) backwards;
+  }
+  .ticket[hidden] { display: none; }
+  .ticket__reply { font-size: var(--t-lead); line-height: 1.65; color: var(--c-ink); font-weight: 600; }
+
+  /* ==================== القصيدة ==================== */
+  .poem {
+    inline-size: 100%;
+    list-style: none;
+    padding: var(--s-4) var(--s-5);
+    margin: 0;
+    display: grid;
+    gap: .35rem;
+    border-radius: var(--r-md);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    font-size: var(--t-lead);
     line-height: 1.7;
     color: var(--c-ink);
   }
-  /* السطر الثاني يخفت: هو تعليقٌ على القيد لا جزءٌ منه */
-  .dossier__after {
-    display: block;
-    color: var(--c-ink-faint);
-  }
-  .dossier__row {
-    display: flex;
-    align-items: baseline;
-    gap: var(--s-3);
-    font-size: var(--t-sm);
-  }
-  /* الوصلة المنقّطة تربط الاسم بقيمته عبر الفراغ — هي ما يجعل الصفّ سجلّاً
-     لا سطرين متجاورين */
-  /*
-   * الوصلة عنصرٌ مرن لا عنصرٌ مطلق.
-   *
-   * المطلق يبدأ من `inset-inline-start`، وهي في RTL الحافّةُ اليمنى، فيمشي
-   * الخطّ عكس اتجاه الكلمة ويمرّ فوقها. أمّا `flex: 1` فيملأ ما تبقّى من
-   * الفراغ أياً كان اتجاه الكتابة، ولا يعرف يميناً من يسار أصلاً.
-   */
-  .dossier__row dt {
-    color: var(--c-ink-faint);
-    flex: 1;
-    display: flex;
-    align-items: baseline;
-    gap: .6em;
-    overflow: hidden;
-  }
-  .dossier__row dt::after {
-    content: '';
-    flex: 1;
-    border-block-end: 1px dotted rgb(196 181 253 / .22);
-    transform: translateY(-.28em);
-  }
-  .dossier__row dd { color: var(--c-ink); font-weight: 700; }
+  .poem__l--seed { color: var(--c-ink-soft); }
+  .poem :global(.poem__l) { animation: rise .6s var(--e-out) backwards; }
+  .poem :global(.poem__l--new) { color: var(--c-ink); font-weight: 700; }
 
-  /* ==================== 3 · الطرَف ==================== */
-  .clue {
-    min-block-size: 1.3em;
-    font-size: var(--t-display);
+  /* ==================== الدعم ==================== */
+  .support {
+    inline-size: min(100%, 17rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    font-size: var(--t-h2);
     font-weight: 700;
-    letter-spacing: -.03em;
-    color: transparent;
-    background: var(--g-text);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: #2a1550;
+    background: radial-gradient(circle at 40% 35%, #fff 0%, color-mix(in srgb, var(--tint) 70%, #fff) 55%, var(--tint) 100%);
+    box-shadow: 0 0 60px -8px color-mix(in srgb, var(--tint) 70%, transparent);
+    animation: breathe 3.6s var(--e-soft) infinite;
+    transition: transform var(--d-fast) var(--e-back);
+    -webkit-tap-highlight-color: transparent;
   }
-  /* الكلمة تدخل من الضبابة وتخرج إليها: الظهور الحادّ يُقرأ نصّاً، والذوبان
-     يُقرأ لمحة */
-  .clue.in { animation: clue-in 2s var(--e-soft) forwards; }
-  @keyframes clue-in {
-    0%   { opacity: 0; filter: blur(18px); transform: scale(1.14); }
-    28%  { opacity: 1; filter: blur(0);    transform: scale(1); }
-    72%  { opacity: 1; filter: blur(0);    transform: scale(1); }
-    100% { opacity: 0; filter: blur(14px); transform: scale(.94); }
+  .support:hover { transform: scale(1.03); }
+  .support:active { transform: scale(.95); animation: none; }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 46px -10px color-mix(in srgb, var(--tint) 60%, transparent); }
+    50%      { box-shadow: 0 0 80px -6px color-mix(in srgb, var(--tint) 85%, transparent); }
   }
-  .clues__tail[hidden], [data-clues-next][hidden] { display: none; }
-  .clues__tail { animation: rise .8s var(--e-out) backwards; }
+  .support__line { min-block-size: 2.6em; }
 
-  /* ==================== 5 · الزرّ ==================== */
-  /* صغير عمداً: الزرّ الممنوع الذي يملأ الشاشة ليس ممنوعاً بل دعوة */
-  .tempt {
-    padding: .5rem 1rem;
-    font-size: var(--t-xs);
-    font-weight: 700;
-    color: var(--c-ink-faint);
-    border: 1px dashed rgb(196 181 253 / .35);
-    border-radius: var(--r-pill);
-    background: transparent;
-    transition: transform var(--d-base) var(--e-back), color var(--d-base) var(--e-soft),
-                border-color var(--d-base) var(--e-soft), opacity var(--d-base) var(--e-soft);
-  }
-  .tempt:hover { color: var(--c-ink); border-color: var(--c-lav-soft); transform: scale(1.04); }
-  .tempt.gone { opacity: 0; transform: scale(.5) rotate(-8deg); pointer-events: none; }
-  [data-tempt-after][hidden], [data-tempt-next][hidden] { display: none; }
-
-  /* ==================== 6 · التحضير ==================== */
-  .load__step {
-    min-block-size: 1.6em;
+  /* ==================== القمر ==================== */
+  .verse {
     font-size: var(--t-lead);
-    font-weight: 600;
+    line-height: 1.9;
     color: var(--c-ink-soft);
+    font-weight: 600;
   }
-  .load__track {
-    inline-size: min(100%, 18rem);
-    height: 3px;
-    border-radius: var(--r-pill);
-    background: rgb(196 181 253 / .14);
-    overflow: hidden;
+  .moon {
+    inline-size: min(13rem, 56vw);
+    filter: drop-shadow(0 0 40px color-mix(in srgb, var(--tint) 35%, transparent));
   }
-  .load__track :global(span) {
-    display: block;
-    height: 100%;
-    width: 0;
-    border-radius: inherit;
-    background: linear-gradient(to left, var(--c-lav-soft), var(--c-rose));
-    box-shadow: var(--glow-sm);
-    transition: width .5s var(--e-soft);
-  }
-  /* لاتينية بحتة، فالتباعد هنا يصحّ */
-  .load__pct {
-    font-size: var(--t-xs);
-    font-weight: 700;
-    letter-spacing: .12em;
-    color: var(--c-ink-faint);
-  }
-  .load__done[hidden], [data-load-next][hidden] { display: none; }
+  .moon__dark { fill: #1a1436; stroke: rgb(255 255 255 / .08); stroke-width: 1; }
+  .moon__lit { transition: d .8s var(--e-soft); }
 
-  /* ==================== 7 · الاسم ==================== */
-  .name__tail[hidden], [data-name-next][hidden] { display: none; }
-  .name__tail {
-    margin-block-start: 34svh;
-    animation: rise .9s var(--e-out) backwards;
+  /* ==================== المناكير ==================== */
+  .swatches {
+    inline-size: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .6rem;
+  }
+  .swatch {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: .4rem;
+    padding: .8rem .4rem .7rem;
+    border-radius: var(--r-md);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    color: var(--c-ink-soft);
+    cursor: pointer;
+    transition: transform var(--d-fast) var(--e-back), border-color var(--d-base) var(--e-soft);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .swatch:hover { transform: translateY(-2px); border-color: var(--sw, var(--c-lav-soft)); }
+  .swatch.is-on { border-color: var(--sw, var(--c-lav-soft)); box-shadow: 0 0 20px -4px var(--sw, transparent); }
+  .swatch__dot {
+    inline-size: 2.2rem; block-size: 2.2rem;
+    border-radius: 50%;
+    background: var(--sw);
+    box-shadow: inset 0 -6px 12px rgb(0 0 0 / .18), inset 0 6px 10px rgb(255 255 255 / .35);
+  }
+  .swatch__dot--wheel {
+    background: conic-gradient(#f7a8c4, #f2c46d, #7cbf63, #7aa2ff, #c4b5fd, #d63a6e, #f7a8c4);
+  }
+  .swatch__name { font-size: .72rem; font-weight: 700; line-height: 1.3; }
+  .swatch--custom input {
+    position: absolute; inset: 0;
+    opacity: 0;
+    cursor: pointer;
   }
 
-  /* ==================== 8 · العدّ ==================== */
-  .cd { display: grid; justify-items: center; gap: var(--s-4); }
-  .cd[hidden] { display: none; }
-
-  .cd__big {
-    display: flex;
-    align-items: baseline;
-    gap: .5rem;
-    animation: rise .9s var(--e-out) backwards;
+  /* ==================== المحكمة ==================== */
+  .verdict {
+    inline-size: 100%;
+    padding: var(--s-4);
+    border-radius: var(--r-md);
+    background: var(--c-glass);
+    border: 1px solid var(--c-hairline);
+    display: grid;
+    gap: .3rem;
+    animation: rise .6s var(--e-out) backwards;
   }
-  .cd__big[hidden] { display: none; }
-  .cd__big b {
-    font-size: var(--t-display);
+  .verdict[hidden] { display: none; }
+  .verdict__text { font-size: var(--t-lead); line-height: 1.65; font-weight: 600; color: var(--c-ink); }
+
+  /* ==================== الجلي ==================== */
+  .timer {
+    font-size: clamp(4rem, 2.5rem + 12vw, 7rem);
     font-weight: 700;
     line-height: 1;
     letter-spacing: -.04em;
-    color: transparent;
-    background: var(--g-text);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: var(--c-ink);
+    text-shadow: 0 0 40px color-mix(in srgb, var(--tint) 40%, transparent);
   }
-  .cd__big span { font-size: var(--t-h3); font-weight: 600; color: var(--c-ink-soft); }
-
-  .cd__track {
-    inline-size: min(100%, 16rem);
-    height: 2px;
+  .track {
+    inline-size: min(100%, 18rem);
+    height: 3px;
     border-radius: var(--r-pill);
-    background: rgb(196 181 253 / .14);
+    background: rgb(255 255 255 / .1);
     overflow: hidden;
   }
-  .cd__track :global(span) {
-    display: block;
-    height: 100%;
-    width: 0;
+  .track :global(span) {
+    display: block; height: 100%; width: 0;
+    border-radius: inherit;
     background: linear-gradient(to left, var(--c-lav-soft), var(--c-rose));
     box-shadow: var(--glow-sm);
-    transition: width 1s var(--e-out);
+    transition: width 1s linear;
   }
-  /* الساعة أرقام لاتينية، فالتباعد يصحّ عليها ويجعلها تُقرأ عدّاداً */
-  .cd__clock {
-    font-size: var(--t-xs);
-    font-weight: 700;
-    letter-spacing: .2em;
-    color: var(--c-ink-faint);
-  }
+  .done { display: grid; gap: .4rem; justify-items: center; }
+  .done[hidden] { display: none; }
 
-  /* آخر دقيقة */
-  .last { display: grid; justify-items: center; gap: var(--s-3); }
-  .last[hidden] { display: none; }
-  .last__say {
-    min-block-size: 1.5em;
-    font-size: var(--t-lead);
-    font-weight: 700;
-    color: var(--c-ink-soft);
-  }
-  .last__n {
-    font-size: clamp(7rem, 4rem + 24vw, 15rem);
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -.05em;
-    color: var(--c-ink);
-    text-shadow: 0 0 60px rgb(196 181 253 / .45);
-  }
-  /* نبضة كنبضة القلب: انقباض حادّ ثم استرخاء، لا ذبذبة متساوية */
-  .last__n.beat { animation: beat 1s var(--e-out); }
-  @keyframes beat {
-    0%   { transform: scale(1.22); opacity: .45; filter: blur(10px); }
-    22%  { transform: scale(1);    opacity: 1;   filter: blur(0); }
-    100% { transform: scale(1);    opacity: 1;   filter: blur(0); }
-  }
-
-  /* ==================== 10 · الكشف ==================== */
-  .scene--reveal { gap: var(--s-5); }
-
-  .reveal__name {
-    font-size: var(--t-display);
-    font-weight: 700;
-    letter-spacing: -.03em;
-    color: var(--c-ink);
-    animation: spark 2.4s var(--e-out) backwards;
-  }
-  .reveal__name[hidden] { display: none; }
-  /* تولد نقطةً ثم تتّسع: الاسم يخرج من الضوء لا من الفراغ */
-  /* بلا تباعد حرفي: «رغد» كلمةٌ موصولة، وتوسيعها يفكّها بدل أن يوسّعها.
-     الاتّساع يأتي من `scale` وحده. */
-  @keyframes spark {
-    0%   { opacity: 0; transform: scale(.15); filter: blur(26px); }
-    45%  { opacity: 1; transform: scale(1);   filter: blur(0); }
-    100% { opacity: 1; }
-  }
-
-  .reveal__body[hidden] { display: none; }
-  .reveal__body { display: grid; justify-items: center; gap: var(--s-4); }
-
-  .reveal__greet {
-    font-size: var(--t-h1);
-    font-weight: 700;
-    letter-spacing: -.025em;
-    color: var(--c-ink);
-    animation: rise 1s var(--e-out) backwards;
-  }
-  .reveal__lines { display: grid; gap: var(--s-3); }
-  .reveal__l {
-    font-size: var(--t-lead);
-    line-height: 1.75;
-    color: var(--c-ink-soft);
-    text-wrap: balance;
-    animation: rise .9s var(--e-out) backwards;
-    animation-delay: var(--d, 0ms);
-  }
-  .reveal__l:last-child { color: var(--c-ink); font-weight: 700; }
-  .scene--reveal .scene__hint,
-  .scene--reveal .btn {
-    animation: rise .9s var(--e-out) backwards;
-    animation-delay: var(--d, 0ms);
+  /* ==================== الصيد ==================== */
+  .hud { display: flex; align-items: baseline; gap: .5rem; font-size: var(--t-h3); font-weight: 700; color: var(--c-ink); }
+  .hud__sep { color: var(--c-ink-faint); }
+  .hunt {
+    inline-size: 100%;
+    block-size: min(52svh, 30rem);
+    border-radius: var(--r-md);
+    background: linear-gradient(to bottom, rgb(255 255 255 / .04), rgb(255 255 255 / .01));
+    border: 1px solid var(--c-hairline);
+    touch-action: none;
+    cursor: crosshair;
   }
 
   /* ==================== حركة مخفّضة ==================== */
   @media (prefers-reduced-motion: reduce) {
-    .scene__in, .huge, .clue.in, .cd__big, .last__n.beat,
-    .reveal__name, .reveal__greet, .reveal__l, .clues__tail, .name__tail,
-    .scene--reveal .scene__hint, .scene--reveal .btn {
-      animation: none !important;
-    }
-    .pulse, .dossier__scan { animation: none; }
-    .thread__fill, .cd__track :global(span), .load__track :global(span) { transition: none; }
-    .clue { opacity: 1; }
+    .scene__in, .huge, .records :global(.record), .poem :global(.poem__l), .ticket, .verdict { animation: none !important; }
+    .board__dot, .support { animation: none; }
+    .track :global(span), .moon__lit { transition: none; }
   }
 </style>

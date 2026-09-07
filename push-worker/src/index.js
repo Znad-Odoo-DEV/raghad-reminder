@@ -1,9 +1,10 @@
 /**
- * push-worker — نقطة استقبال اشتراكات Web Push
+ * push-worker — نقطة استقبال اشتراكات Web Push، وسجلّ الوزارة
  *
  * GitHub Pages يخدم ملفات ثابتة ولا يستقبل POST، ومتصفّح رغد يولّد اشتراكاً
  * لا بدّ أن يصل إلينا لنستطيع الإرسال إليها لاحقاً. هذا الـWorker هو تلك
- * النقطة، ولا يفعل شيئاً غيرها: يخزّن ويحذف ويسلّم القائمة.
+ * النقطة — ومعها صار سجلَّ الوزارة: مراسيمها، وقوافي صباح النور، ومخالفات
+ * المحكمة، وضغطات زرّ الدعم.
  *
  * **لا يُرسل الإشعارات.** الإرسال يحتاج المفتاح الخاص، وهو محفوظ في أسرار
  * المستودع ويُستعمل داخل مسار GitHub وحده. إبقاؤه خارج الـWorker يعني أن
@@ -16,14 +17,30 @@
  *   POST   /prune   ← حذف اشتراك ميت      (Bearer ADMIN_TOKEN)
  *   POST   /visit   ← تسجيل فتحة للصفحة
  *   GET    /visits  ← سجل الفتحات         (Bearer ADMIN_TOKEN)
+ *   POST   /note    ← قيد جديد في سجلّ الوزارة {kind, text}
+ *   GET    /notes   ← قيود نوعٍ واحد ?kind=  (العامّة بلا توكن، والدعم بتوكن)
+ *   DELETE /note    ← حذف قيد {kind, at}    (Bearer ADMIN_TOKEN)
+ *   GET    /inbox   ← كل السجلّ           (Bearer ADMIN_TOKEN)
  */
 
 const DEFAULT_ORIGIN = 'https://znad-odoo-dev.github.io';
 
+/**
+ * أنواع القيود.
+ *
+ * الثلاثة الأولى تُعرض في الموقع نفسه فقراءتها عامّة — من يستطيع فتح الموقع
+ * يراها هناك أصلاً. أمّا ضغطات الدعم فليست للعرض: هي رسالة منها إليه، ولا
+ * تُقرأ إلا بالتوكن.
+ */
+const NOTE_KINDS = new Set(['decree', 'rhyme', 'court', 'support']);
+const PUBLIC_KINDS = new Set(['decree', 'rhyme', 'court']);
+const NOTE_MAX_CHARS = 280;
+const NOTE_MAX_LIST = 300;
+
 function corsHeaders(env) {
   return {
     'access-control-allow-origin': env.ALLOWED_ORIGIN || DEFAULT_ORIGIN,
-    'access-control-allow-methods': 'POST, DELETE, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
     'access-control-allow-headers': 'content-type',
     'access-control-max-age': '86400',
   };
@@ -55,6 +72,22 @@ function validSub(sub) {
     typeof sub.keys.p256dh === 'string' &&
     typeof sub.keys.auth === 'string'
   );
+}
+
+/** يجمع كل القيم تحت بادئة، مرتّبةً بمفتاحها (وهو زمنيّ). */
+async function listAll(env, prefix, cap = Infinity) {
+  const out = [];
+  let cursor;
+  do {
+    const page = await env.SUBS.list({ prefix, cursor });
+    for (const k of page.keys) {
+      const raw = await env.SUBS.get(k.name);
+      if (raw) out.push(JSON.parse(raw));
+      if (out.length >= cap) return out;
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return out;
 }
 
 export default {
@@ -124,38 +157,82 @@ export default {
     if (url.pathname === '/visits' && request.method === 'GET') {
       if (!authorised(request, env)) return json({ error: 'unauthorised' }, 401);
 
-      const out = [];
-      let cursor;
-      do {
-        const page = await env.SUBS.list({ prefix: 'visit:', cursor });
-        for (const k of page.keys) {
-          const raw = await env.SUBS.get(k.name);
-          if (raw) out.push(JSON.parse(raw));
-        }
-        cursor = page.list_complete ? undefined : page.cursor;
-      } while (cursor);
-
+      const out = await listAll(env, 'visit:');
       out.sort((a, b) => (a.at < b.at ? 1 : -1));
       const devices = [...new Set(out.map((v) => v.id))];
       return json({ total: out.length, devices, visits: out }, 200);
     }
 
+    /* ---- قيد جديد في سجلّ الوزارة ----
+       النصّ محدود الطول، والنوع من قائمة مغلقة. لا تحقّق من الهويّة: الموقع
+       لشخصٍ واحد، والرابط ليس على محرّكات البحث، والأسوأ الممكن قيدٌ مزعج
+       يُحذف بالتوكن. */
+    if (url.pathname === '/note' && request.method === 'POST') {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'bad json' }, 400, cors);
+      }
+      const kind = typeof body?.kind === 'string' ? body.kind : '';
+      if (!NOTE_KINDS.has(kind)) return json({ error: 'bad kind' }, 400, cors);
+
+      const text = typeof body.text === 'string' ? body.text.trim().slice(0, NOTE_MAX_CHARS) : '';
+      const at = new Date().toISOString();
+      const rand = Math.random().toString(36).slice(2, 8);
+      const note = { kind, text, at };
+
+      await env.SUBS.put(`note:${kind}:${at}:${rand}`, JSON.stringify(note));
+      return json({ ok: true, note }, 200, cors);
+    }
+
+    /* ---- قيود نوعٍ واحد ---- */
+    if (url.pathname === '/notes' && request.method === 'GET') {
+      const kind = url.searchParams.get('kind') || '';
+      if (!NOTE_KINDS.has(kind)) return json({ error: 'bad kind' }, 400, cors);
+      if (!PUBLIC_KINDS.has(kind) && !authorised(request, env)) {
+        return json({ error: 'unauthorised' }, 401, cors);
+      }
+
+      const out = await listAll(env, `note:${kind}:`, NOTE_MAX_LIST);
+      return json(out, 200, { ...cors, 'cache-control': 'no-store' });
+    }
+
+    /* ---- حذف قيد (إداري) ----
+       الوزارة تحتاج إشرافاً: قيدٌ خاطئ أو مزعج يجب أن يُحذف، والحذف بالتوكن
+       وحده. الاستهداف بالنوع ولحظة الحفظ معاً — وهي بادئة المفتاح — فلا
+       يحتاج المشرف إلى اللاحقة العشوائية. */
+    if (url.pathname === '/note' && request.method === 'DELETE') {
+      if (!authorised(request, env)) return json({ error: 'unauthorised' }, 401, cors);
+
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'bad json' }, 400, cors);
+      }
+      const kind = typeof body?.kind === 'string' ? body.kind : '';
+      const at = typeof body?.at === 'string' ? body.at : '';
+      if (!NOTE_KINDS.has(kind) || at.length < 20) return json({ error: 'bad target' }, 400, cors);
+
+      const page = await env.SUBS.list({ prefix: `note:${kind}:${at}` });
+      for (const k of page.keys) await env.SUBS.delete(k.name);
+      return json({ ok: true, deleted: page.keys.length }, 200, cors);
+    }
+
+    /* ---- كل السجلّ (إداري) ---- */
+    if (url.pathname === '/inbox' && request.method === 'GET') {
+      if (!authorised(request, env)) return json({ error: 'unauthorised' }, 401);
+
+      const inbox = {};
+      for (const kind of NOTE_KINDS) inbox[kind] = await listAll(env, `note:${kind}:`);
+      return json(inbox, 200);
+    }
+
     /* ---- قائمة الاشتراكات (إداري) ---- */
     if (url.pathname === '/subs' && request.method === 'GET') {
       if (!authorised(request, env)) return json({ error: 'unauthorised' }, 401);
-
-      const out = [];
-      let cursor;
-      do {
-        const page = await env.SUBS.list({ prefix: 'sub:', cursor });
-        for (const k of page.keys) {
-          const raw = await env.SUBS.get(k.name);
-          if (raw) out.push(JSON.parse(raw));
-        }
-        cursor = page.list_complete ? undefined : page.cursor;
-      } while (cursor);
-
-      return json(out, 200);
+      return json(await listAll(env, 'sub:'), 200);
     }
 
     /* ---- حذف اشتراك ميت (إداري) ---- */

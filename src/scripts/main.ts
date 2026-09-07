@@ -1,5 +1,5 @@
 /**
- * main.ts — تشغيل القصة
+ * main.ts — تشغيل الوزارة
  *
  * الملف الوحيد الذي يلمس الـDOM. المكوّنات تحمل markup وCSS فقط، والربط كله
  * عبر `data-*`.
@@ -9,11 +9,9 @@
  * لأن العنصر يخرج من `display:none`.
  */
 
-import { STORY, HER } from '../site.config';
+import { STORY, DAILY_NOTIFY } from '../site.config';
 
 import {
-  untilBirthday,
-  nextBirthdayInstant,
   nowMs,
   damascusClock,
   damascusTodayAt,
@@ -26,12 +24,15 @@ import * as story from './story';
 import type { Scene } from './story';
 
 import {
-  CLUES, JOKE, BUTTON, LOADING, CD, CANDLE, REVEAL,
-  AWAY_TITLES, MISC, dayUnitAr, hourUnitAr, minuteUnitAr, pick,
+  DECREES, NET, RHYME, SUPPORT, MOON, NAILS, COURT, DISHES, HUNT,
+  AWAY_TITLES, MISC, pick,
 } from './copy';
 
-import { finale, burst, bloom, butterflies, heartRain } from './celebrate';
-import { nameInDust } from './dust';
+import { finale, burst, bloom, heartRain, butterflies } from './celebrate';
+import { moonAt, moonPath } from './moon';
+import { postNote, getNotes, stampOf, type Note, type PublicKind } from './ministry';
+import { applyTint, loadTint } from './tint';
+import { startHunt, preloadHunt, type HuntHandle } from './hunt';
 import { initAudio, type MusicHandle } from './music';
 import { dropRetiredKeys, resetAll } from './store';
 import { logVisit } from './visit';
@@ -57,67 +58,21 @@ const $$ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document
   Array.from(r.querySelectorAll(s)) as T[];
 
 const scenes = $$<HTMLElement>('[data-scene]');
-const thread = $('[data-thread]');
 const after = $('#after');
 const live = $('#live-region');
 
 const BASE_TITLE = document.title;
-const CD_START_KEY = 'raghd:cd-start:v1';
 
 let music: MusicHandle | null = null;
 let musicStarted = false;
-let tickTimer = 0;
-let lastSleeps = -1;
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const pad2 = (n: number) => String(n).padStart(2, '0');
 /** مسافة غير قابلة للكسر — تحجز ارتفاع سطر فارغ فلا يقفز ما تحته */
-const NBSP = '\u00a0';
+const NBSP = ' ';
 
 /* =========================================================================
    المشاهد
-   ========================================================================= */
-
-function show(name: Scene): void {
-  for (const el of scenes) el.hidden = el.dataset.scene !== name;
-
-  if (thread) thread.style.width = `${Math.round(story.progress() * 100)}%`;
-
-  // الأدوات الجانبية لا تظهر إلا بعد أن تنتهي التجربة
-  if (after) after.hidden = !(name === 'countdown' || name === 'reveal');
-
-  window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
-  onEnter(name);
-}
-
-/** ما يحتاج تشغيلاً عند دخول مشهد بعينه. */
-function onEnter(name: Scene): void {
-  window.clearInterval(tickTimer);
-  // مشهدٌ هُجر يظلّ يكتب في الـDOM إن بقيت مؤقّتاته حيّة
-  clearScene();
-  paintPhase();
-
-  switch (name) {
-    case 'clues':     runClues(); break;
-    case 'joke':      runJoke(); break;
-    case 'button':    runButton(); break;
-    case 'loading':   runLoading(); break;
-    case 'name':      runName(); break;
-    case 'countdown': startCountdown(); break;
-    case 'candle':    runCandle(); break;
-    case 'reveal':    runReveal(); break;
-  }
-}
-
-function advance(): void {
-  // أوّل «كمّلي» هي أوّل إيماءة في التجربة، وقبلها يرفض المتصفّح تشغيل الصوت.
-  // ربطها بمشهد بعينه كان يؤخّر الأغنية إلى ما بعد نصف التمهيد.
-  if (STORY.musicOnFirstOpen) void startMusic();
-  show(story.next().scene);
-}
-
-/* =========================================================================
-   المشاهد التمهيدية
    ========================================================================= */
 
 /** يلغي كل مؤقّتات المشهد السابق: مشهدٌ مهجور يظلّ يكتب في الـDOM بلا هذا. */
@@ -130,424 +85,460 @@ function clearScene(): void {
   sceneTimers = [];
 }
 
-/** ٣ · كلمات تمرّ وتختفي، ثم يظهر الذيل. */
-function runClues(): void {
-  const el = $('[data-clue]');
-  const tail = $('[data-clues-tail]');
-  const next = $('[data-clues-next]');
-  if (!el || !tail || !next) return;
+function show(name: Scene): void {
+  clearScene();
+  onLeave(story.current());
+  story.go(name);
 
-  tail.hidden = true;
-  next.hidden = true;
-  el.textContent = '';
+  for (const el of scenes) el.hidden = el.dataset.scene !== name;
 
-  // في الحركة المخفّضة لا تُقرأ كلمةٌ تذوب: نعرضها كلّها سطراً واحداً
-  if (reduced()) {
-    el.textContent = CLUES.words.join(' · ');
-    tail.hidden = false;
-    next.hidden = false;
-    return;
+  // التذييل على البوّابة وحدها: داخل قسمٍ يشتّت
+  if (after) after.hidden = name !== 'hub';
+
+  window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
+  onEnter(name);
+}
+
+function onEnter(name: Scene): void {
+  switch (name) {
+    case 'decrees': void loadRecords('decree'); break;
+    case 'court':   void loadRecords('court'); break;
+    case 'rhyme':   void loadRhyme(); break;
+    case 'moon':    paintMoon(); break;
+    case 'nails':   paintSwatches(); break;
+    case 'dishes':  paintDishes(); break;
+    case 'hunt':    preloadHunt(); resetHunt(); break;
   }
-
-  const STEP = 1500;
-  CLUES.words.forEach((w, i) => {
-    later(() => {
-      el.textContent = w;
-      // إعادة تشغيل الأنيميشن تحتاج إزالة الصنف وقراءة تخطيط بينهما
-      el.classList.remove('in');
-      void el.offsetWidth;
-      el.classList.add('in');
-    }, i * STEP);
-  });
-
-  later(() => {
-    el.classList.remove('in');
-    el.textContent = '';
-    tail.hidden = false;
-    later(() => { next.hidden = false; }, 700);
-  }, CLUES.words.length * STEP);
 }
 
-/** ٤ · «خلصت المفاجأة» … سكوت … «مزحة». */
-function runJoke(): void {
-  const end = $('[data-joke-end]');
-  const twist = $('[data-joke-twist]');
-  const next = $('[data-joke-next]');
-  if (!end || !twist || !next) return;
-
-  end.hidden = false;
-  twist.hidden = true;
-  next.hidden = true;
-
-  // السكوت هو النكتة. تقصيره يقتلها، وإطالته تجعلها عطلاً.
-  later(() => {
-    end.hidden = true;
-    twist.hidden = false;
-    announce(JOKE.twist);
-    later(() => { next.hidden = false; }, 900);
-  }, reduced() ? 900 : 2100);
+/** ما يجب إيقافه عند مغادرة مشهد: مؤقّت الجلي ولعبة الصيد يعملان في الخلفية. */
+function onLeave(name: Scene): void {
+  if (name === 'hub') $('[data-scene="hub"]')?.classList.add('is-warm');
+  if (name === 'hunt') stopHunt();
+  // مؤقّت الجلي يبقى يعدّ عن قصد — الجلي لا يتوقّف لأنها فتحت قسماً آخر
 }
 
-/** ٥ · الزرّ الممنوع. */
-function runButton(): void {
-  const btn = $<HTMLButtonElement>('[data-tempt]');
-  const after = $('[data-tempt-after]');
-  const next = $('[data-tempt-next]');
-  if (!btn || !after || !next) return;
-
-  btn.hidden = false;
-  btn.disabled = false;
-  btn.classList.remove('gone');
-  after.hidden = true;
-  next.hidden = true;
-
-  // مخرج بعد سبع ثوانٍ.
-  //
-  // النكتة تفترض أنها ستكبس، والافتراض ليس تصميماً: من لم تكبس كانت تقف أمام
-  // مشهد بلا طريق إلى ما بعده. سبعٌ تكفي لأن تكبس من ستكبس، ولا تطول على من
-  // لن تفعل.
-  later(() => {
-    if (!btn.disabled) next.hidden = false;
-  }, 7000);
-}
-
-function tempted(): void {
-  const btn = $<HTMLButtonElement>('[data-tempt]');
-  const after = $('[data-tempt-after]');
-  const next = $('[data-tempt-next]');
-  if (!btn || !after || !next || btn.disabled) return;
-
-  btn.disabled = true;
-  btn.classList.add('gone');
-  bloom();
-  later(() => {
-    btn.hidden = true;
-    after.hidden = false;
-    announce(BUTTON.after);
-    later(() => { next.hidden = false; }, 800);
-  }, 380);
-}
-
-/** ٦ · شاشة التحضير. */
-function runLoading(): void {
-  const step = $('[data-load-step]');
-  const fill = $('[data-load-fill]');
-  const pct = $('[data-load-pct]');
-  const done = $('[data-load-done]');
-  const next = $('[data-load-next]');
-  if (!step || !fill || !pct || !done || !next) return;
-
-  done.hidden = true;
-  next.hidden = true;
-  fill.style.width = '0%';
-  pct.textContent = '0%';
-
-  const STEP = reduced() ? 500 : 1150;
-  LOADING.steps.forEach((line, i) => {
-    later(() => {
-      step.textContent = `${line}…`;
-      const done = Math.round(((i + 1) / LOADING.steps.length) * 100);
-      fill.style.width = `${done}%`;
-      pct.textContent = `${done}%`;
-    }, i * STEP);
-  });
-
-  later(() => {
-    step.textContent = ' ';
-    done.hidden = false;
-    announce(LOADING.done);
-    later(() => { next.hidden = false; }, 700);
-  }, LOADING.steps.length * STEP);
-}
-
-/** ٧ · غبار يتجمّع فيكتب اسمها. */
-function runName(): void {
-  const tail = $('[data-name-tail]');
-  const next = $('[data-name-next]');
-  if (!tail || !next) return;
-
-  tail.hidden = true;
-  next.hidden = true;
-  announce(HER);
-
-  nameInDust(HER, 2.4, () => {
-    tail.hidden = false;
-    later(() => { next.hidden = false; }, 700);
-  });
+function goTo(name: string): void {
+  if (!story.isScene(name)) return;
+  // أوّل ضغطة في الزيارة هي أوّل إيماءة، وقبلها يرفض المتصفّح تشغيل الصوت
+  if (STORY.musicOnFirstOpen) void startMusic();
+  show(name);
 }
 
 /* =========================================================================
-   العدّ
+   القيود — المراسيم والمحكمة
    ========================================================================= */
 
-/** أول لحظة رأت فيها العدّاد — منها يُقاس امتلاء الخط. */
-function countdownStart(target: number): number {
-  try {
-    const saved = Number(localStorage.getItem(CD_START_KEY));
-    if (saved && saved < target) return saved;
-    const now = nowMs();
-    localStorage.setItem(CD_START_KEY, String(now));
-    return now;
-  } catch {
-    return nowMs();
+const recordEls = {
+  decree: { list: $('[data-decree-list]'), empty: $('[data-decree-empty]') },
+  court:  { list: $('[data-court-list]'),  empty: $('[data-court-empty]') },
+} as const;
+
+function recordNode(kind: 'decree' | 'court', n: Note, index: number): HTMLLIElement {
+  const li = document.createElement('li');
+  li.className = 'record';
+
+  const num = document.createElement('span');
+  num.className = 'record__n';
+  num.textContent = kind === 'decree' ? `${DECREES.numberPrefix} ${index}` : `مخالفة رقم ${index}`;
+
+  const when = document.createElement('span');
+  when.className = 'record__when tnum';
+  when.textContent = stampOf(n.at);
+
+  const t = document.createElement('p');
+  t.className = 'record__t';
+  t.textContent = n.text || (kind === 'court' ? 'مجاملة بلا نصّ. المحكمة صدّقت.' : '—');
+
+  const stamp = document.createElement('span');
+  stamp.className = 'record__stamp';
+  stamp.textContent = kind === 'decree' ? DECREES.stamp : 'موثّقة';
+
+  li.append(num, when, t, stamp);
+  return li;
+}
+
+function paintRecords(kind: 'decree' | 'court', notes: Note[]): void {
+  const { list, empty } = recordEls[kind];
+  if (!list) return;
+  list.replaceChildren();
+  // الأحدث فوق
+  notes.forEach((n, i) => list.prepend(recordNode(kind, n, i + 1)));
+  if (empty) empty.hidden = notes.length > 0;
+}
+
+const cache: Partial<Record<PublicKind, Note[]>> = {};
+
+async function loadRecords(kind: 'decree' | 'court'): Promise<void> {
+  if (cache[kind]) paintRecords(kind, cache[kind]!);
+  const notes = await getNotes(kind);
+  if (notes) {
+    cache[kind] = notes;
+    paintRecords(kind, notes);
+  } else if (!cache[kind]) {
+    paintRecords(kind, []);
   }
 }
 
-function startCountdown(): void {
-  paintCountdown();
-  tickTimer = window.setInterval(paintCountdown, 1000);
+/** يضيف قيداً محلياً فوراً ثم يحاول حفظه. الكلمة لا تضيع أمام عينها. */
+async function addRecord(kind: 'decree' | 'court', text: string): Promise<boolean> {
+  const local: Note = { kind, text, at: new Date(nowMs()).toISOString() };
+  cache[kind] = [...(cache[kind] ?? []), local];
+  paintRecords(kind, cache[kind]!);
+  const saved = await postNote(kind, text);
+  return saved !== null;
 }
 
-function paintCountdown(): void {
-  const b = untilBirthday();
-  const target = nextBirthdayInstant();
-  if (!b || target === null) return;
+/* ---- المراسيم ---- */
+function initDecrees(): void {
+  const form = $<HTMLFormElement>('[data-decree-form]');
+  const text = $<HTMLTextAreaElement>('[data-decree-text]');
+  const say = $('[data-decree-say]');
+  if (!form || !text) return;
 
-  // الطور يتبع الوقت لا تبديل المشهد وحده.
-  //
-  // هنا تنتظر، وهنا تعبر الساعةُ الأخيرة. حسابُه عند دخول المشهد فقط كان
-  // يعني أن من فتحت الصفحة قبل الغروب وتركتها مفتوحة لا ترى العالم يدفأ أبداً.
-  paintPhase();
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const v = text.value.trim();
+    if (!v) return;
+    text.value = '';
+    if (say) say.textContent = DECREES.issued;
+    announce(DECREES.issued);
+    bloom();
+    const ok = await addRecord('decree', v);
+    if (!ok && say) say.textContent = DECREES.failed;
+  });
+}
 
-  // وصل اليوم — ننتقل لوحدنا
-  if (b.isToday) {
-    window.clearInterval(tickTimer);
-    show(story.go('candle').scene);
-    return;
-  }
+/* ---- المحكمة ---- */
+let verdictIndex = -1;
 
-  const mins = b.hours * 60 + b.minutes;
-  const eve = b.sleeps === 1;
+function initCourt(): void {
+  const form = $<HTMLFormElement>('[data-court-form]');
+  const text = $<HTMLInputElement>('[data-court-text]');
+  const box = $('[data-court-verdict]');
+  const out = $('[data-court-out]');
+  if (!form || !text) return;
 
-  // آخر دقيقة: الشاشة رقم واحد ولا شيء غيره.
-  // «باقي ٢٦ ثانية» مكتوبةً داخل جملة لا تفعل ما تفعله ٢٦ وحدها تملأ الشاشة.
-  const lastMinute = eve && b.hours === 0 && b.minutes === 0;
-  const body = $('[data-cd-body]');
-  const lastBox = $('[data-cd-last]');
-  if (body) body.hidden = lastMinute;
-  if (lastBox) lastBox.hidden = !lastMinute;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const v = text.value.trim();
+    text.value = '';
 
-  if (lastMinute) {
-    const tick = $('[data-cd-tick]');
-    const say = $('[data-cd-say]');
-    if (tick && tick.textContent !== String(b.seconds)) {
-      tick.textContent = String(b.seconds);
-      // إعادة تشغيل الأنيميشن تحتاج إزالة الصنف وقراءة تخطيط بينهما
-      if (!reduced()) {
-        tick.classList.remove('beat');
-        void tick.offsetWidth;
-        tick.classList.add('beat');
-      }
+    const { text: verdict, index } = pick(COURT.verdicts, verdictIndex);
+    verdictIndex = index;
+    if (out) out.textContent = verdict;
+    if (box) {
+      box.hidden = true;
+      void box.offsetWidth;
+      box.hidden = false;
     }
-    if (say) say.textContent = b.seconds > 30 ? CD.wait : b.seconds > 10 ? CD.near : NBSP;
-    return;
-  }
+    announce(`${COURT.verdictLabel}: ${verdict}`);
+    burst(form);
+    await addRecord('court', v);
+  });
+}
 
-  const bigWrap = $('[data-cd-big]');
-  const big = $('[data-cd-n]');
-  const unit = $('[data-cd-u]');
-  const one = $('[data-cd-one]');
-  const label = $('[data-cd-label]');
-  const clock = $('[data-cd-clock]');
-  const fill = $('[data-cd-fill]');
+/* =========================================================================
+   حالة النت
+   ========================================================================= */
 
-  // الواحد والاثنان لهما صيغتان بلا رقم: «بكرا» و«يومين». والرقم مع «2» خطأ
-  // نحوي في العربية، فنعرض الكلمة وحدها بدله.
-  //
-  // و«بكرا» تصحّ صباحاً وتصير كذبةً باردة في الحادية عشرة والنصف، فالليلة
-  // الأخيرة تضيق لغتها مع الوقت بدل أن تجمد على كلمة واحدة أربعاً وعشرين ساعة.
-  const phrase =
-    eve && mins > 360 ? { text: CD.tomorrow, sub: CD.tomorrowSub }
-    : b.sleeps === 2 ? { text: CD.two, sub: CD.twoSub }
-    : eve && mins > 60 && b.hours === 1 ? { text: CD.hourOne, sub: CD.hours }
-    : eve && mins > 60 && b.hours === 2 ? { text: CD.hourTwo, sub: CD.hours }
-    : eve && mins === 1 ? { text: CD.minOne, sub: CD.close }
-    : eve && mins === 2 ? { text: CD.minTwo, sub: CD.close }
-    : null;
+let netIndex = -1;
 
-  if (phrase) {
-    if (bigWrap) bigWrap.hidden = true;
-    if (one) {
-      one.hidden = false;
-      one.textContent = phrase.text;
+function initNet(): void {
+  const btn = $<HTMLButtonElement>('[data-net-report]');
+  const ticket = $('[data-net-ticket]');
+  const n = $('[data-net-n]');
+  const reply = $('[data-net-reply]');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    const { text, index } = pick(NET.replies, netIndex);
+    netIndex = index;
+    // رقم بلاغ يشبه الحقيقي: خمسة أرقام لا تتكرّر بين ضغطتين متتاليتين غالباً
+    if (n) n.textContent = String(10000 + Math.floor(Math.random() * 89999));
+    if (reply) reply.textContent = text;
+    if (ticket) {
+      ticket.hidden = true;
+      void ticket.offsetWidth;
+      ticket.hidden = false;
     }
-    if (label) label.textContent = phrase.sub;
-  } else {
-    if (bigWrap) bigWrap.hidden = false;
-    if (one) one.hidden = true;
-
-    const shown =
-      !eve ? { n: b.sleeps, u: dayUnitAr(b.sleeps), l: CD.far }
-      : mins > 60 ? { n: b.hours, u: hourUnitAr(b.hours), l: CD.hours }
-      : mins > 15 ? { n: mins, u: minuteUnitAr(mins), l: CD.minutes }
-      : { n: mins, u: minuteUnitAr(mins), l: CD.close };
-
-    if (big) big.textContent = String(shown.n);
-    if (unit) unit.textContent = shown.u;
-    if (label) label.textContent = shown.l;
-  }
-
-  if (clock) clock.textContent = pad2(b.hours) + ':' + pad2(b.minutes) + ':' + pad2(b.seconds);
-
-  if (fill) {
-    const from = countdownStart(target);
-    const span = target - from;
-    const done = span > 0 ? Math.min(1, Math.max(0, (nowMs() - from) / span)) : 1;
-    fill.style.width = (done * 100).toFixed(2) + '%';
-  }
-
-  // الإعلان باليوم لا بالثانية: قارئ شاشة ينطق كل ثانية لا يُحتمل
-  if (b.sleeps !== lastSleeps) {
-    lastSleeps = b.sleeps;
-    announce(
-      b.sleeps === 1 ? CD.tomorrow
-      : b.sleeps === 2 ? CD.two
-      : 'باقي ' + b.sleeps + ' ' + dayUnitAr(b.sleeps),
-    );
-  }
+    announce(text);
+  });
 }
 
 /* =========================================================================
-   طور العالم البصري
+   صباح النور
    ========================================================================= */
 
-/**
- * `data-phase` على <html> — يمشي في اتجاه واحد: ليل ثم دفء ثم فجر.
- *
- * الدفء يبدأ في الساعة الأخيرة قبل منتصف الليل ويبقى في مشهد الشمعة —
- * شمعةٌ في وضح النهار ليست شمعة. والفجر يطلع مع الكشف وحده، فيصير طلوع
- * الضوء جزءاً من الهدية لا خلفيةً لها.
- */
-function paintPhase(): void {
-  const root = document.documentElement;
-  const scene = story.current().scene;
+let rhymeLoaded = false;
 
-  let next: string | null = null;
-  if (scene === 'reveal') {
-    next = 'dawn';
-  } else {
-    const b = untilBirthday();
-    const soon = !!b && b.sleeps === 1 && b.hours === 0;
-    if (scene === 'candle' || soon) next = 'warm';
-  }
+function rhymeNode(text: string, fresh = false): HTMLLIElement {
+  const li = document.createElement('li');
+  li.className = `poem__l${fresh ? ' poem__l--new' : ''}`;
+  li.textContent = text;
+  return li;
+}
 
-  if (root.getAttribute('data-phase') === next) return;
-  if (next === null) root.removeAttribute('data-phase');
-  else root.setAttribute('data-phase', next);
+/** يخلص بـ«ور»؟ نتسامح مع علامات الترقيم والتشكيل في الآخر. */
+function endsWithOor(s: string): boolean {
+  const clean = s.replace(/[\s.…!؟?،,ـً-ْ]+$/u, '');
+  return /ور$/.test(clean);
+}
+
+async function loadRhyme(): Promise<void> {
+  const list = $('[data-rhyme-list]');
+  if (!list || rhymeLoaded) return;
+  const notes = await getNotes('rhyme');
+  if (!notes) return;
+  rhymeLoaded = true;
+  for (const n of notes) if (n.text) list.append(rhymeNode(n.text));
+}
+
+function initRhyme(): void {
+  const form = $<HTMLFormElement>('[data-rhyme-form]');
+  const text = $<HTMLInputElement>('[data-rhyme-text]');
+  const list = $('[data-rhyme-list]');
+  const say = $('[data-rhyme-say]');
+  if (!form || !text || !list) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const v = text.value.trim();
+    if (!v) return;
+    if (!endsWithOor(v)) {
+      if (say) say.textContent = RHYME.bad;
+      announce(RHYME.bad);
+      return;
+    }
+    text.value = '';
+    list.append(rhymeNode(v, true));
+    if (say) say.textContent = RHYME.added;
+    announce(RHYME.added);
+    butterflies(6);
+    const saved = await postNote('rhyme', v);
+    if (!saved && say) say.textContent = RHYME.failed;
+  });
 }
 
 /* =========================================================================
-   الشمعة
+   الدعم
    ========================================================================= */
 
-function runCandle(): void {
-  announce(CANDLE.line);
-  void startMusic();
+let supportIndex = -1;
 
-  const el = $('[data-candle]');
-  const btn = $<HTMLButtonElement>('[data-blow]');
-  const out = $('[data-candle-out]');
+function initSupport(): void {
+  const btn = $<HTMLButtonElement>('[data-support]');
+  const line = $('[data-support-line]');
+  const sent = $('[data-support-sent]');
+  if (!btn) return;
 
-  // إعادة الإشعال عند كل دخول: من أعادت التجربة من أوّلها تجد شمعةً مطفأة
-  el?.classList.remove('out');
-  if (out) out.hidden = true;
-  if (btn) {
-    btn.hidden = false;
-    btn.disabled = false;
-  }
-}
-
-function blowOut(): void {
-  const el = $('[data-candle]');
-  const btn = $<HTMLButtonElement>('[data-blow]');
-  const out = $('[data-candle-out]');
-  if (!el || el.classList.contains('out')) return;
-
-  el.classList.add('out');
-  if (btn) btn.disabled = true;
-  announce(CANDLE.out);
-
-  later(() => {
-    if (btn) btn.hidden = true;
-    if (out) out.hidden = false;
-  }, 500);
-
-  // العتمة تنزل بعد أن ينطفئ اللهب لا معه: الظلام الذي يبتلع الشمعة وهي
-  // تنطفئ يخفي اللحظة التي جاءت الشمعة من أجلها.
-  later(() => toReveal(), reduced() ? 900 : 1900);
+  btn.addEventListener('click', () => {
+    const { text, index } = pick(SUPPORT.lines, supportIndex);
+    supportIndex = index;
+    if (line) {
+      line.hidden = true;
+      line.textContent = text;
+      void line.offsetWidth;
+      line.hidden = false;
+    }
+    if (sent) sent.hidden = false;
+    btn.textContent = SUPPORT.again;
+    announce(text);
+    if (!reduced()) heartRain();
+    // بلا نصّ: الضغطة نفسها هي الرسالة
+    void postNote('support');
+  });
 }
 
 /* =========================================================================
-   الكشف
+   القمر
    ========================================================================= */
 
-/** ستارة العتمة — تُصنع عند الحاجة وتُرفع بعد أن يبزغ الاسم. */
-function blackout(on: boolean): void {
-  let el = $('.blackout');
-  if (!el && on) {
-    el = document.createElement('div');
-    el.className = 'blackout';
-    el.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(el);
-    // إطار واحد قبل إضافة الصنف، وإلا بدأ الانتقال من حالته النهائية
-    void el.offsetWidth;
-  }
-  el?.classList.toggle('on', on);
+function paintMoon(): void {
+  const info = moonAt(nowMs());
+  const path = $('[data-moon-path]');
+  const name = $('[data-moon-name]');
+  const pct = $('[data-moon-pct]');
+  if (path) path.setAttribute('d', moonPath(info, 96));
+  if (name) name.textContent = MOON.phases[info.index] ?? '—';
+  if (pct) pct.textContent = String(Math.round(info.illumination * 100));
+  announce(`${MOON.tonight}: ${MOON.phases[info.index]}`);
 }
 
-/** الانتقال إلى الكشف: عتمة كاملة أولاً، ثم يبزغ الاسم منها. */
-function toReveal(): void {
-  if (reduced()) {
-    show(story.go('reveal').scene);
-    return;
+/* =========================================================================
+   المناكير
+   ========================================================================== */
+
+function paintSwatches(): void {
+  const current = loadTint();
+  for (const b of $$('[data-swatch]')) {
+    b.classList.toggle('is-on', !!current && b.dataset.swatch?.toLowerCase() === current);
   }
-  blackout(true);
-  later(() => {
-    show(story.go('reveal').scene);
-    // الستارة تُرفع بعد أن يبدأ الاسم بالظهور، فيُرى وهو يخرج من السواد
-    later(() => {
-      blackout(false);
-      later(() => $('.blackout')?.remove(), 1200);
-    }, 500);
-  }, 900);
 }
 
-/**
- * الاحتفال.
- *
- * تسلسلٌ لا رشقةٌ واحدة: الاسم وحده في العتمة، ثم التهنئة، ثم تفتّح ضوء، ثم
- * قلوب، ثم فراشات، ثم الرشقة الكبرى. ما يُطلق دفعةً واحدة يُقرأ ضجيجاً، وما
- * يُطلق على مراحل يُقرأ احتفالاً.
- */
-function runReveal(): void {
-  const name = $('[data-rev-name]');
-  const body = $('[data-rev-body]');
-  if (name) name.hidden = false;
-  if (body) body.hidden = true;
+function initNails(): void {
+  const say = $('[data-nails-say]');
+  const custom = $<HTMLInputElement>('[data-swatch-custom]');
 
-  announce(REVEAL.name + ' ' + REVEAL.greeting);
-  void startMusic();
+  const set = (hex: string | null): void => {
+    applyTint(hex);
+    paintSwatches();
+    if (say) say.textContent = hex ? NAILS.applied : NBSP;
+    if (hex) bloom();
+  };
 
-  if (reduced()) {
-    if (name) name.hidden = true;
-    if (body) body.hidden = false;
-    return;
+  for (const b of $$<HTMLButtonElement>('[data-swatch]')) {
+    b.addEventListener('click', () => set(b.dataset.swatch ?? null));
   }
+  custom?.addEventListener('input', () => set(custom.value));
+  $('[data-swatch-reset]')?.addEventListener('click', () => set(null));
+}
 
-  // الاسم يقف وحده ثلاث ثوانٍ. الاستعجال هنا يلغي المشهد كلّه.
-  later(() => {
-    if (name) name.hidden = true;
-    if (body) body.hidden = false;
-  }, 3000);
+/* =========================================================================
+   الجلي
+   ========================================================================= */
 
-  if (story.current().celebrated) return;
-  story.markCelebrated();
+const DISH_TOTAL = DISHES.minutes * 60;
+let dishLeft = DISH_TOTAL;
+let dishTimer = 0;
+let dishLastMinute = -1;
 
-  later(() => bloom(), 2600);
-  later(() => heartRain(), 3800);
-  later(() => butterflies(10), 5200);
-  later(() => finale(), 6800);
-  later(() => burst(null), 8800);
+function paintDishes(): void {
+  const time = $('[data-dishes-time]');
+  const fill = $('[data-dishes-fill]');
+  const toggle = $<HTMLButtonElement>('[data-dishes-toggle]');
+  const say = $('[data-dishes-say]');
+  const done = $('[data-dishes-done]');
+
+  if (time) time.textContent = `${pad2(Math.floor(dishLeft / 60))}:${pad2(dishLeft % 60)}`;
+  if (fill) fill.style.width = `${(((DISH_TOTAL - dishLeft) / DISH_TOTAL) * 100).toFixed(1)}%`;
+  if (toggle) {
+    toggle.textContent = dishTimer ? DISHES.pause : dishLeft === DISH_TOTAL ? DISHES.start : DISHES.resume;
+    toggle.hidden = dishLeft === 0;
+  }
+  if (done) done.hidden = dishLeft !== 0;
+
+  // جملة عند كل دقيقة تمرّ
+  const minute = Math.floor((DISH_TOTAL - dishLeft) / 60);
+  if (dishTimer && minute !== dishLastMinute && minute >= 1 && minute <= DISHES.perMinute.length) {
+    dishLastMinute = minute;
+    if (say) say.textContent = DISHES.perMinute[minute - 1] ?? NBSP;
+  }
+}
+
+function dishTick(): void {
+  dishLeft = Math.max(0, dishLeft - 1);
+  paintDishes();
+  if (dishLeft === 0) {
+    window.clearInterval(dishTimer);
+    dishTimer = 0;
+    announce(`${DISHES.done} ${DISHES.doneSub}`);
+    if (!reduced()) {
+      bloom();
+      later(() => finale(), 500);
+    }
+  }
+}
+
+function initDishes(): void {
+  const toggle = $<HTMLButtonElement>('[data-dishes-toggle]');
+  const reset = $<HTMLButtonElement>('[data-dishes-reset]');
+  const say = $('[data-dishes-say]');
+
+  toggle?.addEventListener('click', () => {
+    if (dishTimer) {
+      window.clearInterval(dishTimer);
+      dishTimer = 0;
+    } else {
+      // الجلي بأغنية أحسن من الجلي بصمت
+      void startMusic();
+      dishTimer = window.setInterval(dishTick, 1000);
+    }
+    paintDishes();
+  });
+
+  reset?.addEventListener('click', () => {
+    window.clearInterval(dishTimer);
+    dishTimer = 0;
+    dishLeft = DISH_TOTAL;
+    dishLastMinute = -1;
+    if (say) say.textContent = NBSP;
+    paintDishes();
+  });
+}
+
+/* =========================================================================
+   صيد الملوخية
+   ========================================================================= */
+
+let hunt: HuntHandle | null = null;
+let huntIndex = 0;
+
+function huntVerdict(score: number): string {
+  let text = HUNT.verdicts[0]!.text;
+  for (const v of HUNT.verdicts) if (score >= v.min) text = v.text;
+  return text;
+}
+
+function resetHunt(): void {
+  stopHunt();
+  const score = $('[data-hunt-score]');
+  const time = $('[data-hunt-time]');
+  const result = $('[data-hunt-result]');
+  const start = $<HTMLButtonElement>('[data-hunt-start]');
+  if (score) score.textContent = '0';
+  if (time) time.textContent = String(HUNT.seconds);
+  if (result) result.hidden = true;
+  if (start) {
+    start.hidden = false;
+    start.textContent = huntIndex === 0 ? HUNT.start : HUNT.again;
+  }
+  // كانفاس نظيف بين لعبتين
+  const canvas = $<HTMLCanvasElement>('[data-hunt-canvas]');
+  canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function stopHunt(): void {
+  hunt?.stop();
+  hunt = null;
+  const canvas = $<HTMLCanvasElement>('[data-hunt-canvas]');
+  canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function initHunt(): void {
+  const canvas = $<HTMLCanvasElement>('[data-hunt-canvas]');
+  const start = $<HTMLButtonElement>('[data-hunt-start]');
+  const score = $('[data-hunt-score]');
+  const time = $('[data-hunt-time]');
+  const result = $('[data-hunt-result]');
+  if (!canvas || !start) return;
+
+  start.addEventListener('click', () => {
+    stopHunt();
+    start.hidden = true;
+    if (result) result.hidden = true;
+    huntIndex++;
+
+    hunt = startHunt(canvas, {
+      seconds: HUNT.seconds,
+      onTick(left, s) {
+        if (time) time.textContent = String(left);
+        if (score) score.textContent = String(s);
+      },
+      onEnd(s) {
+        hunt = null;
+        const verdict = huntVerdict(s);
+        if (result) {
+          result.textContent = `${s} ${HUNT.unit(s)}. ${verdict}`;
+          result.hidden = false;
+        }
+        start.textContent = HUNT.again;
+        start.hidden = false;
+        announce(`${HUNT.scoreLabel}: ${s}. ${verdict}`);
+        if (s >= 12 && !reduced()) burst(result);
+      },
+    });
+  });
 }
 
 /* =========================================================================
@@ -558,12 +549,8 @@ function runReveal(): void {
  * ملاحظٌ واحد لكل عناصر `.reveal`.
  *
  * القاعدة في الأنماط تبدأ من `opacity: 0` وتنتظر `.is-visible`، والصنف يأتي
- * من هنا. بلا هذا لا يصل أبداً، فيبقى كل ما تحت العدّاد — رسالة اليوم وزرّ
- * التنبيهات والتذييل — مخفياً بلا أن يبدو معطّلاً: العنصر موجود في الصفحة،
- * وشفافيته صفر، فلا خطأ في وحدة التحكّم ولا شيء ينقص في المصدر.
- *
- * وعند تعذّر الملاحظ أو في الحركة المخفّضة يظهر كل شيء فوراً: الفشل يجب أن
- * يُري المحتوى لا أن يخفيه.
+ * من هنا. وعند تعذّر الملاحظ أو في الحركة المخفّضة يظهر كل شيء فوراً: الفشل
+ * يجب أن يُري المحتوى لا أن يخفيه.
  */
 function initReveal(): void {
   const items = $$('.reveal');
@@ -614,20 +601,16 @@ function setMusicUi(playing: boolean, waiting = false): void {
 
   root.hidden = false;
   root.classList.toggle('is-playing', playing);
-  root.classList.toggle('is-waiting', waiting);
   toggle.setAttribute('aria-pressed', String(playing));
-  label.textContent = playing ? 'شغالة' : waiting ? 'المسي الشاشة' : 'الأغنية';
-  toggle.setAttribute('aria-label', playing ? 'إيقاف الأغنية' : 'تشغيل الأغنية');
+  label.textContent = playing ? 'شغالة' : waiting ? 'المسي الشاشة' : 'مطفية';
 }
 
 function initMusic(): void {
   const el = $<HTMLAudioElement>('[data-music-audio]');
   const toggle = $<HTMLButtonElement>('[data-music-toggle]');
-  const root = $('[data-music]');
-  if (!el || !toggle || !root) return;
+  if (!el || !toggle) return;
 
   music = initAudio(el);
-  root.hidden = true; // المشغّل لا يظهر قبل أن تبدأ الحكاية
 
   toggle.addEventListener('click', async () => {
     const playing = await music!.toggle();
@@ -641,7 +624,7 @@ function initMusic(): void {
 }
 
 /* =========================================================================
-   الإشعارات
+   الإشعارات — معطَّلة مؤقّتاً من `DAILY_NOTIFY`
    ========================================================================= */
 
 const notifBtn = $<HTMLButtonElement>('[data-notif-enable]');
@@ -691,9 +674,23 @@ async function armPush(reg: ServiceWorkerRegistration | null): Promise<void> {
   await pushSubscribe(reg);
 }
 
+/**
+ * عامل الخدمة يُسجَّل دائماً — هو التخزين والتحديث. أمّا جدولة الرسالة
+ * اليومية وإعادة مزامنتها فخلف `DAILY_NOTIFY`، وهي مطفأة الآن. الاشتراك في
+ * Push يبقى قائماً: الإرسال يدويّ ولا يحدث إلا حين يُطلب.
+ */
 function initNotify(): void {
-  if (!notifBtn) return;
+  if (notifySupported()) {
+    void registerWorker().then((reg) => {
+      if (DAILY_NOTIFY) {
+        scheduleNotify();
+        initResync();
+      }
+      void armPush(reg);
+    });
+  }
 
+  if (!notifBtn) return;
   notifBtn.addEventListener('click', async () => {
     if (notifBtn.dataset.notifTest === '1') {
       await showTest();
@@ -706,16 +703,7 @@ function initNotify(): void {
     notifBtn.disabled = false;
     paintNotify();
   });
-
   paintNotify();
-
-  if (notifySupported()) {
-    void registerWorker().then((reg) => {
-      scheduleNotify();
-      initResync();
-      void armPush(reg);
-    });
-  }
 }
 
 /* =========================================================================
@@ -728,7 +716,7 @@ const panelStatus = $('[data-committee-status]');
 function refreshPanel(): void {
   if (!panelStatus) return;
   panelStatus.textContent =
-    `${getOffset() ? 'وقت مُحاكى' : 'وقت حقيقي'} — ${damascusClock()} · مشهد: ${story.current().scene}`;
+    `${getOffset() ? 'وقت مُحاكى' : 'وقت حقيقي'} — ${damascusClock()} · مشهد: ${story.current()}`;
 }
 
 function initPanel(): void {
@@ -749,55 +737,24 @@ function initPanel(): void {
   for (const btn of $$<HTMLButtonElement>('[data-sim]')) {
     btn.addEventListener('click', () => {
       const real = Date.now();
-
-      /**
-       * قفزة إلى محطّة من ليلة العيد.
-       *
-       * الإزاحة تُقاس من منتصف ليل عيدها لا من تاريخ مكتوب، فتصحّ كل سنة.
-       * والقياس من `Date.now()` لا من `nowMs()`، وإلا تراكمت الإزاحة على
-       * نفسها مع كل ضغطة فابتعدت المحطّة عن اسمها.
-       *
-       * ولا إعادة تحميل: نقفز إلى المشهد هنا مباشرةً. تغيير الساعة وحده
-       * يبدّل الأرقام ويترك المشهد مكانه.
-       */
-      const bd = nextBirthdayInstant(real);
-      const jump = (deltaMs: number, scene: Scene): void => {
-        if (bd === null) return;
-        setOffset(bd + deltaMs - real);
-        // التصفير يمحو علامة «احتفلنا» فتعمل الرشقة من جديد في كل معاينة
-        story.reset();
-        panel.hidden = true;
-        show(story.go(scene).scene);
-      };
-
       switch (btn.dataset.sim) {
         case 'before': setOffset(damascusTodayAt(SWEET_HOUR - 1, 15, real) - real); break;
         case 'due':    setOffset(damascusTodayAt(SWEET_HOUR, 0, real) - real); break;
         case 'after':  setOffset(damascusTodayAt(SWEET_HOUR + 2, 40, real) - real); break;
+        // القمر يتبع محاكي الوقت: أسبوعٌ للأمام يقلب طوره
+        case 'week':   setOffset(getOffset() + 7 * 86_400_000); break;
         case 'rain':   finale(); break;
-
-        case 'cd-far':    jump(-3 * 3_600_000, 'countdown'); return;
-        case 'cd-warm':   jump(-45 * 60_000, 'countdown'); return;
-        case 'cd-last':   jump(-25_000, 'countdown'); return;
-        case 'bd-candle': jump(5_000, 'candle'); return;
-        case 'bd-reveal': jump(5_000, 'reveal'); return;
-
-        case 'real':
-          setOffset(0);
-          story.reset();
-          show('open');
-          break;
+        case 'real':   setOffset(0); break;
         case 'reset':
           resetAll();
-          story.reset();
           setOffset(0);
-          try { localStorage.removeItem(CD_START_KEY); } catch { /* noop */ }
-          show('open');
+          applyTint(null);
+          show('hub');
           break;
       }
-      scheduleNotify();
+      if (DAILY_NOTIFY) scheduleNotify();
       refreshPanel();
-      if (story.current().scene === 'countdown') paintCountdown();
+      if (story.current() === 'moon') paintMoon();
     });
   }
 }
@@ -822,7 +779,6 @@ function reloadOnNewWorker(): void {
       if (sessionStorage.getItem(GUARD) === '1') return;
       sessionStorage.setItem(GUARD, '1');
     } catch {
-      /* بلا تخزين لا حارس — نكتفي بعدم إعادة التحميل */
       return;
     }
     location.reload();
@@ -834,19 +790,21 @@ function boot(): void {
   reloadOnNewWorker();
   logVisit();
 
-  for (const b of $$('[data-next]')) b.addEventListener('click', advance);
-  $('[data-tempt]')?.addEventListener('click', tempted);
-  $('[data-blow]')?.addEventListener('click', blowOut);
+  // لون المناكير المحفوظ قبل أوّل رسم، وإلا رأت الوزارة تنقلب لونها أمامها
+  applyTint(loadTint());
 
-  // ‎$‎ ترجّع عنصراً واحداً — لو صار في الصفحة زرّان بالوسم نفسه فقد الثاني
-  // وظيفته بصمت. ‎$$‎ لا تقع في ذلك.
-  for (const b of $$('[data-replay]')) {
-    b.addEventListener('click', () => {
-      story.reset();
-      show('open');
-      announce(MISC.replayDone);
-    });
+  for (const b of $$<HTMLElement>('[data-go]')) {
+    b.addEventListener('click', () => goTo(b.dataset.go ?? ''));
   }
+
+  initDecrees();
+  initNet();
+  initRhyme();
+  initSupport();
+  initNails();
+  initCourt();
+  initDishes();
+  initHunt();
 
   initReveal();
   initMusic();
@@ -866,14 +824,7 @@ function boot(): void {
 
   document.addEventListener('copy', () => announce(MISC.copyEgg), { passive: true });
 
-  // يوم عيدها يفتح على الشمعة مباشرة، لا على أوّل التجربة.
-  //
-  // التمهيد كلّه مبنيّ على الانتظار، ولا معنى لانتظارٍ بعد أن يجيء الموعد.
-  // ومن وصلت إلى الشمعة أو تجاوزتها تبقى مكانها.
-  const b = untilBirthday();
-  const saved = story.current().scene;
-  const past = story.SCENES.indexOf(saved) >= story.SCENES.indexOf('candle');
-  show(b?.isToday ? story.go(past ? saved : 'candle').scene : saved);
+  show('hub');
 }
 
 if (document.readyState === 'loading') {

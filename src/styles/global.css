@@ -20,20 +20,26 @@
   --c-ink-soft:      #cbc0f2;
   --c-ink-faint:     #9287c6;
 
-  --c-violet:        #8b6bff;
-  --c-violet-deep:   #b9a4ff;
-  --c-violet-wash:   #221846;
+  --c-violet:        color-mix(in srgb, var(--tint) 60%, #8b6bff);
+  --c-violet-deep:   color-mix(in srgb, var(--tint) 70%, #fff);
+  --c-violet-wash:   color-mix(in srgb, var(--tint) 18%, #0b0722);
 
-  /* اللافندر — لون الموقع. على الليل تنقلب القاعدة: الفاتح هو المقروء
-     والغامق صار زينة. ‎#c4b5fd‎ على ‎#0b0722‎ يعطي ‎9.6:1‎. */
-  --c-lav:           #a78bfa;
-  --c-lav-soft:      #c4b5fd;
-  --c-lav-deep:      #c4b5fd;
-  --c-lav-wash:      #221846;
+  /*
+   * `--tint` — لون المناكير. متغيّرٌ واحد تشتقّ منه كل درجات اللافندر بـ
+   * `color-mix`، فتغييره من هيئة المناكير يلوّن الوزارة كلّها دفعةً واحدة.
+   *
+   * الحبر لا يُشتقّ منه عمداً: النصّ يبقى فاتحاً على الليل أياً كان اللون،
+   * والتباين لا يُترك للونٍ اختارته صاحبة الموقع.
+   */
+  --tint:            #c4b5fd;
 
-  /* الوردي الدافئ والذهبي: لا يظهران إلا حين يقترب الوقت، فهما لون الفجر
-     لا لون الليل. */
-  --c-rose:          #f7a8c4;
+  --c-lav:           color-mix(in srgb, var(--tint) 85%, #8b6bff);
+  --c-lav-soft:      var(--tint);
+  /* للنصّ: يُفتَّح دائماً حتى لا يهبط تباين لونٍ غامق تحت الحدّ */
+  --c-lav-deep:      color-mix(in srgb, var(--tint) 60%, #fff);
+  --c-lav-wash:      color-mix(in srgb, var(--tint) 18%, #0b0722);
+
+  --c-rose:          color-mix(in srgb, var(--tint) 45%, #f7a8c4);
   --c-warm:          #ffd8ae;
 
   --c-mint:          #12b981;
@@ -57,7 +63,7 @@
   --g-brand: linear-gradient(135deg, var(--c-violet) 0%, var(--c-lav-soft) 100%);
   /* RTL: القراءة تبدأ من اليمين، فيبدأ التدرّج بالغامق هناك.
      الطرف الفاتح لا ينزل تحت ‎#9b7ae8‎ حتى يبقى العنوان مقروءاً. */
-  --g-text:  linear-gradient(to left, #ffffff 0%, #e3d8ff 42%, #c4b5fd 100%);
+  --g-text:  linear-gradient(to left, #ffffff 0%, color-mix(in srgb, var(--tint) 40%, #fff) 42%, var(--tint) 100%);
 
   /* ---- Elevation -------------------------------------------------------- */
   /* على الليل لا يُرى الظلّ. البروز يأتي من الوهج لا من العتمة تحت العنصر. */
@@ -70,7 +76,7 @@
      يُطارَد الأبيض المكتوب يدوياً في كل مكوّن على حدة. */
   --c-glass:     rgb(255 255 255 / .07);
   --c-glass-hi:  rgb(255 255 255 / .13);
-  --c-hairline:  rgb(196 181 253 / .2);
+  --c-hairline:  color-mix(in srgb, var(--tint) 20%, transparent);
   --glow-md: 0 0 44px rgba(196, 181, 253, .34);
 
   /* ---- Radii ------------------------------------------------------------ */
@@ -111,52 +117,6 @@
   --pad-x: clamp(1.15rem, .6rem + 2.6vw, 2.75rem);
 
   color-scheme: dark;
-}
-
-/* ==========================================================================
-   أطوار التجربة
-   ========================================================================== */
-
-/*
- * `data-phase` على ‎<html>‎ — يمشي في اتجاه واحد: ليل ← دفء ← فجر.
- *
- * ثلاث محطّات لا تدرّج مستمرّ. المستمرّ أجمل نظرياً وأخطر عملياً: الألوان
- * الوسطى بين الفاتح والغامق تقتل التباين للحبر الفاتح والغامق معاً، وما من
- * قيمة واحدة تُفحص لأنها لا نهائية. والانتقال بينها بطيء، فترى العين ضوءاً
- * يطلع لا قفزة.
- */
-html,
-body { transition: background-color 2.4s var(--e-soft), color 2.4s var(--e-soft); }
-
-/* ١ · دفء — يبدأ حين تقلّ الساعة الأخيرة. أرضٌ ما زالت ليلاً لكنها تسخن. */
-html[data-phase='warm'] {
-  --c-bg:      #170c33;
-  --c-bg-deep: #0c0620;
-}
-
-/* ٢ · فجر — عند الكشف. الحبر ينقلب غامقاً على أرض دافئة:
-      ‎#2a1550‎ على ‎#fdf4f8‎ يعطي ‎14.8:1‎. */
-html[data-phase='dawn'] {
-  --c-bg:           #fdf4f8;
-  --c-bg-deep:      #f6e9f6;
-  --c-surface:      #ffffff;
-  --c-surface-soft: #fdf7ff;
-  --c-ink:          #2a1550;
-  --c-ink-soft:     #4d3878;
-  --c-ink-faint:    #6f6396;
-  --c-lav-deep:     #6d4aca;
-  --c-violet-deep:  #4b2fd6;
-  --c-lav-wash:     #f3ecff;
-  --c-violet-wash:  #f3ecff;
-  --g-text: linear-gradient(to left, #4b2fd6 0%, #7c53d8 45%, #c07ab0 100%);
-  --c-glass:     rgb(255 255 255 / .8);
-  --c-glass-hi:  rgb(255 255 255 / .95);
-  --c-hairline:  rgb(42 21 80 / .1);
-  color-scheme: light;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html, body { transition: none; }
 }
 
 /* ==========================================================================
@@ -314,21 +274,12 @@ a { color: var(--c-violet-deep); text-underline-offset: .25em; }
  */
 .btn--primary {
   color: #2a1550;
-  background: linear-gradient(135deg, #e9dcff 0%, #cbbcff 100%);
-  box-shadow: 0 0 34px -6px rgb(196 181 253 / .55);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tint) 35%, #fff) 0%, color-mix(in srgb, var(--tint) 85%, #fff) 100%);
+  box-shadow: 0 0 34px -6px color-mix(in srgb, var(--tint) 55%, transparent);
 }
 .btn--primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 48px -6px rgb(196 181 253 / .75);
-}
-
-html[data-phase='dawn'] .btn--primary {
-  color: #fff;
-  background: linear-gradient(135deg, #6d4aca 0%, #4b2fd6 100%);
-  box-shadow: 0 8px 22px -8px rgb(109 74 202 / .75);
-}
-html[data-phase='dawn'] .btn--primary:hover {
-  box-shadow: 0 14px 30px -10px rgb(109 74 202 / .85);
+  box-shadow: 0 0 48px -6px color-mix(in srgb, var(--tint) 75%, transparent);
 }
 .btn--primary:active { transform: translateY(0) scale(.97); }
 
@@ -354,7 +305,7 @@ html[data-phase='dawn'] .btn--primary:hover {
 .btn--ghost {
   color: var(--c-ink);
   background: rgb(255 255 255 / .07);
-  border: 1px solid rgb(196 181 253 / .28);
+  border: 1px solid color-mix(in srgb, var(--tint) 28%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: none;
@@ -362,17 +313,11 @@ html[data-phase='dawn'] .btn--primary:hover {
 .btn--ghost:hover {
   transform: translateY(-2px);
   background: rgb(255 255 255 / .13);
-  border-color: rgb(196 181 253 / .5);
+  border-color: color-mix(in srgb, var(--tint) 50%, transparent);
   box-shadow: var(--glow-sm);
 }
 
-html[data-phase='dawn'] .btn--ghost {
-  color: var(--c-ink-soft);
-  background: rgb(255 255 255 / .8);
-  border-color: rgb(42 21 80 / .1);
-  box-shadow: var(--sh-sm);
-}
-html[data-phase='dawn'] .btn--ghost:hover { background: #fff; }
+
 .btn--ghost:active { transform: translateY(0) scale(.97); }
 
 .btn--quiet {
@@ -387,8 +332,7 @@ html[data-phase='dawn'] .btn--ghost:hover { background: #fff; }
 }
 .btn--quiet { backdrop-filter: none; -webkit-backdrop-filter: none; }
 .btn--quiet:hover { background: rgb(255 255 255 / .09); box-shadow: none; }
-html[data-phase='dawn'] .btn--quiet { background: transparent; border-color: transparent; }
-html[data-phase='dawn'] .btn--quiet:hover { background: rgb(255 255 255 / .7); box-shadow: var(--sh-sm); }
+
 
 .btn--wide { flex-basis: 100%; }
 
